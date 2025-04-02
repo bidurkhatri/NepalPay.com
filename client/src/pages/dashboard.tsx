@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { useWallet } from '@/contexts/wallet-context';
 import Sidebar from '@/components/sidebar';
@@ -31,7 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight, RefreshCw, Wallet as WalletIcon } from 'lucide-react';
+import { Loader2, ArrowRight, RefreshCw, Wallet as WalletIcon, Coins } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -118,8 +119,10 @@ const Dashboard: React.FC = () => {
                   <span>NPT Token:</span>
                   <span className="font-semibold">1.23 NPT</span>
                 </Badge>
-                <Button variant="outline" size="sm" className="text-xs" onClick={() => setCryptoDialogOpen(true)}>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1" /> Sync
+                <Button variant="outline" size="sm" className="text-xs flex items-center" asChild>
+                  <Link href="/crypto">
+                    <Coins className="h-3.5 w-3.5 mr-1" /> Manage
+                  </Link>
                 </Button>
               </div>
             </div>

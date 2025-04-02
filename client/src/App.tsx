@@ -8,9 +8,10 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import CryptoPage from "@/pages/crypto";
 
 // Protected route component that redirects to login if not authenticated
-const ProtectedRoute = ({ component: Component, ...rest }: { component: React.ComponentType, path?: string }) => {
+const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
   const { user, loading } = useAuth();
   
   // Show nothing while checking authentication
@@ -20,11 +21,11 @@ const ProtectedRoute = ({ component: Component, ...rest }: { component: React.Co
   if (!user) return <Redirect to="/login" />;
   
   // If authenticated, render the component
-  return <Component {...rest} />;
+  return <Component />;
 };
 
 // Public route component that redirects to dashboard if already authenticated
-const PublicRoute = ({ component: Component, ...rest }: { component: React.ComponentType, path?: string }) => {
+const PublicRoute = ({ component: Component }: { component: React.ComponentType }) => {
   const { user, loading } = useAuth();
   
   // Show nothing while checking authentication
@@ -34,7 +35,7 @@ const PublicRoute = ({ component: Component, ...rest }: { component: React.Compo
   if (user) return <Redirect to="/dashboard" />;
   
   // If not authenticated, render the component
-  return <Component {...rest} />;
+  return <Component />;
 };
 
 function Router() {
@@ -50,9 +51,9 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/crypto" component={() => <ProtectedRoute component={CryptoPage} />} />
       <Route path="/wallet" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/transactions" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/cards" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/profile" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Dashboard} />} />

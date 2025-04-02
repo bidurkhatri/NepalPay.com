@@ -12,6 +12,7 @@ import {
   SettingsIcon,
   LogoutIcon
 } from '@/lib/icons';
+import { Coins } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -24,8 +25,8 @@ const Sidebar: React.FC = () => {
   const menuItems = [
     { href: '/dashboard', icon: <DashboardIcon className="mr-3 text-lg" />, label: 'Dashboard' },
     { href: '/wallet', icon: <WalletIcon className="mr-3 text-lg" />, label: 'My Wallet' },
+    { href: '/crypto', icon: <Coins className="mr-3 text-lg text-orange-500" />, label: 'NPT Tokens' },
     { href: '/transactions', icon: <TransactionIcon className="mr-3 text-lg" />, label: 'Transactions' },
-    { href: '/cards', icon: <CardIcon className="mr-3 text-lg" />, label: 'Cards' },
     { href: '/analytics', icon: <ChartIcon className="mr-3 text-lg" />, label: 'Analytics' },
     { href: '/profile', icon: <UserIcon className="mr-3 text-lg" />, label: 'Profile' },
     { href: '/settings', icon: <SettingsIcon className="mr-3 text-lg" />, label: 'Settings' },
@@ -62,8 +63,8 @@ const Sidebar: React.FC = () => {
       <nav className="flex-1 px-2 py-4 space-y-1">
         {menuItems.map((item) => (
           <Link key={item.href} href={item.href}>
-            <a 
-              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+            <div 
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md cursor-pointer ${
                 location === item.href 
                   ? 'bg-primary-50 text-primary-500' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-primary-500'
@@ -71,7 +72,7 @@ const Sidebar: React.FC = () => {
             >
               {item.icon}
               {item.label}
-            </a>
+            </div>
           </Link>
         ))}
       </nav>
