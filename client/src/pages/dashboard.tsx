@@ -105,21 +105,21 @@ const Dashboard: React.FC = () => {
       <main className="flex-1 flex flex-col pb-16 md:pb-0">
         <Header />
 
-        <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8 bg-black/80">
           <div className="max-w-7xl mx-auto">
             {/* Page Heading with NPT Token */}
-            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-500 mt-1">Welcome back, manage your finances with blockchain security</p>
+                <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
+                <p className="text-gray-400 mt-1">Welcome back, manage your finances with blockchain security</p>
               </div>
               <div className="mt-4 md:mt-0 flex items-center space-x-2">
-                <Badge variant="outline" className="py-2 flex items-center gap-1 border-orange-500 text-orange-500 hover:text-orange-500">
+                <Badge variant="outline" className="py-2 flex items-center gap-1 border-primary bg-primary/10 text-white hover:text-white glow">
                   <WalletIcon className="h-3.5 w-3.5" />
                   <span>NPT Token:</span>
                   <span className="font-semibold">1.23 NPT</span>
                 </Badge>
-                <Button variant="outline" size="sm" className="text-xs flex items-center" asChild>
+                <Button variant="outline" size="sm" className="text-xs flex items-center border-primary/50 bg-primary/10 text-white hover:bg-primary/20 transition-all duration-300 glow" asChild>
                   <Link href="/crypto">
                     <Coins className="h-3.5 w-3.5 mr-1" /> Manage
                   </Link>
@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
 
             {/* Quick Actions */}
             <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <ActionButton
                   icon={<SendIcon className="text-primary-500 text-xl" />}
