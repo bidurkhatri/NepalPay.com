@@ -66,13 +66,18 @@ function Router() {
   );
 }
 
+// Import the BlockchainProvider
+import { BlockchainProvider } from "@/contexts/blockchain-context";
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <WalletProvider>
-          <Router />
-          <Toaster />
+          <BlockchainProvider>
+            <Router />
+            <Toaster />
+          </BlockchainProvider>
         </WalletProvider>
       </AuthProvider>
     </QueryClientProvider>
