@@ -96,9 +96,9 @@ const BlockchainContext = createContext<BlockchainContextType>({
   setUserProfile: async () => ({}),
 });
 
-// Contract addresses (to be updated with actual addresses after deployment)
-const NEPALPAY_CONTRACT_ADDRESS = '0x1234567890123456789012345678901234567890'; // Placeholder - update after deployment
-const TOKEN_CONTRACT_ADDRESS = '0x0987654321098765432109876543210987654321'; // Placeholder - update after deployment
+// Contract addresses (actual deployed contracts on BSC)
+const NEPALPAY_CONTRACT_ADDRESS = '0x1b10ba100e879d30f62cea5c5d385ad11b6deb8c'; // NepalPay contract on BSC Mainnet
+const TOKEN_CONTRACT_ADDRESS = '0xD7f8cFeE6721F9c876DB7a808E53Fe4759392E8e'; // NepalPay Token (NPT) on BSC Mainnet
 
 // BSC Network Configuration
 const BSC_MAINNET = {
