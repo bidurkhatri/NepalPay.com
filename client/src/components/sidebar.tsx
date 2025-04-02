@@ -23,13 +23,13 @@ const Sidebar: React.FC = () => {
   const initials = getInitials(user.firstName, user.lastName);
 
   const menuItems = [
-    { href: '/dashboard', icon: <DashboardIcon className="mr-3 text-lg" />, label: 'Dashboard' },
-    { href: '/wallet', icon: <WalletIcon className="mr-3 text-lg" />, label: 'My Wallet' },
-    { href: '/crypto', icon: <Coins className="mr-3 text-lg text-orange-500" />, label: 'NPT Tokens' },
-    { href: '/transactions', icon: <TransactionIcon className="mr-3 text-lg" />, label: 'Transactions' },
-    { href: '/analytics', icon: <ChartIcon className="mr-3 text-lg" />, label: 'Analytics' },
-    { href: '/profile', icon: <UserIcon className="mr-3 text-lg" />, label: 'Profile' },
-    { href: '/settings', icon: <SettingsIcon className="mr-3 text-lg" />, label: 'Settings' },
+    { href: '/dashboard', icon: <DashboardIcon className="mr-2 h-5 w-5" />, label: 'Dashboard' },
+    { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
+    { href: '/crypto', icon: <Coins className="mr-2 h-5 w-5 text-orange-500" />, label: 'NPT Tokens' },
+    { href: '/transactions', icon: <TransactionIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
+    { href: '/analytics', icon: <ChartIcon className="mr-2 h-5 w-5" />, label: 'Analytics' },
+    { href: '/profile', icon: <UserIcon className="mr-2 h-5 w-5" />, label: 'Profile' },
+    { href: '/settings', icon: <SettingsIcon className="mr-2 h-5 w-5" />, label: 'Settings' },
   ];
 
   const handleLogout = async () => {
@@ -83,7 +83,7 @@ const Sidebar: React.FC = () => {
           onClick={handleLogout}
           className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
         >
-          <LogoutIcon className="mr-2 text-lg" />
+          <LogoutIcon className="mr-2 h-5 w-5" />
           Logout
         </button>
       </div>

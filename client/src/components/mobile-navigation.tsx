@@ -19,7 +19,7 @@ const MobileNavigation: React.FC = () => {
           <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
             location === '/dashboard' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
           }`}>
-            <HomeIcon className="text-xl" />
+            <HomeIcon className="h-5 w-5" />
             <span className="text-xs mt-1">Home</span>
           </div>
         </Link>
@@ -27,14 +27,14 @@ const MobileNavigation: React.FC = () => {
           <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
             location === '/wallet' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
           }`}>
-            <WalletIcon className="text-xl" />
+            <WalletIcon className="h-5 w-5" />
             <span className="text-xs mt-1">Wallet</span>
           </div>
         </Link>
         <div className="flex items-center justify-center">
           <Link href="/send-money">
             <div className="bg-gradient-to-tr from-primary to-purple-500 text-white rounded-full p-3 -mt-6 shadow-lg cursor-pointer glow hover:scale-110 transition-all duration-300">
-              <SendIcon className="text-xl" />
+              <SendIcon className="h-5 w-5" />
             </div>
           </Link>
         </div>
@@ -42,7 +42,7 @@ const MobileNavigation: React.FC = () => {
           <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
             location === '/transactions' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
           }`}>
-            <TransactionIcon className="text-xl" />
+            <TransactionIcon className="h-5 w-5" />
             <span className="text-xs mt-1">History</span>
           </div>
         </Link>
@@ -50,7 +50,7 @@ const MobileNavigation: React.FC = () => {
           <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
             location === '/crypto' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
           }`}>
-            <Coins className="text-xl" />
+            <Coins className="h-5 w-5" />
             <span className="text-xs mt-1">Crypto</span>
           </div>
         </Link>

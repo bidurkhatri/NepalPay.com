@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { SearchIcon, NotificationIcon } from '@/lib/icons';
 import { getInitials } from '@/lib/icons';
+import { Menu, X } from 'lucide-react'; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from 'wouter';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -55,8 +57,82 @@ const Header: React.FC = () => {
           
           {/* Right side: Actions */}
           <div className="flex items-center space-x-4">
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button className="p-1.5 rounded-full text-primary hover:bg-primary/20 transition-colors duration-300 glow focus:outline-none">
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full max-w-xs bg-black/90 border-primary/30 text-white p-0">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-primary/20">
+                    <h2 className="font-bold text-xl gradient-text">
+                      <span>Nepal</span>Pay
+                    </h2>
+                    <SheetTrigger asChild>
+                      <button className="text-primary hover:text-white">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </SheetTrigger>
+                  </div>
+                  <div className="px-4 py-3 border-b border-primary/20">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/30 flex items-center justify-center glow">
+                        <span className="text-white font-semibold">{initials}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{`${user.firstName} ${user.lastName}`}</p>
+                        <p className="text-xs text-primary/80">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <nav className="py-3 space-y-1 px-2">
+                    <Link href="/dashboard">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        Dashboard
+                      </div>
+                    </Link>
+                    <Link href="/wallet">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        My Wallet
+                      </div>
+                    </Link>
+                    <Link href="/crypto">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        NPT Tokens
+                      </div>
+                    </Link>
+                    <Link href="/transactions">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        Transactions
+                      </div>
+                    </Link>
+                    <Link href="/profile">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        Profile
+                      </div>
+                    </Link>
+                    <Link href="/settings">
+                      <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
+                        Settings
+                      </div>
+                    </Link>
+                  </nav>
+                  <div className="mt-auto p-4 border-t border-primary/20">
+                    <button 
+                      onClick={() => logout()}
+                      className="w-full py-2 px-4 bg-primary/20 hover:bg-primary/30 text-white rounded-md transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+            
             <button className="p-1 rounded-full text-primary hover:bg-primary/20 transition-colors duration-300 relative glow">
-              <NotificationIcon className="text-xl" />
+              <NotificationIcon className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse">3</span>
             </button>
             
