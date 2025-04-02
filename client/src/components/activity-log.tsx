@@ -16,17 +16,17 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="font-semibold text-lg text-gray-900">Activity Log</h3>
+      <div className="glass cyber-card rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-primary/20 animated-border">
+          <h3 className="font-semibold text-lg text-white">Activity Log</h3>
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-primary/10">
           {[1, 2, 3].map((i) => (
             <div key={i} className="px-6 py-3 flex items-start space-x-3">
-              <Skeleton className="h-2 w-2 rounded-full mt-1.5" />
-              <div>
-                <Skeleton className="h-4 w-40 mb-1" />
-                <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-2 w-2 rounded-full mt-1.5 bg-primary/50" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-full mb-1 bg-primary/20" />
+                <Skeleton className="h-3 w-24 bg-primary/10" />
               </div>
             </div>
           ))}
@@ -36,17 +36,23 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
   }
 
   const getActivityDot = (action: string) => {
-    let bgColor = 'bg-gray-500';
+    let bgColor = 'bg-primary/80';
+    let ringColor = 'ring-1 ring-primary';
+    let pulseEffect = '';
 
     if (action.includes('LOGIN') || action.includes('REGISTER')) {
-      bgColor = 'bg-green-500';
+      bgColor = 'bg-green-400';
+      ringColor = 'ring-1 ring-green-500';
     } else if (action.includes('FAILED')) {
-      bgColor = 'bg-yellow-500';
+      bgColor = 'bg-yellow-400';
+      ringColor = 'ring-1 ring-yellow-500';
+      pulseEffect = 'animate-pulse';
     } else if (action.includes('TRANSACTION')) {
-      bgColor = 'bg-blue-500';
+      bgColor = 'bg-blue-400';
+      ringColor = 'ring-1 ring-blue-500';
     }
 
-    return <div className={`h-2 w-2 rounded-full ${bgColor}`}></div>;
+    return <div className={`h-2 w-2 rounded-full ${bgColor} ${ringColor} ${pulseEffect}`}></div>;
   };
 
   const formatDate = (dateString: string) => {
@@ -79,25 +85,25 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="font-semibold text-lg text-gray-900">Activity Log</h3>
+    <div className="glass cyber-card rounded-xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-primary/20 animated-border">
+        <h3 className="font-semibold text-lg text-white">Activity Log</h3>
       </div>
       
       {activities.length === 0 ? (
         <div className="px-6 py-10 text-center">
-          <p className="text-gray-500">No activities found</p>
+          <p className="text-white/60">No activities found</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-primary/10">
           {activities.slice(0, 5).map((activity) => (
-            <div key={activity.id} className="px-6 py-3 flex items-start space-x-3">
+            <div key={activity.id} className="px-6 py-3 flex items-start space-x-3 hover:bg-primary/5 transition-colors group">
               <div className="flex-shrink-0 mt-1">
                 {getActivityDot(activity.action)}
               </div>
               <div>
-                <p className="text-sm text-gray-800">{formatActivityTitle(activity)}</p>
-                <p className="text-xs text-gray-500">{formatDate(activity.createdAt)}</p>
+                <p className="text-sm text-white group-hover:text-primary transition-colors duration-300">{formatActivityTitle(activity)}</p>
+                <p className="text-xs text-white/60">{formatDate(activity.createdAt)}</p>
               </div>
             </div>
           ))}
@@ -105,10 +111,10 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
       )}
       
       {activities.length > 0 && onViewAll && (
-        <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 text-center">
+        <div className="px-6 py-3 bg-black/30 border-t border-primary/20 text-center">
           <button 
             onClick={onViewAll}
-            className="text-sm font-medium text-primary-500 hover:text-primary-600"
+            className="text-sm font-medium text-primary hover:text-white transition-colors"
           >
             View All Activity
           </button>

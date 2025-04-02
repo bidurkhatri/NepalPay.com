@@ -9,13 +9,13 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = ({ icon, label, onClick }) => {
   return (
     <button 
-      className="flex flex-col items-center justify-center bg-white rounded-xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow"
+      className="flex flex-col items-center justify-center glass p-4 rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 glow group"
       onClick={onClick}
     >
-      <div className="p-3 bg-primary-50 rounded-full mb-2">
-        {icon}
+      <div className="p-3 bg-primary/10 rounded-full mb-2 border border-primary/20 group-hover:bg-primary/20 transition-all duration-300">
+        {React.cloneElement(icon as React.ReactElement, { className: "text-primary text-xl" })}
       </div>
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium text-white group-hover:text-primary transition-colors duration-300">{label}</span>
     </button>
   );
 };

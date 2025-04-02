@@ -62,7 +62,7 @@ export interface RegisterData {
 
 // Form types
 export interface TransferFormData {
-  receiverId: number;
+  receiverId: number | string;
   amount: string;
   note?: string;
 }
