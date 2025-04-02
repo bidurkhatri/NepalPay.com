@@ -25,11 +25,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight, RefreshCw, Wallet as WalletIcon } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -38,6 +40,7 @@ const Dashboard: React.FC = () => {
   
   const [mobileTopupOpen, setMobileTopupOpen] = useState(false);
   const [utilityPaymentOpen, setUtilityPaymentOpen] = useState(false);
+  const [cryptoDialogOpen, setCryptoDialogOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [utilityAmount, setUtilityAmount] = useState('');
   const [topupNote, setTopupNote] = useState('');
@@ -103,10 +106,22 @@ const Dashboard: React.FC = () => {
 
         <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8 bg-gray-50">
           <div className="max-w-7xl mx-auto">
-            {/* Page Heading */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-500 mt-1">Welcome back, manage your finances efficiently</p>
+            {/* Page Heading with NPT Token */}
+            <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-gray-500 mt-1">Welcome back, manage your finances with blockchain security</p>
+              </div>
+              <div className="mt-4 md:mt-0 flex items-center space-x-2">
+                <Badge variant="outline" className="py-2 flex items-center gap-1 border-orange-500 text-orange-500 hover:text-orange-500">
+                  <WalletIcon className="h-3.5 w-3.5" />
+                  <span>NPT Token:</span>
+                  <span className="font-semibold">1.23 NPT</span>
+                </Badge>
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => setCryptoDialogOpen(true)}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" /> Sync
+                </Button>
+              </div>
             </div>
 
             {/* Balance Cards Section */}
@@ -143,7 +158,7 @@ const Dashboard: React.FC = () => {
             {/* Quick Actions */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <ActionButton
                   icon={<SendIcon className="text-primary-500 text-xl" />}
                   label="Send Money"
@@ -166,13 +181,8 @@ const Dashboard: React.FC = () => {
                 
                 <ActionButton
                   icon={<CardIcon className="text-blue-500 text-xl" />}
-                  label="Cards"
-                  onClick={() => {
-                    toast({
-                      title: 'Cards',
-                      description: 'Card management will be available soon',
-                    });
-                  }}
+                  label="Buy NPT"
+                  onClick={() => setCryptoDialogOpen(true)}
                 />
                 
                 <Dialog open={mobileTopupOpen} onOpenChange={setMobileTopupOpen}>
@@ -335,6 +345,64 @@ const Dashboard: React.FC = () => {
         
         <MobileNavigation />
       </main>
+      
+      {/* NPT Token Dialog */}
+      <Dialog open={cryptoDialogOpen} onOpenChange={setCryptoDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>NPT Token Management</DialogTitle>
+            <DialogDescription>
+              Manage your Nepal Pay Token (NPT) - the native cryptocurrency for NepalPay
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-sm font-medium text-gray-500">Current Balance</span>
+                <Badge variant="outline" className="py-1 border-orange-500 text-orange-500">Blockchain</Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <WalletIcon className="h-6 w-6 text-primary" />
+                <span className="text-2xl font-bold">1.23 NPT</span>
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                ≈ NPR 1,230.00
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Button className="w-full">
+                  <ArrowRight className="mr-2 h-4 w-4" /> Send NPT
+                </Button>
+                <Button variant="outline" className="w-full">
+                  Receive NPT
+                </Button>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-3">Other Actions</h4>
+                <div className="space-y-2">
+                  <Button variant="ghost" className="w-full justify-start">
+                    Add Collateral
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Take Loan
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start">
+                    Crowdfunding
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCryptoDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
