@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new SessionStore({
         checkPeriod: 86400000, // prune expired entries every 24h
       }),
-      secret: process.env.SESSION_SECRET || "nepal-pay-secret",
+      secret: process.env.SESSION_SECRET || "nepali-pay-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/register", async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
       
@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/login", async (req, res) => {
     try {
       const { username, password } = req.body;
       
@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", requireAuth, (req, res) => {
+  app.post("/api/logout", requireAuth, (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Logout failed" });
@@ -134,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", requireAuth, async (req, res) => {
+  app.get("/api/user", requireAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId!);
       

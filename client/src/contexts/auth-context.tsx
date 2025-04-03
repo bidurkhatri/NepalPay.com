@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuth = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch('/api/user', {
         credentials: 'include',
       });
 
@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: LoginCredentials) => {
     try {
       setLoading(true);
-      const res = await apiRequest('POST', '/api/auth/login', credentials);
+      const res = await apiRequest('POST', '/api/login', credentials);
       const userData = await res.json();
       setUser(userData);
       toast({
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (data: RegisterData) => {
     try {
       setLoading(true);
-      const res = await apiRequest('POST', '/api/auth/register', data);
+      const res = await apiRequest('POST', '/api/register', data);
       const userData = await res.json();
       setUser(userData);
       toast({
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       setLoading(true);
-      await apiRequest('POST', '/api/auth/logout');
+      await apiRequest('POST', '/api/logout');
       setUser(null);
       toast({
         title: 'Logged out',

@@ -35,7 +35,7 @@ const Header: React.FC = () => {
           <div className="flex items-center">
             <div className="md:hidden flex-shrink-0">
               <h1 className="font-bold text-xl gradient-text">
-                <span>Nepal</span>Pay
+                <span>Nepali</span>Pay
               </h1>
             </div>
             <div className="hidden md:block ml-4">
@@ -68,7 +68,7 @@ const Header: React.FC = () => {
                 <SheetContent side="left" className="w-full max-w-xs bg-black/90 border-primary/30 text-white p-0">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-primary/20">
                     <h2 className="font-bold text-xl gradient-text">
-                      <span>Nepal</span>Pay
+                      <span>Nepali</span>Pay
                     </h2>
                     <SheetTrigger asChild>
                       <button className="text-primary hover:text-white">
