@@ -12,8 +12,9 @@
   }
 
   body {
-    @apply font-sans antialiased bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-foreground;
+    @apply font-sans antialiased text-foreground;
     font-family: 'Inter', sans-serif;
+    background: linear-gradient(140deg, #0f172a, #1a1f38, #0f172a);
     background-attachment: fixed;
   }
 
@@ -27,12 +28,12 @@
   }
 
   :root {
-    --glass-shine: linear-gradient(120deg, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 70%);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-background: rgba(23, 25, 35, 0.4);
-    --blur-amount: 15px;
-    --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --primary-rgb: 65, 105, 225; /* Royal blue */
+    --glass-shine: linear-gradient(120deg, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.03), rgba(255,255,255,0) 70%);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-background: rgba(15, 23, 42, 0.65);
+    --blur-amount: 12px;
+    --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    --primary-rgb: 79, 130, 251; /* Modern blue */
   }
 }
 
@@ -182,28 +183,28 @@
 
   /* Sleek Apple-style card */
   .cyber-card {
-    background: rgba(23, 25, 35, 0.8);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    padding: 1.25rem;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
   }
   
   .cyber-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   }
   
   .cyber-card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(45deg, transparent 50%, rgba(var(--primary-rgb), 0.05) 80%, rgba(var(--primary-rgb), 0.1));
+    background: linear-gradient(45deg, transparent 60%, rgba(var(--primary-rgb), 0.03) 85%, rgba(var(--primary-rgb), 0.05));
     z-index: 0;
     pointer-events: none;
     border-radius: inherit;
@@ -248,23 +249,25 @@
   /* Modern button */
   .modern-button {
     @apply relative overflow-hidden;
-    background: linear-gradient(135deg, theme('colors.primary.DEFAULT'), theme('colors.blue.400'));
-    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.9), rgba(var(--primary-rgb), 0.7));
+    border-radius: 10px;
     border: none;
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 0.625rem 1.25rem;
     font-weight: 500;
-    box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.3);
-    transition: all 0.3s ease;
+    box-shadow: 0 3px 15px rgba(var(--primary-rgb), 0.25);
+    transition: all 0.2s ease;
   }
   
   .modern-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(var(--primary-rgb), 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 20px rgba(var(--primary-rgb), 0.3);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 1), rgba(var(--primary-rgb), 0.8));
   }
   
   .modern-button:active {
     transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.2);
   }
   
   .modern-button::before {
@@ -273,8 +276,8 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 50%;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
     pointer-events: none;
   }
   
@@ -318,15 +321,15 @@
   
   /* Card with frosted glass effect */
   .glass-card {
-    background: rgba(20, 25, 40, 0.7);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 
-      0 10px 30px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-    padding: 1.5rem;
+      0 8px 24px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+    padding: 1.25rem;
     position: relative;
     overflow: hidden;
   }
@@ -337,71 +340,71 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 40%;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-    border-radius: 20px 20px 0 0;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+    border-radius: 16px 16px 0 0;
     pointer-events: none;
   }
   
   /* Modern modal/dialog */
   .modern-dialog {
-    background: rgba(25, 30, 45, 0.85);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 
-      0 15px 50px rgba(0, 0, 0, 0.3),
-      0 0 0 1px rgba(255, 255, 255, 0.05);
+      0 12px 40px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.03);
     padding: 0;
     overflow: hidden;
   }
   
   .modern-dialog-header {
-    @apply p-6 border-b border-white/10;
-    background: rgba(30, 35, 50, 0.5);
+    @apply p-5 border-b border-white/5;
+    background: rgba(15, 23, 42, 0.5);
   }
   
   .modern-dialog-body {
-    @apply p-6;
+    @apply p-5;
   }
   
   .modern-dialog-footer {
-    @apply p-6 border-t border-white/10 flex justify-end gap-3;
-    background: rgba(30, 35, 50, 0.5);
+    @apply p-5 border-t border-white/5 flex justify-end gap-3;
+    background: rgba(15, 23, 42, 0.5);
   }
   
   /* App-style UI tabs */
   .app-tabs {
-    @apply flex gap-2 p-1 rounded-xl;
-    background: rgba(30, 35, 50, 0.5);
+    @apply flex gap-1 p-1 rounded-lg;
+    background: rgba(15, 23, 42, 0.5);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
   
   .app-tab {
-    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
-    color: rgba(255, 255, 255, 0.6);
+    @apply px-3 py-1.5 rounded-md text-sm font-medium transition-all;
+    color: rgba(255, 255, 255, 0.5);
   }
   
   .app-tab[data-state="active"] {
-    background: rgba(var(--primary-rgb), 0.15);
+    background: rgba(var(--primary-rgb), 0.12);
     color: rgba(var(--primary-rgb), 1);
-    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15);
   }
   
   /* Sidebar navigation */
   .sidebar-nav {
-    background: rgba(20, 25, 40, 0.7);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 1.5rem 1rem;
+    background: rgba(10, 15, 30, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 1.25rem 0.75rem;
   }
   
   .sidebar-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-white/70 transition-all;
+    @apply flex items-center gap-2 px-3 py-2.5 rounded-lg mb-1 text-white/60 transition-all;
   }
   
   .sidebar-item:hover {
@@ -409,8 +412,9 @@
   }
   
   .sidebar-item.active {
-    background: rgba(var(--primary-rgb), 0.15);
+    background: rgba(var(--primary-rgb), 0.12);
     color: white;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15);
   }
   
   /* Enhanced scrollbar */
