@@ -355,7 +355,7 @@ const Dashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle>NPT Token Management</DialogTitle>
             <DialogDescription>
-              Manage your Nepal Pay Token (NPT) - the native cryptocurrency for NepalPay
+              Manage your NepaliPay Token (NPT) - the native cryptocurrency for NepaliPay
             </DialogDescription>
           </DialogHeader>
           

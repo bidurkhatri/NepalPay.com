@@ -378,7 +378,7 @@ const CryptoPage: React.FC = () => {
                           <div className="bg-gray-50 p-4 rounded-lg border h-[calc(100%-28px)]">
                             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
                               <dt className="text-gray-500">Name:</dt>
-                              <dd>NepalPay Token</dd>
+                              <dd>NepaliPay Token</dd>
                               <dt className="text-gray-500">Symbol:</dt>
                               <dd>NPT</dd>
                               <dt className="text-gray-500">Decimals:</dt>

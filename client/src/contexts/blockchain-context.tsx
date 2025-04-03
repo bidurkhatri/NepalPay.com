@@ -17,7 +17,7 @@ declare global {
 }
 
 // ABIs
-const NepalPayABI = [
+const NepaliPayABI = [
   "function depositTokens(uint256 _amount) external",
   "function withdrawTokens(uint256 _amount) external",
   "function sendTokens(address _recipient, uint256 _amount, string memory _description) external",
@@ -40,7 +40,7 @@ const NepalPayABI = [
   "function crowdfundingCampaigns(address, bytes32) public view returns (uint256)",
 ];
 
-const NepalPayTokenABI = [
+const NepaliPayTokenABI = [
   "function balanceOf(address owner) external view returns (uint256)",
   "function transfer(address to, uint256 amount) external returns (bool)",
   "function approve(address spender, uint256 amount) external returns (bool)",
@@ -57,7 +57,7 @@ const NepalPayTokenABI = [
 interface BlockchainContextType {
   provider: BrowserProvider | null;
   signer: JsonRpcSigner | null;
-  nepalPayContract: Contract | null;
+  nepaliPayContract: Contract | null;
   tokenContract: Contract | null;
   userAddress: string | null;
   isConnected: boolean;
@@ -84,7 +84,7 @@ interface BlockchainContextType {
 const BlockchainContext = createContext<BlockchainContextType>({
   provider: null,
   signer: null,
-  nepalPayContract: null,
+  nepaliPayContract: null,
   tokenContract: null,
   userAddress: null,
   isConnected: false,
@@ -108,8 +108,8 @@ const BlockchainContext = createContext<BlockchainContextType>({
 });
 
 // Contract addresses (actual deployed contracts on BSC)
-const NEPALPAY_CONTRACT_ADDRESS = '0x1b10ba100e879d30f62cea5c5d385ad11b6deb8c'; // NepalPay contract on BSC Mainnet
-const TOKEN_CONTRACT_ADDRESS = '0xD7f8cFeE6721F9c876DB7a808E53Fe4759392E8e'; // NepalPay Token (NPT) on BSC Mainnet
+const NEPALIPAY_CONTRACT_ADDRESS = '0x1b10ba100e879d30f62cea5c5d385ad11b6deb8c'; // NepaliPay contract on BSC Mainnet
+const TOKEN_CONTRACT_ADDRESS = '0xD7f8cFeE6721F9c876DB7a808E53Fe4759392E8e'; // NepaliPay Token (NPT) on BSC Mainnet
 
 // BSC Network Configuration
 const BSC_MAINNET = {
@@ -141,7 +141,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const { toast } = useToast();
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
-  const [nepalPayContract, setNepalPayContract] = useState<Contract | null>(null);
+  const [nepaliPayContract, setNepaliPayContract] = useState<Contract | null>(null);
   const [tokenContract, setTokenContract] = useState<Contract | null>(null);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -187,7 +187,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   
   // Update balances and other account data
   const updateBalances = async (address: string) => {
-    if (!tokenContract || !nepalPayContract) return;
+    if (!tokenContract || !nepaliPayContract) return;
     
     try {
       // Get token balance
@@ -197,7 +197,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       
       // Get staking info
       try {
-        const stakingData = await nepalPayContract.getStakingInfo(address);
+        const stakingData = await nepaliPayContract.getStakingInfo(address);
         setIsStaking(stakingData.isStaking);
         setStakedAmount(formatUnits(stakingData.stakedAmount, 18));
         setStakingRewards(formatUnits(stakingData.rewards, 18));
@@ -272,8 +272,8 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const signer = await updatedProvider.getSigner();
       
       // Initialize contracts
-      const nepalPayContract = new Contract(NEPALPAY_CONTRACT_ADDRESS, NepalPayABI, signer);
-      const tokenContract = new Contract(TOKEN_CONTRACT_ADDRESS, NepalPayTokenABI, signer);
+      const nepaliPayContract = new Contract(NEPALIPAY_CONTRACT_ADDRESS, NepaliPayABI, signer);
+      const tokenContract = new Contract(TOKEN_CONTRACT_ADDRESS, NepaliPayTokenABI, signer);
       
       // Get token balances
       let formattedTokenBalance = '0';
@@ -290,7 +290,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       let stakingRewards = "0";
       
       try {
-        const stakingData = await nepalPayContract.getStakingInfo(account);
+        const stakingData = await nepaliPayContract.getStakingInfo(account);
         isStaking = stakingData.isStaking;
         stakedAmount = formatUnits(stakingData.stakedAmount, 18);
         stakingRewards = formatUnits(stakingData.rewards, 18);
@@ -301,7 +301,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       // Update state
       setProvider(updatedProvider);
       setSigner(signer);
-      setNepalPayContract(nepalPayContract);
+      setNepaliPayContract(nepaliPayContract);
       setTokenContract(tokenContract);
       setUserAddress(account);
       setIsConnected(true);
@@ -341,7 +341,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     setUserAddress(null);
     setSigner(null);
     setProvider(null);
-    setNepalPayContract(null);
+    setNepaliPayContract(null);
     setTokenContract(null);
     
     toast({
@@ -353,7 +353,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Send tokens
   const sendTokens = async (recipientAddress: string, amount: string, description: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -366,7 +366,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to send tokens
-      const tx = await nepalPayContract.sendTokens(recipientAddress, amountInWei, description);
+      const tx = await nepaliPayContract.sendTokens(recipientAddress, amountInWei, description);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -397,7 +397,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Pay business account
   const payBusinessAccount = async (recipientUsername: string, amount: string, description: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -410,7 +410,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to make business payment
-      const tx = await nepalPayContract.makeBusinessPayment(recipientUsername, amountInWei, description);
+      const tx = await nepaliPayContract.makeBusinessPayment(recipientUsername, amountInWei, description);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -529,7 +529,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Take loan
   const takeLoan = async (amount: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -542,7 +542,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to take a loan
-      const tx = await nepalPayContract.takeLoan(amountInWei);
+      const tx = await nepaliPayContract.takeLoan(amountInWei);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -573,7 +573,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Repay loan
   const repayLoan = async (amount: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -586,7 +586,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to repay a loan
-      const tx = await nepalPayContract.repayLoan(amountInWei);
+      const tx = await nepaliPayContract.repayLoan(amountInWei);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -617,7 +617,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Start crowdfunding campaign
   const startCrowdfundingCampaign = async (id: string, amount: string, description: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -633,7 +633,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const campaignId = id_to_bytes32(id);
       
       // Call the contract method to start a campaign
-      const tx = await nepalPayContract.startCampaign(campaignId, amountInWei, description);
+      const tx = await nepaliPayContract.startCampaign(campaignId, amountInWei, description);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -660,7 +660,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Contribute to fund
   const contributeToFund = async (campaignId: string, amount: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -678,7 +678,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         : id_to_bytes32(campaignId);
       
       // Call the contract method to contribute to a campaign
-      const tx = await nepalPayContract.contribute(campaignIdBytes, amountInWei);
+      const tx = await nepaliPayContract.contribute(campaignIdBytes, amountInWei);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -709,7 +709,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Set user profile
   const setUserProfile = async (username: string, role: string, country: string) => {
     try {
-      if (!nepalPayContract || !signer) {
+      if (!nepaliPayContract || !signer) {
         throw new Error("Wallet not connected");
       }
       
@@ -719,7 +719,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Call the contract method to set user profile
-      const tx = await nepalPayContract.setUsername(username, role, country);
+      const tx = await nepaliPayContract.setUsername(username, role, country);
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -747,7 +747,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       value={{
         provider,
         signer,
-        nepalPayContract,
+        nepaliPayContract,
         tokenContract,
         userAddress,
         isConnected,
