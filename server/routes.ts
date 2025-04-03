@@ -443,6 +443,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve the React app for all routes that don't start with /api
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    
+    // Forward all other requests to the React app
+    console.log(`Forwarding route: ${req.path} to the React app`);
+    res.sendFile('index.html', { root: './client' });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
