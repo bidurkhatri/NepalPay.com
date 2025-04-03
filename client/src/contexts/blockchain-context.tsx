@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as ethers from 'ethers';
+import { ethers } from 'ethers';
+import { BrowserProvider, JsonRpcSigner, Contract, formatUnits, parseUnits, keccak256, toUtf8Bytes } from 'ethers';
 import { useAuth } from './auth-context';
 import { useToast } from '@/hooks/use-toast';
+
+// Utility function to convert ID to bytes32
+const id_to_bytes32 = (text: string) => {
+  return keccak256(toUtf8Bytes(text));
+};
 
 // Define window.ethereum for TypeScript
 declare global {
@@ -27,6 +33,11 @@ const NepalPayABI = [
   "function startCampaign(bytes32 _campaignId, uint256 _targetAmount, string memory _description) external",
   "function contribute(bytes32 _campaignId, uint256 _amount) external",
   "function getStakingInfo(address user) public view returns (bool isStaking, uint256 stakedAmount, uint256 rewards)",
+  "function setScheduledPayment(bytes32 _paymentId, uint256 _amount, uint256 _timestamp) external",
+  "function modifyScheduledPayment(bytes32 _paymentId, uint256 _amount, uint256 _timestamp) external",
+  "function cancelScheduledPayment(bytes32 _paymentId) external",
+  "function scheduledPayments(address, bytes32) public view returns (uint256 amount, uint256 timestamp, bool active)",
+  "function crowdfundingCampaigns(address, bytes32) public view returns (uint256)",
 ];
 
 const NepalPayTokenABI = [
@@ -44,10 +55,10 @@ const NepalPayTokenABI = [
 
 // Interface types
 interface BlockchainContextType {
-  provider: ethers.providers.Web3Provider | null;
-  signer: ethers.Signer | null;
-  nepalPayContract: ethers.Contract | null;
-  tokenContract: ethers.Contract | null;
+  provider: BrowserProvider | null;
+  signer: JsonRpcSigner | null;
+  nepalPayContract: Contract | null;
+  tokenContract: Contract | null;
   userAddress: string | null;
   isConnected: boolean;
   connecting: boolean;
@@ -128,10 +139,10 @@ const BSC_TESTNET = {
 export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
-  const [signer, setSigner] = useState<ethers.Signer | null>(null);
-  const [nepalPayContract, setNepalPayContract] = useState<ethers.Contract | null>(null);
-  const [tokenContract, setTokenContract] = useState<ethers.Contract | null>(null);
+  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
+  const [nepalPayContract, setNepalPayContract] = useState<Contract | null>(null);
+  const [tokenContract, setTokenContract] = useState<Contract | null>(null);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(false);
@@ -181,15 +192,15 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       // Get token balance
       const balance = await tokenContract.balanceOf(address);
-      const formattedBalance = ethers.utils.formatEther(balance);
+      const formattedBalance = formatUnits(balance, 18);
       setNptBalance(formattedBalance);
       
       // Get staking info
       try {
         const stakingData = await nepalPayContract.getStakingInfo(address);
         setIsStaking(stakingData.isStaking);
-        setStakedAmount(ethers.utils.formatEther(stakingData.stakedAmount));
-        setStakingRewards(ethers.utils.formatEther(stakingData.rewards));
+        setStakedAmount(formatUnits(stakingData.stakedAmount, 18));
+        setStakingRewards(formatUnits(stakingData.rewards, 18));
       } catch (error) {
         console.log("Could not fetch staking info:", error);
       }
@@ -218,7 +229,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       const account = accounts[0];
       
       // Initialize provider
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
       
       // Switch to BSC network if not already on it
       try {
@@ -226,7 +237,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         const network = await provider.getNetwork();
         
         // BSC Mainnet Chain ID is 56, BSC Testnet Chain ID is 97
-        if (network.chainId !== 56 && network.chainId !== 97) {
+        if (network.chainId !== 56n && network.chainId !== 97n) {
           try {
             // Try to switch to BSC Mainnet
             await window.ethereum.request({
@@ -257,18 +268,18 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       }
       
       // Refresh provider after potential network switch
-      const updatedProvider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = updatedProvider.getSigner();
+      const updatedProvider = new BrowserProvider(window.ethereum);
+      const signer = await updatedProvider.getSigner();
       
       // Initialize contracts
-      const nepalPayContract = new ethers.Contract(NEPALPAY_CONTRACT_ADDRESS, NepalPayABI, signer);
-      const tokenContract = new ethers.Contract(TOKEN_CONTRACT_ADDRESS, NepalPayTokenABI, signer);
+      const nepalPayContract = new Contract(NEPALPAY_CONTRACT_ADDRESS, NepalPayABI, signer);
+      const tokenContract = new Contract(TOKEN_CONTRACT_ADDRESS, NepalPayTokenABI, signer);
       
       // Get token balances
       let formattedTokenBalance = '0';
       try {
         const tokenBalance = await tokenContract.balanceOf(account);
-        formattedTokenBalance = ethers.utils.formatEther(tokenBalance);
+        formattedTokenBalance = formatUnits(tokenBalance, 18);
       } catch (error) {
         console.error("Error fetching token balance:", error);
       }
@@ -281,8 +292,8 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       try {
         const stakingData = await nepalPayContract.getStakingInfo(account);
         isStaking = stakingData.isStaking;
-        stakedAmount = ethers.utils.formatEther(stakingData.stakedAmount);
-        stakingRewards = ethers.utils.formatEther(stakingData.rewards);
+        stakedAmount = formatUnits(stakingData.stakedAmount, 18);
+        stakingRewards = formatUnits(stakingData.rewards, 18);
       } catch (error) {
         console.log("Staking features not available or error:", error);
       }
@@ -352,7 +363,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to send tokens
       const tx = await nepalPayContract.sendTokens(recipientAddress, amountInWei, description);
@@ -396,7 +407,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to make business payment
       const tx = await nepalPayContract.makeBusinessPayment(recipientUsername, amountInWei, description);
@@ -440,7 +451,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to stake tokens
       const tx = await tokenContract.stake(amountInWei);
@@ -484,7 +495,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to unstake tokens
       const tx = await tokenContract.unstake(amountInWei);
@@ -528,7 +539,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to take a loan
       const tx = await nepalPayContract.takeLoan(amountInWei);
@@ -572,7 +583,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Call the contract method to repay a loan
       const tx = await nepalPayContract.repayLoan(amountInWei);
@@ -616,10 +627,10 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Convert id to bytes32
-      const campaignId = ethers.utils.id(id);
+      const campaignId = id_to_bytes32(id);
       
       // Call the contract method to start a campaign
       const tx = await nepalPayContract.startCampaign(campaignId, amountInWei, description);
@@ -659,12 +670,12 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       
       // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = parseUnits(amount, 18);
       
       // Convert id to bytes32 if it's not already in bytes32 format
       const campaignIdBytes = campaignId.startsWith('0x') && campaignId.length === 66 
         ? campaignId 
-        : ethers.utils.id(campaignId);
+        : id_to_bytes32(campaignId);
       
       // Call the contract method to contribute to a campaign
       const tx = await nepalPayContract.contribute(campaignIdBytes, amountInWei);

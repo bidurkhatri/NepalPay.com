@@ -32,14 +32,28 @@
 
   /* Glassmorphism */
   .glass {
-    @apply bg-opacity-10 backdrop-blur-md border border-white/10;
+    @apply bg-opacity-10 backdrop-blur-md border border-primary/30;
     background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  }
+
+  .dark .glass {
+    @apply bg-opacity-20 backdrop-blur-md border border-primary/20;
+    background-image: linear-gradient(to bottom right, rgba(30, 30, 30, 0.4), rgba(20, 20, 20, 0.2));
   }
 
   /* Futuristic gradient */
   .gradient-text {
     @apply font-bold bg-clip-text text-transparent;
     background-image: linear-gradient(to right, theme('colors.primary.DEFAULT'), theme('colors.purple.400'));
+  }
+
+  /* Dark mode specifics for better text visibility */
+  .dark .text-foreground-contrast {
+    @apply text-gray-100;
+  }
+
+  .text-foreground-contrast {
+    @apply text-gray-900;
   }
 
   /* Animated border */
@@ -66,13 +80,23 @@
 
   /* Stylish card */
   .cyber-card {
-    @apply bg-black/70 border border-primary/50 rounded-lg p-5 relative overflow-hidden;
+    @apply bg-card/95 border border-primary/50 rounded-lg p-5 relative overflow-hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+  
+  .dark .cyber-card {
+    @apply bg-black/70 border border-primary/30;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   }
   
   .cyber-card::before {
     content: '';
     @apply absolute -top-2 -right-2 w-16 h-16 bg-primary/30 blur-xl;
     border-radius: 50%;
+  }
+  
+  /* Improved card text visibility */
+  .card-content {
+    @apply text-gray-900 dark:text-gray-100;
   }
 }
