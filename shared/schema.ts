@@ -57,6 +57,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   type: true,
   status: true,
   note: true,
+  // createdAt is handled automatically by the database
 });
 
 // Activity schema
