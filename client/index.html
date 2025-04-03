@@ -3,9 +3,70 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>NepaliPay | Digital Wallet </title>
+    <title>NepaliPay | Digital Wallet</title>
+    <style>
+      /* Basic styles to ensure the page is visible regardless of React */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background: linear-gradient(135deg, #111827, #0f172a);
+        color: white;
+        min-height: 100vh;
+      }
+      
+      .fallback-content {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+      }
+      
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      
+      p {
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        color: #d1d5db;
+      }
+      
+      .button {
+        display: inline-block;
+        background: #3b82f6;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-weight: 500;
+        margin: 0 0.5rem;
+        transition: background-color 0.3s;
+      }
+      
+      .button:hover {
+        background: #2563eb;
+      }
+    </style>
   </head>
   <body>
+    <!-- Fallback content in case React doesn't load -->
+    <div class="fallback-content">
+      <h1>Welcome to NepaliPay</h1>
+      <p>The next generation digital wallet for Nepal with blockchain capabilities</p>
+      <a href="/login" class="button">Login</a>
+      <a href="/register" class="button">Register</a>
+      <p style="margin-top: 2rem; font-size: 0.9rem;">Demo account: Username: <strong>demo</strong> / Password: <strong>password</strong></p>
+    </div>
+    
+    <!-- React mount point -->
     <div id="root"></div>
+    
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

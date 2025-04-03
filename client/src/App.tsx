@@ -1,315 +1,156 @@
-import { Switch, Route, useLocation, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider, useAuth } from "@/contexts/auth-context";
-import { WalletProvider } from "@/contexts/wallet-context";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Login from "@/pages/login";
-import Register from "@/pages/register";
-import CryptoPage from "@/pages/crypto";
-import CryptoFixedPage from "@/pages/crypto-fixed";
-import WalletPage from "@/pages/wallet";
-import TransactionsPage from "@/pages/transactions";
-import ProfilePage from "@/pages/profile";
-import SettingsPage from "@/pages/settings";
-import AnalyticsPage from "@/pages/analytics";
-import { useState, useEffect } from "react";
+import React from 'react';
 
-// Protected route component that redirects to login if not authenticated
-const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  console.log("ProtectedRoute rendering");
-  const { user, loading } = useAuth();
-  
-  console.log("ProtectedRoute - Auth state:", { loading, isAuthenticated: !!user });
-  
-  // Show a loading indicator while checking authentication
-  if (loading) {
-    console.log("ProtectedRoute - Still loading auth state");
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-  
-  // If not authenticated, redirect to login
-  if (!user) {
-    console.log("ProtectedRoute - User not authenticated, redirecting to login");
-    return <Redirect to="/login" />;
-  }
-  
-  // If authenticated, render the component
-  console.log("ProtectedRoute - User authenticated, rendering component");
-  return <Component />;
-};
-
-// Public route component that redirects to dashboard if already authenticated
-const PublicRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  console.log("PublicRoute rendering");
-  const { user, loading } = useAuth();
-  
-  console.log("PublicRoute - Auth state:", { loading, isAuthenticated: !!user });
-  
-  // Show a loading indicator while checking authentication
-  if (loading) {
-    console.log("PublicRoute - Still loading auth state");
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-  
-  // If authenticated, redirect to dashboard
-  if (user) {
-    console.log("PublicRoute - User already authenticated, redirecting to dashboard");
-    return <Redirect to="/dashboard" />;
-  }
-  
-  // If not authenticated, render the component
-  console.log("PublicRoute - User not authenticated, rendering component");
-  return <Component />;
-};
-
-function Router() {
-  console.log("Router component rendering");
-  const [location] = useLocation();
-  console.log("Current location:", location);
-
-  // Render a minimal fallback UI if there's an error in the routing logic
-  try {
-    // Redirect from root to dashboard or login
-    if (location === "/") {
-      console.log("Redirecting from root to dashboard");
-      return <Redirect to="/dashboard" />;
-    }
-
-    console.log("Setting up routes");
-    return (
-      <Switch>
-        <Route path="/login" component={() => {
-          console.log("Rendering login route");
-          return <PublicRoute component={Login} />;
-        }} />
-        <Route path="/register" component={() => {
-          console.log("Rendering register route");
-          return <PublicRoute component={Register} />;
-        }} />
-        <Route path="/dashboard" component={() => {
-          console.log("Rendering dashboard route");
-          return <ProtectedRoute component={Dashboard} />;
-        }} />
-        <Route path="/crypto" component={() => {
-          console.log("Rendering crypto route");
-          return <ProtectedRoute component={CryptoFixedPage} />;
-        }} />
-        <Route path="/wallet" component={() => {
-          console.log("Rendering wallet route");
-          return <ProtectedRoute component={WalletPage} />;
-        }} />
-        <Route path="/transactions" component={() => {
-          console.log("Rendering transactions route");
-          return <ProtectedRoute component={TransactionsPage} />;
-        }} />
-        <Route path="/analytics" component={() => {
-          console.log("Rendering analytics route");
-          return <ProtectedRoute component={AnalyticsPage} />;
-        }} />
-        <Route path="/profile" component={() => {
-          console.log("Rendering profile route");
-          return <ProtectedRoute component={ProfilePage} />;
-        }} />
-        <Route path="/settings" component={() => {
-          console.log("Rendering settings route");
-          return <ProtectedRoute component={SettingsPage} />;
-        }} />
-        <Route component={() => {
-          console.log("Rendering not found route");
-          return <NotFound />;
-        }} />
-      </Switch>
-    );
-  } catch (error) {
-    console.error("Critical error in Router component:", error);
-    return (
-      <div style={{ padding: "20px", margin: "20px", backgroundColor: "#f43f5e", color: "white", borderRadius: "10px" }}>
-        <h2>Router Error</h2>
-        <p>Current location: {location}</p>
-        <p>The application encountered an error setting up routes.</p>
-        <pre>{error instanceof Error ? error.stack : String(error)}</pre>
-      </div>
-    );
-  }
-}
-
-// Import providers
-import { BlockchainProvider } from "@/contexts/blockchain-context";
-import { SettingsProvider } from "@/contexts/settings-context";
-
-// Simple standalone login page that doesn't depend on any other contexts
-function MinimalLoginPage() {
-  console.log("MinimalLoginPage rendering");
-  
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-  
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoggingIn(true);
-      console.log("Attempting login with:", username);
-      
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-      
-      if (res.ok) {
-        console.log("Login successful");
-        window.location.href = '/dashboard';
-      } else {
-        console.error("Login failed:", await res.text());
-        alert('Login failed. Please check your credentials.');
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert('Login error. Please try again.');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
+// Simple landing page without any dependencies
+const App: React.FC = () => {
+  console.log("Rendering simple landing page");
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4">
-      <div className="glass-card max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-6">NepaliPay Login</h2>
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-1">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="modern-input w-full"
-              placeholder="Enter your username"
-              required
-            />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Header */}
+      <header className="py-6 px-8 backdrop-blur-lg bg-black/20 border-b border-white/10">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xl">N</span>
+            </div>
+            <h1 className="text-white text-2xl font-bold">NepaliPay</h1>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="modern-input w-full"
-              placeholder="Enter your password"
-              required
-            />
+          <nav>
+            <ul className="flex space-x-8">
+              <li><a href="#features" className="text-gray-300 hover:text-white transition">Features</a></li>
+              <li><a href="#about" className="text-gray-300 hover:text-white transition">About</a></li>
+              <li><a href="#contact" className="text-gray-300 hover:text-white transition">Contact</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="flex-grow flex items-center">
+        <div className="container mx-auto px-8 py-16 flex flex-col md:flex-row items-center">
+          <div className="md:w-1/2 mb-10 md:mb-0">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+              Next Generation <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">Digital Wallet</span> for Nepal
+            </h2>
+            <p className="text-gray-300 text-lg mb-8 max-w-lg">
+              Securely manage your finances, send money instantly, and access blockchain-powered features in one seamless app.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a 
+                href="/login" 
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium text-lg hover:opacity-90 transition shadow-lg shadow-blue-500/20 text-center"
+              >
+                Login
+              </a>
+              <a 
+                href="/register" 
+                className="px-8 py-3 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-white/10 text-white font-medium text-lg hover:bg-gray-700/50 transition text-center"
+              >
+                Register
+              </a>
+            </div>
+            <div className="mt-6 text-gray-400 text-sm">
+              <p>Demo account: <span className="text-white">Username: demo / Password: password</span></p>
+            </div>
           </div>
-          <button 
-            type="submit" 
-            disabled={loggingIn}
-            className="modern-button w-full"
-          >
-            {loggingIn ? 'Logging in...' : 'Login'}
-          </button>
-          <p className="text-sm text-gray-300 mt-4">
-            Demo account: Username: <span className="text-white font-medium">demo</span>, Password: <span className="text-white font-medium">password</span>
-          </p>
-        </form>
-      </div>
+          
+          <div className="md:w-1/2 flex justify-center">
+            <div className="relative w-80 h-[500px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl transform md:rotate-3">
+              <div className="absolute inset-0 bg-gradient-to-b from-gray-900/90 to-gray-900/70 backdrop-blur-md z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-700/10 bg-cover opacity-30"></div>
+              
+              {/* Mockup Content */}
+              <div className="absolute inset-0 z-20 p-6 flex flex-col">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <p className="text-gray-400 text-xs">Welcome back</p>
+                    <h3 className="text-white font-semibold">John Doe</h3>
+                  </div>
+                  <div className="h-10 w-10 rounded-full bg-gray-800 border border-gray-700"></div>
+                </div>
+                
+                <div className="bg-gray-800/60 rounded-2xl p-4 backdrop-blur-lg border border-white/5 mb-6">
+                  <p className="text-gray-400 text-xs mb-1">Total Balance</p>
+                  <h2 className="text-white text-2xl font-bold mb-1">NPT 2,456.00</h2>
+                  <div className="flex items-center">
+                    <span className="text-green-400 text-xs">+5.3%</span>
+                    <span className="text-gray-400 text-xs ml-2">this week</span>
+                  </div>
+                </div>
+                
+                <p className="text-gray-400 text-xs mb-3">Quick Actions</p>
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {['Send', 'Receive', 'Pay'].map(action => (
+                    <div key={action} className="bg-gray-800/40 rounded-xl p-3 text-center border border-white/5">
+                      <div className="h-8 w-8 rounded-full bg-blue-500/20 mx-auto mb-2 flex items-center justify-center">
+                        <div className="h-4 w-4 rounded-full bg-blue-500"></div>
+                      </div>
+                      <p className="text-white text-xs">{action}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                <p className="text-gray-400 text-xs mb-3">Recent Transactions</p>
+                <div className="space-y-3 flex-grow overflow-hidden">
+                  {['Starbucks', 'Amazon', 'Netflix'].map(merchant => (
+                    <div key={merchant} className="bg-gray-800/30 rounded-xl p-3 flex justify-between items-center border border-white/5">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-gray-700 mr-3"></div>
+                        <div>
+                          <p className="text-white text-sm">{merchant}</p>
+                          <p className="text-gray-400 text-xs">Yesterday</p>
+                        </div>
+                      </div>
+                      <p className="text-white">-$24.99</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="py-16 bg-gray-900/50">
+        <div className="container mx-auto px-8">
+          <h2 className="text-3xl font-bold text-white text-center mb-12">Powerful Features</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                title: 'Blockchain Transactions',
+                description: 'Send money instantly with minimal fees using our blockchain technology'
+              },
+              {
+                title: 'NPT Token Staking',
+                description: 'Earn rewards by staking your NepaliPayTokens in our platform'
+              },
+              {
+                title: 'Crypto Loans',
+                description: 'Get instant loans using your crypto assets as collateral'
+              }
+            ].map((feature, index) => (
+              <div key={index} className="bg-gray-800/30 backdrop-blur-lg rounded-xl p-6 border border-white/5">
+                <div className="h-12 w-12 rounded-full bg-blue-500/20 mb-4 flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full bg-blue-500"></div>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
+                <p className="text-gray-400">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 bg-black/30 backdrop-blur-lg border-t border-white/5">
+        <div className="container mx-auto px-8 text-center">
+          <p className="text-gray-400">© 2023 NepaliPay. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
-}
-
-function App() {
-  console.log("App rendering started");
-  const [showMinimal, setShowMinimal] = useState(false);
-  
-  // Option to show minimal UI after a timeout
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log("Timeout reached, checking if app rendered properly");
-      const rootEl = document.getElementById('root');
-      const isEmpty = rootEl && rootEl.childElementCount <= 1;
-      
-      if (isEmpty) {
-        console.log("App appears to be empty, showing minimal UI");
-        setShowMinimal(true);
-      }
-    }, 5000); // 5 seconds timeout
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Add fallback UI in case of provider errors
-  try {
-    console.log("Initializing providers");
-    
-    // If minimal mode is triggered, bypass all other providers
-    if (showMinimal) {
-      console.log("Rendering minimal UI");
-      return <MinimalLoginPage />;
-    }
-    
-    return (
-      <QueryClientProvider client={queryClient}>
-        <div id="app-fallback" style={{ 
-          position: 'fixed', 
-          bottom: '10px', 
-          right: '10px', 
-          padding: '10px', 
-          background: 'rgba(0,0,0,0.7)', 
-          color: 'white', 
-          borderRadius: '5px',
-          zIndex: 9999,
-          display: 'block'
-        }}>
-          Loading app...
-        </div>
-        <AuthProvider>
-          <SettingsProvider>
-            <WalletProvider>
-              <BlockchainProvider>
-                <Router />
-                <Toaster />
-              </BlockchainProvider>
-            </WalletProvider>
-          </SettingsProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    );
-  } catch (error) {
-    console.error("Critical error in App component:", error);
-    return (
-      <div style={{ padding: "20px", margin: "20px", backgroundColor: "#f43f5e", color: "white", borderRadius: "10px" }}>
-        <h2>Critical App Error</h2>
-        <p>The application encountered a serious problem during initialization.</p>
-        <pre>{error instanceof Error ? error.stack : String(error)}</pre>
-        <div className="mt-4">
-          <button 
-            onClick={() => setShowMinimal(true)}
-            style={{
-              padding: "10px 20px",
-              background: "white",
-              color: "black",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}
-          >
-            Switch to Minimal UI
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
+};
 
 export default App;
