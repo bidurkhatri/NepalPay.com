@@ -1,8 +1,9 @@
 import { db, initializeDatabase } from './db';
 import { 
-  users, wallets, transactions, activities,
+  users, wallets, transactions, activities, bankAccounts,
   InsertUser, User, InsertWallet, Wallet, 
-  InsertTransaction, Transaction, InsertActivity, Activity
+  InsertTransaction, Transaction, InsertActivity, Activity,
+  InsertBankAccount, BankAccount
 } from '../shared/schema';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { IStorage } from './storage';
@@ -10,9 +11,7 @@ import { IStorage } from './storage';
 // Make sure the database is initialized
 let dbInitialized = false;
 
-// IMPORTANT: IStorage was updated to remove bank account methods.
-// If using this class, update storage.ts first.
-export class PgStorage {
+export class PgStorage implements IStorage {
   constructor() {
     // Initialize database when constructing the storage
     this.ensureDbInitialized();
@@ -148,7 +147,38 @@ export class PgStorage {
     return result[0];
   }
   
+  // Bank Account methods
+  async getBankAccount(id: number): Promise<BankAccount | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(bankAccounts).where(eq(bankAccounts.id, id));
+    return result[0];
+  }
 
+  async getUserBankAccounts(userId: number): Promise<BankAccount[]> {
+    await this.ensureDbInitialized();
+    return await db.select()
+      .from(bankAccounts)
+      .where(eq(bankAccounts.userId, userId))
+      .orderBy(desc(bankAccounts.createdAt));
+  }
+
+  async createBankAccount(bankAccount: InsertBankAccount): Promise<BankAccount> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(bankAccounts).values(bankAccount).returning();
+    return result[0];
+  }
+
+  async updateBankAccount(id: number, bankAccountData: Partial<BankAccount>): Promise<BankAccount | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.update(bankAccounts)
+      .set({ 
+        ...bankAccountData, 
+        lastSynced: new Date() 
+      })
+      .where(eq(bankAccounts.id, id))
+      .returning();
+    return result[0];
+  }
 
   // Initialize demo data for development
   async initializeDemoData() {
