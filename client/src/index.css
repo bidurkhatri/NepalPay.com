@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,12 +12,27 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Space Grotesk', sans-serif;
+    @apply font-sans antialiased bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-foreground;
+    font-family: 'Inter', sans-serif;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    @apply font-medium tracking-tight;
+  }
+
+  code, pre {
+    font-family: 'Roboto Mono', monospace;
   }
 
   :root {
-    --neon-shadow: 0 0 5px theme('colors.primary.DEFAULT'), 0 0 20px theme('colors.primary.DEFAULT');
+    --glass-shine: linear-gradient(120deg, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 70%);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-background: rgba(23, 25, 35, 0.4);
+    --blur-amount: 15px;
+    --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --primary-rgb: 65, 105, 225; /* Royal blue */
   }
 }
 
@@ -30,21 +47,61 @@
     box-shadow: 0 0 10px theme('colors.primary.DEFAULT'), 0 0 30px theme('colors.primary.DEFAULT');
   }
 
-  /* Glassmorphism */
+  /* Modern Apple-inspired Glassmorphism */
   .glass {
-    @apply bg-opacity-10 backdrop-blur-md border border-primary/30;
-    background-image: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    background: var(--glass-background);
+    backdrop-filter: blur(var(--blur-amount));
+    -webkit-backdrop-filter: blur(var(--blur-amount));
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    box-shadow: var(--soft-shadow);
+    position: relative;
+    overflow: hidden;
   }
 
-  .dark .glass {
-    @apply bg-opacity-20 backdrop-blur-md border border-primary/20;
-    background-image: linear-gradient(to bottom right, rgba(30, 30, 30, 0.4), rgba(20, 20, 20, 0.2));
+  .glass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: var(--glass-shine);
+    opacity: 0.5;
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
   }
 
-  /* Futuristic gradient */
+  /* Futuristic gradient text */
   .gradient-text {
-    @apply font-bold bg-clip-text text-transparent;
-    background-image: linear-gradient(to right, theme('colors.primary.DEFAULT'), theme('colors.amber.400'));
+    @apply font-semibold bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, theme('colors.primary.DEFAULT'), theme('colors.blue.400'));
+  }
+  
+  /* Button with glow effect */
+  .glass-button {
+    @apply px-4 py-2 rounded-full text-white font-medium relative overflow-hidden;
+    background: rgba(65, 95, 255, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .glass-button:hover {
+    background: rgba(65, 95, 255, 0.4);
+    box-shadow: 0 6px 25px rgba(65, 95, 255, 0.25);
+  }
+  
+  .glass-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
   }
 
   /* Dark mode specifics for better text visibility */
@@ -123,44 +180,118 @@
     100% { left: 100%; }
   }
 
-  /* Stylish card */
+  /* Sleek Apple-style card */
   .cyber-card {
-    @apply bg-card/95 border border-primary/50 rounded-lg p-5 relative overflow-hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    background: rgba(23, 25, 35, 0.8);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
   
-  .dark .cyber-card {
-    @apply bg-gray-900/90 border border-primary/40;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  .cyber-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
   }
   
   .cyber-card::before {
     content: '';
-    @apply absolute -top-2 -right-2 w-16 h-16 bg-primary/30 blur-xl;
-    border-radius: 50%;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 50%, rgba(var(--primary-rgb), 0.05) 80%, rgba(var(--primary-rgb), 0.1));
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  
+  /* Card highlight effect */
+  .card-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.04), transparent);
+    border-radius: 16px 16px 0 0;
+    pointer-events: none;
   }
   
   /* Improved card text visibility */
   .card-content {
-    @apply text-gray-900 dark:text-gray-100;
+    @apply text-gray-100 relative z-10;
   }
   
   /* Modern UI elements */
   .modern-input {
-    @apply bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 
-           rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary
-           outline-none transition-all;
+    background: rgba(30, 35, 50, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   
+  .modern-input:focus {
+    border-color: rgba(var(--primary-rgb), 0.5);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.25);
+  }
+  
+  /* Modern button */
   .modern-button {
-    @apply bg-gradient-to-r from-primary/90 to-amber-500/90 hover:from-primary hover:to-amber-500
-           text-white font-medium py-2 px-4 rounded-lg transition-all shadow-lg
-           hover:shadow-primary/20 focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, theme('colors.primary.DEFAULT'), theme('colors.blue.400'));
+    border-radius: 12px;
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.3);
+    transition: all 0.3s ease;
   }
   
+  .modern-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(var(--primary-rgb), 0.4);
+  }
+  
+  .modern-button:active {
+    transform: translateY(1px);
+  }
+  
+  .modern-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+  }
+  
+  /* Outline button */
   .modern-button-outline {
-    @apply border border-primary text-primary dark:text-primary hover:bg-primary/10
-           font-medium py-2 px-4 rounded-lg transition-all shadow-sm;
+    @apply relative overflow-hidden;
+    background: transparent;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--primary-rgb), 0.5);
+    color: rgba(var(--primary-rgb), 1);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  .modern-button-outline:hover {
+    background: rgba(var(--primary-rgb), 0.1);
   }
   
   .status-badge {
@@ -181,5 +312,127 @@
   
   .status-badge.info {
     @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400;
+  }
+  
+  /* Modern Apple-style UI components */
+  
+  /* Card with frosted glass effect */
+  .glass-card {
+    background: rgba(20, 25, 40, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+    border-radius: 20px 20px 0 0;
+    pointer-events: none;
+  }
+  
+  /* Modern modal/dialog */
+  .modern-dialog {
+    background: rgba(25, 30, 45, 0.85);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 15px 50px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  .modern-dialog-header {
+    @apply p-6 border-b border-white/10;
+    background: rgba(30, 35, 50, 0.5);
+  }
+  
+  .modern-dialog-body {
+    @apply p-6;
+  }
+  
+  .modern-dialog-footer {
+    @apply p-6 border-t border-white/10 flex justify-end gap-3;
+    background: rgba(30, 35, 50, 0.5);
+  }
+  
+  /* App-style UI tabs */
+  .app-tabs {
+    @apply flex gap-2 p-1 rounded-xl;
+    background: rgba(30, 35, 50, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  
+  .app-tab {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  
+  .app-tab[data-state="active"] {
+    background: rgba(var(--primary-rgb), 0.15);
+    color: rgba(var(--primary-rgb), 1);
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.2);
+  }
+  
+  /* Sidebar navigation */
+  .sidebar-nav {
+    background: rgba(20, 25, 40, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 1.5rem 1rem;
+  }
+  
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl mb-1 text-white/70 transition-all;
+  }
+  
+  .sidebar-item:hover {
+    @apply text-white bg-white/5;
+  }
+  
+  .sidebar-item.active {
+    background: rgba(var(--primary-rgb), 0.15);
+    color: white;
+  }
+  
+  /* Enhanced scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.3);
+    border-radius: 5px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.5);
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 }
