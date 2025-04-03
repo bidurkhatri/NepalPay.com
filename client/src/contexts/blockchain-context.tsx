@@ -53,12 +53,23 @@ const NepaliPayTokenABI = [
   "function symbol() external view returns (string memory)",
 ];
 
+const FeeRelayerABI = [
+  "function relayTransaction(address _from, uint256 _value) external",
+  "function withdrawFees(uint256 _amount) external",
+  "function isRelayer(address) public view returns (bool)",
+  "function relayerBalance(address) public view returns (uint256)",
+  "function feeExempt(address) public view returns (bool)",
+  "function customFeePercentage(address) public view returns (uint256)",
+  "function relayFeePercentage() public view returns (uint256)",
+];
+
 // Interface types
 interface BlockchainContextType {
   provider: BrowserProvider | null;
   signer: JsonRpcSigner | null;
   nepaliPayContract: Contract | null;
   tokenContract: Contract | null;
+  feeRelayerContract: Contract | null;
   userAddress: string | null;
   isConnected: boolean;
   connecting: boolean;
@@ -78,6 +89,8 @@ interface BlockchainContextType {
   startCrowdfundingCampaign: (id: string, amount: string, description: string) => Promise<any>;
   contributeToFund: (campaignId: string, amount: string) => Promise<any>;
   setUserProfile: (username: string, role: string, country: string) => Promise<any>;
+  // New fee-related functions
+  relayTransaction: (from: string, value: string) => Promise<any>;
 }
 
 // Create context with default values
@@ -86,6 +99,7 @@ const BlockchainContext = createContext<BlockchainContextType>({
   signer: null,
   nepaliPayContract: null,
   tokenContract: null,
+  feeRelayerContract: null,
   userAddress: null,
   isConnected: false,
   connecting: false,
@@ -105,11 +119,13 @@ const BlockchainContext = createContext<BlockchainContextType>({
   startCrowdfundingCampaign: async () => ({}),
   contributeToFund: async () => ({}),
   setUserProfile: async () => ({}),
+  relayTransaction: async () => ({}),
 });
 
 // Contract addresses (actual deployed contracts on BSC)
-const NEPALIPAY_CONTRACT_ADDRESS = '0x1b10ba100e879d30f62cea5c5d385ad11b6deb8c'; // NepaliPay contract on BSC Mainnet
-const TOKEN_CONTRACT_ADDRESS = '0xD7f8cFeE6721F9c876DB7a808E53Fe4759392E8e'; // NepaliPay Token (NPT) on BSC Mainnet
+const NEPALIPAY_CONTRACT_ADDRESS = '0x3614247fade5557f27ff42a0aff2e0d6fe44cadb'; // NepaliPay contract on BSC Mainnet
+const TOKEN_CONTRACT_ADDRESS = '0x38e6af81e7b344b3c5f9107c263aa1ecf1601adb'; // NepaliPay Token (NPT) on BSC Mainnet
+const FEE_RELAYER_CONTRACT_ADDRESS = '0x261c23b9692fc5755863bff5dd923abaf2b53b4c'; // Fee Relayer on BSC Mainnet
 
 // BSC Network Configuration
 const BSC_MAINNET = {
@@ -143,6 +159,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
   const [nepaliPayContract, setNepaliPayContract] = useState<Contract | null>(null);
   const [tokenContract, setTokenContract] = useState<Contract | null>(null);
+  const [feeRelayerContract, setFeeRelayerContract] = useState<Contract | null>(null);
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(false);
@@ -292,6 +309,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       // Initialize contracts
       const nepaliPayContract = new Contract(NEPALIPAY_CONTRACT_ADDRESS, NepaliPayABI, signer);
       const tokenContract = new Contract(TOKEN_CONTRACT_ADDRESS, NepaliPayTokenABI, signer);
+      const feeRelayerContract = new Contract(FEE_RELAYER_CONTRACT_ADDRESS, FeeRelayerABI, signer);
       
       // Get token balances
       let formattedTokenBalance = '0';
@@ -321,6 +339,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       setSigner(signer);
       setNepaliPayContract(nepaliPayContract);
       setTokenContract(tokenContract);
+      setFeeRelayerContract(feeRelayerContract);
       setUserAddress(account);
       setIsConnected(true);
       setNptBalance(formattedTokenBalance);
@@ -361,6 +380,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     setProvider(null);
     setNepaliPayContract(null);
     setTokenContract(null);
+    setFeeRelayerContract(null);
     
     toast({
       title: 'Wallet Disconnected',
@@ -759,6 +779,45 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       };
     }
   };
+  
+  // Relay transaction using FeeRelayer
+  const relayTransaction = async (from: string, value: string) => {
+    try {
+      if (!feeRelayerContract || !signer) {
+        throw new Error("Wallet not connected");
+      }
+      
+      toast({
+        title: 'Relaying Transaction',
+        description: `Relaying transaction of ${value} NPT tokens`,
+      });
+      
+      // Convert amount to wei (considering 18 decimals for the token)
+      const valueInWei = parseUnits(value, 18);
+      
+      // Call the contract method to relay transaction
+      const tx = await feeRelayerContract.relayTransaction(from, valueInWei);
+      
+      // Wait for transaction to be mined
+      const receipt = await tx.wait();
+      
+      if (receipt.status === 1) {
+        return { 
+          success: true, 
+          message: 'Transaction relayed successfully!', 
+          hash: receipt.transactionHash 
+        };
+      } else {
+        throw new Error("Transaction relay failed");
+      }
+    } catch (error: any) {
+      console.error('Error relaying transaction:', error);
+      return { 
+        success: false, 
+        message: error.message || 'Transaction relay failed. Please try again.' 
+      };
+    }
+  };
 
   return (
     <BlockchainContext.Provider
@@ -767,6 +826,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         signer,
         nepaliPayContract,
         tokenContract,
+        feeRelayerContract,
         userAddress,
         isConnected,
         connecting,
@@ -786,6 +846,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         startCrowdfundingCampaign,
         contributeToFund,
         setUserProfile,
+        relayTransaction,
       }}
     >
       {children}
