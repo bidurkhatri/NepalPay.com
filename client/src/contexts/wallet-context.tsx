@@ -53,26 +53,55 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       setLoading(prev => ({ ...prev, wallet: true }));
-      const res = await fetch('/api/wallet', {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
+      
+      try {
+        const res = await apiRequest('GET', '/api/wallet');
         const walletData = await res.json();
         setWallet(walletData);
-      } else {
-        setWallet(null);
-        toast({
-          title: 'Error',
-          description: 'Could not fetch wallet data',
-          variant: 'destructive',
-        });
+        
+        // No error means we successfully fetched the wallet
+        return;
+      } catch (apiError) {
+        console.error('API Error fetching wallet:', apiError);
+        
+        // If the wallet doesn't exist yet for the user, create one
+        if (user) {
+          try {
+            // Create default wallet with zero balance
+            const initWallet = {
+              userId: user.id,
+              balance: "0",
+              currency: "NPR"
+            };
+            
+            // Create wallet
+            const createRes = await apiRequest('POST', '/api/wallet', initWallet);
+            const newWallet = await createRes.json();
+            setWallet(newWallet);
+            
+            toast({
+              title: 'Wallet Created',
+              description: 'Your wallet has been initialized',
+            });
+            return;
+          } catch (createError) {
+            console.error('Could not create wallet:', createError);
+          }
+        }
       }
-    } catch (error) {
-      console.error('Error fetching wallet', error);
+      
+      // If we reach here, both fetch and create failed
+      setWallet(null);
       toast({
-        title: 'Error',
-        description: 'Failed to load wallet information',
+        title: 'Wallet Error',
+        description: 'Could not load or create your wallet',
+        variant: 'destructive',
+      });
+    } catch (error) {
+      console.error('Error in wallet operations:', error);
+      toast({
+        title: 'System Error',
+        description: 'Failed to process wallet information',
         variant: 'destructive',
       });
     } finally {
@@ -85,30 +114,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       setLoading(prev => ({ ...prev, transactions: true }));
-      const res = await fetch('/api/transactions', {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const transactionsData = await res.json();
-        setTransactions(transactionsData);
-        
-        // Calculate stats
-        calculateStats(transactionsData);
-      } else {
-        setTransactions([]);
-        toast({
-          title: 'Error',
-          description: 'Could not fetch transaction data',
-          variant: 'destructive',
-        });
-      }
+      
+      const res = await apiRequest('GET', '/api/transactions');
+      const transactionsData = await res.json();
+      setTransactions(transactionsData);
+      
+      // Calculate stats
+      calculateStats(transactionsData);
     } catch (error) {
       console.error('Error fetching transactions', error);
+      setTransactions([]);
       toast({
-        title: 'Error',
-        description: 'Failed to load transaction history',
-        variant: 'destructive',
+        title: 'Transaction History',
+        description: 'No transactions found in your account yet',
       });
     } finally {
       setLoading(prev => ({ ...prev, transactions: false }));
@@ -120,28 +138,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       setLoading(prev => ({ ...prev, activities: true }));
-      const res = await fetch('/api/activities', {
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        const activitiesData = await res.json();
-        setActivities(activitiesData);
-      } else {
-        setActivities([]);
-        toast({
-          title: 'Error',
-          description: 'Could not fetch activity data',
-          variant: 'destructive',
-        });
-      }
+      
+      const res = await apiRequest('GET', '/api/activities');
+      const activitiesData = await res.json();
+      setActivities(activitiesData);
     } catch (error) {
       console.error('Error fetching activities', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load activity log',
-        variant: 'destructive',
-      });
+      setActivities([]);
+      // Don't show error toast for this - just silently fail
     } finally {
       setLoading(prev => ({ ...prev, activities: false }));
     }

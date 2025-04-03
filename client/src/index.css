@@ -44,7 +44,7 @@
   /* Futuristic gradient */
   .gradient-text {
     @apply font-bold bg-clip-text text-transparent;
-    background-image: linear-gradient(to right, theme('colors.primary.DEFAULT'), theme('colors.purple.400'));
+    background-image: linear-gradient(to right, theme('colors.primary.DEFAULT'), theme('colors.amber.400'));
   }
 
   /* Dark mode specifics for better text visibility */
@@ -54,6 +54,51 @@
 
   .text-foreground-contrast {
     @apply text-gray-900;
+  }
+  
+  /* Ensure dark mode text is always visible */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-gray-50;
+  }
+  
+  .dark p, .dark span, .dark div {
+    @apply text-gray-200;
+  }
+  
+  .dark .text-gray-900 {
+    @apply text-gray-100;
+  }
+  
+  .dark .text-gray-800 {
+    @apply text-gray-200;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-400;
+  }
+  
+  .dark .text-gray-500 {
+    @apply text-gray-400;
+  }
+  
+  .dark .bg-white {
+    @apply bg-gray-900;
+  }
+  
+  .dark .bg-gray-50 {
+    @apply bg-gray-800;
+  }
+  
+  .dark .bg-gray-100 {
+    @apply bg-gray-800;
+  }
+  
+  .dark .custom-border {
+    @apply border-gray-700;
   }
 
   /* Animated border */
@@ -85,7 +130,7 @@
   }
   
   .dark .cyber-card {
-    @apply bg-black/70 border border-primary/30;
+    @apply bg-gray-900/90 border border-primary/40;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   }
   
@@ -98,5 +143,43 @@
   /* Improved card text visibility */
   .card-content {
     @apply text-gray-900 dark:text-gray-100;
+  }
+  
+  /* Modern UI elements */
+  .modern-input {
+    @apply bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 
+           rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/50 focus:border-primary
+           outline-none transition-all;
+  }
+  
+  .modern-button {
+    @apply bg-gradient-to-r from-primary/90 to-amber-500/90 hover:from-primary hover:to-amber-500
+           text-white font-medium py-2 px-4 rounded-lg transition-all shadow-lg
+           hover:shadow-primary/20 focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
+  }
+  
+  .modern-button-outline {
+    @apply border border-primary text-primary dark:text-primary hover:bg-primary/10
+           font-medium py-2 px-4 rounded-lg transition-all shadow-sm;
+  }
+  
+  .status-badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .status-badge.success {
+    @apply bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400;
+  }
+  
+  .status-badge.warning {
+    @apply bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400;
+  }
+  
+  .status-badge.error {
+    @apply bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400;
+  }
+  
+  .status-badge.info {
+    @apply bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400;
   }
 }

@@ -171,6 +171,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+  
+  app.post("/api/wallet", requireAuth, async (req, res) => {
+    try {
+      // Check if a wallet already exists for this user
+      const existingWallet = await storage.getWalletByUserId(req.session.userId!);
+      
+      if (existingWallet) {
+        return res.status(400).json({ message: "User already has a wallet" });
+      }
+      
+      // Create wallet
+      const walletData = {
+        userId: req.session.userId!,
+        balance: req.body.balance || "0",
+        currency: req.body.currency || "NPR"
+      };
+      
+      const wallet = await storage.createWallet(walletData);
+      
+      // Log activity
+      await storage.createActivity({
+        userId: req.session.userId!,
+        action: "WALLET_CREATED",
+        details: "Wallet was initialized",
+        ipAddress: req.ip
+      });
+      
+      res.status(201).json(wallet);
+    } catch (error) {
+      console.error("Error creating wallet:", error);
+      res.status(500).json({ message: "Failed to create wallet" });
+    }
+  });
 
   // Transaction routes
   app.get("/api/transactions", requireAuth, async (req, res) => {
