@@ -153,6 +153,7 @@ const BSC_TESTNET = {
 };
 
 export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  console.log("BlockchainProvider initializing");
   const { user } = useAuth();
   const { toast } = useToast();
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
@@ -168,10 +169,39 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isStaking, setIsStaking] = useState<boolean>(false);
   const [stakedAmount, setStakedAmount] = useState<string>('0');
   const [stakingRewards, setStakingRewards] = useState<string>('0');
+  const [walletAvailable, setWalletAvailable] = useState<boolean>(false);
+  
+  // Check if MetaMask is available in this environment
+  useEffect(() => {
+    try {
+      const isWalletAvailable = typeof window !== 'undefined' && typeof window.ethereum !== 'undefined';
+      console.log("Wallet availability check:", isWalletAvailable);
+      setWalletAvailable(isWalletAvailable);
+      
+      // Log if we're in a restricted environment (iframe, etc)
+      if (isWalletAvailable) {
+        try {
+          if (window.ethereum._metamask) {
+            window.ethereum._metamask.isUnlocked().then((unlocked: boolean) => {
+              console.log("MetaMask is unlocked:", unlocked);
+            }).catch((err: any) => {
+              console.warn("Unable to check if MetaMask is unlocked:", err);
+            });
+          }
+        } catch (err) {
+          console.warn("This might be a restricted environment:", err);
+        }
+      }
+    } catch (err) {
+      console.error("Error checking wallet availability:", err);
+      setWalletAvailable(false);
+    }
+  }, []);
   
   // For demo purposes, initialize mock data when not connected to a wallet
   useEffect(() => {
-    if (!isConnected && process.env.NODE_ENV === 'development') {
+    console.log("Setting up demo data, isConnected:", isConnected);
+    if (!isConnected) {
       setTokenBalance('100.00');
       setNptBalance('50.00');
       setIsStaking(true);

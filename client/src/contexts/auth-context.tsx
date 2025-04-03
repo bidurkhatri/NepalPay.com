@@ -19,23 +19,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
+  console.log("AuthProvider initialized");
+
   const checkAuth = async () => {
+    console.log("Checking authentication status");
     try {
       setLoading(true);
       const res = await fetch('/api/user', {
         credentials: 'include',
       });
 
+      console.log("Auth check response status:", res.status);
+      
       if (res.ok) {
         const userData = await res.json();
+        console.log("User authenticated:", userData);
         setUser(userData);
       } else {
+        console.log("User not authenticated");
         setUser(null);
       }
     } catch (error) {
       console.error('Error checking authentication', error);
       setUser(null);
     } finally {
+      console.log("Authentication check complete, loading set to false");
       setLoading(false);
     }
   };
