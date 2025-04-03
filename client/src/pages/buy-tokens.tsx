@@ -19,16 +19,7 @@ import { Label } from '@/components/ui/label';
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
-let stripePromise: Promise<any> | null = null;
-try {
-  if (import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  } else {
-    console.warn("Stripe public key is missing. Payment functionality will be disabled.");
-  }
-} catch (error) {
-  console.error("Failed to load Stripe:", error);
-}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 function CheckoutForm({ amount }: { amount: number }) {
   const stripe = useStripe();
@@ -126,38 +117,9 @@ export default function BuyTokensPage() {
   }, [amount]);
 
   const createPaymentIntent = async () => {
-    if (!stripePromise) {
-      toast({
-        title: "Payment Service Unavailable",
-        description: "The payment service is currently unavailable. Please try again later or contact support.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       const response = await apiRequest('POST', '/api/create-payment-intent', { amount });
-      
-      if (response.status === 503) {
-        toast({
-          title: "Payment Service Unavailable",
-          description: "The payment service is currently unavailable. Please try again later or contact support.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       const { clientSecret } = await response.json();
-      
-      if (!clientSecret) {
-        toast({
-          title: "Error",
-          description: "Invalid payment response. Please try again later.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       setClientSecret(clientSecret);
       setStep('payment');
     } catch (error) {

@@ -335,24 +335,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment routes
-  let stripe: Stripe | null = null;
-  
-  // Only initialize Stripe if the API key is available
-  if (process.env.STRIPE_SECRET_KEY) {
-    try {
-      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    } catch (error) {
-      console.error("Failed to initialize Stripe:", error);
-    }
-  } else {
-    console.warn("STRIPE_SECRET_KEY is not set. Stripe functionality will be disabled.");
-  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
   app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
-    // Check if Stripe is initialized
-    if (!stripe) {
-      return res.status(503).json({ message: "Payment service unavailable" });
-    }
     try {
       const { amount } = req.body;
       
@@ -391,11 +376,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe webhook to handle successful payments
   app.post("/api/webhook", async (req, res) => {
-    // Check if Stripe is initialized
-    if (!stripe) {
-      return res.status(503).json({ message: "Payment service unavailable" });
-    }
-    
     const payload = req.body;
     const sig = req.headers['stripe-signature'];
 
@@ -403,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       // Verify the webhook signature
-      if (process.env.STRIPE_WEBHOOK_SECRET && sig && stripe) {
+      if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
         event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
       } else {
         // For development, we'll just use the payload directly
@@ -441,17 +421,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).send(`Webhook Error: ${error.message}`);
       return;
     }
-  });
-
-  // Serve the React app for all routes that don't start with /api
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    
-    // Forward all other requests to the React app
-    console.log(`Forwarding route: ${req.path} to the React app`);
-    res.sendFile('index.html', { root: './client' });
   });
 
   const httpServer = createServer(app);
