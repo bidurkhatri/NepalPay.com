@@ -6,6 +6,13 @@ import { z } from "zod";
 import { insertUserSchema, insertTransactionSchema, insertActivitySchema } from "@shared/schema";
 import MemoryStore from "memorystore";
 
+// Extend Express.Session to include userId
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+  }
+}
+
 const SessionStore = MemoryStore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {

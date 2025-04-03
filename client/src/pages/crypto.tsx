@@ -46,6 +46,17 @@ const CryptoPage: React.FC = () => {
   } = useBlockchain();
   
   const [activeTab, setActiveTab] = useState('wallet');
+  const [isWalletAvailable, setIsWalletAvailable] = useState<boolean>(false);
+  
+  // Check if a wallet is available in this browser
+  useEffect(() => {
+    const checkWalletAvailability = () => {
+      const hasEthereum = typeof window.ethereum !== 'undefined';
+      setIsWalletAvailable(hasEthereum);
+    };
+    
+    checkWalletAvailability();
+  }, []);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [sendingTokens, setSendingTokens] = useState(false);
@@ -80,12 +91,14 @@ const CryptoPage: React.FC = () => {
     }
   ]);
 
-  const walletAddress = userAddress || '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'; // Use blockchain address or fallback
+  const walletAddress = userAddress || 'Not connected'; // Only show address when connected
   
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    if (userAddress) {
+      navigator.clipboard.writeText(userAddress);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
   };
 
   const handleSendTokens = async () => {
@@ -290,12 +303,26 @@ const CryptoPage: React.FC = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
-                    onClick={connectWallet}
-                  >
-                    Connect Wallet
-                  </Button>
+                  isWalletAvailable ? (
+                    <Button 
+                      className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
+                      onClick={connectWallet}
+                    >
+                      Connect Wallet
+                    </Button>
+                  ) : (
+                    <a 
+                      href="https://metamask.io/download/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Button 
+                        className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
+                      >
+                        Install MetaMask
+                      </Button>
+                    </a>
+                  )
                 )}
               </div>
             </div>
@@ -307,24 +334,26 @@ const CryptoPage: React.FC = () => {
                   <h2 className="text-sm font-medium text-gray-500">Your Wallet Address</h2>
                   <div className="mt-1 font-mono text-sm">{walletAddress}</div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs gap-1"
-                  onClick={handleCopyAddress}
-                >
-                  {copySuccess ? (
-                    <>
-                      <Check className="h-3.5 w-3.5" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy Address
-                    </>
-                  )}
-                </Button>
+                {isConnected && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={handleCopyAddress}
+                  >
+                    {copySuccess ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy Address
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -332,16 +361,36 @@ const CryptoPage: React.FC = () => {
             {!isConnected ? (
               <div className="text-center py-12 bg-white rounded-lg border shadow-sm">
                 <Wallet className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Connect Your Wallet</h2>
+                <h2 className="text-xl font-semibold mb-2">
+                  {isWalletAvailable ? "Connect Your Wallet" : "Web3 Wallet Required"}
+                </h2>
                 <p className="text-gray-500 max-w-md mx-auto mb-6">
-                  Connect your cryptocurrency wallet to access all blockchain features, including token transfers, loans, and crowdfunding.
+                  {isWalletAvailable 
+                    ? "Connect your cryptocurrency wallet to access all blockchain features, including token transfers, loans, and crowdfunding." 
+                    : "To use the blockchain features of NepaliPay, you need a Web3 wallet like MetaMask installed in your browser."
+                  }
                 </p>
-                <Button 
-                  className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
-                  onClick={connectWallet}
-                >
-                  Connect Wallet
-                </Button>
+                {isWalletAvailable ? (
+                  <Button 
+                    className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
+                    onClick={connectWallet}
+                  >
+                    Connect Wallet
+                  </Button>
+                ) : (
+                  <a 
+                    href="https://metamask.io/download/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block"
+                  >
+                    <Button 
+                      className="bg-gradient-to-r from-orange-500 to-pink-500 text-white"
+                    >
+                      Install MetaMask
+                    </Button>
+                  </a>
+                )}
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">

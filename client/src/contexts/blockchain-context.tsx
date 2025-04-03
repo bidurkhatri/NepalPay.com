@@ -221,6 +221,22 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
           description: 'Please install MetaMask or another Web3 wallet to connect.',
           variant: 'destructive',
         });
+        setConnecting(false);
+        return;
+      }
+      
+      // Check if we're in an environment that doesn't support wallets (like iframe or preview)
+      try {
+        // Test the ethereum object
+        await window.ethereum._metamask?.isUnlocked();
+      } catch (err) {
+        console.error("MetaMask may be blocked or not accessible", err);
+        toast({
+          title: 'Wallet Access Restricted',
+          description: 'Your browser environment may be restricting wallet access. Try opening the application in a new window.',
+          variant: 'destructive',
+        });
+        setConnecting(false);
         return;
       }
       
@@ -237,7 +253,9 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         const network = await provider.getNetwork();
         
         // BSC Mainnet Chain ID is 56, BSC Testnet Chain ID is 97
-        if (network.chainId !== 56n && network.chainId !== 97n) {
+        // Convert chainId to string for compatibility
+        const chainIdStr = network.chainId.toString();
+        if (chainIdStr !== '56' && chainIdStr !== '97') {
           try {
             // Try to switch to BSC Mainnet
             await window.ethereum.request({
