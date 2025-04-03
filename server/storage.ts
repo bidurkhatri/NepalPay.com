@@ -2,8 +2,7 @@ import {
   users, type User, type InsertUser,
   wallets, type Wallet, type InsertWallet,
   transactions, type Transaction, type InsertTransaction,
-  activities, type Activity, type InsertActivity,
-  bankAccounts, type BankAccount, type InsertBankAccount
+  activities, type Activity, type InsertActivity
 } from "@shared/schema";
 
 export interface IStorage {
@@ -31,12 +30,6 @@ export interface IStorage {
   getActivity(id: number): Promise<Activity | undefined>;
   getUserActivities(userId: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
-  
-  // Bank Account methods
-  getBankAccount(id: number): Promise<BankAccount | undefined>;
-  getUserBankAccounts(userId: number): Promise<BankAccount[]>;
-  createBankAccount(bankAccount: InsertBankAccount): Promise<BankAccount>;
-  updateBankAccount(id: number, bankAccount: Partial<BankAccount>): Promise<BankAccount | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -44,19 +37,16 @@ export class MemStorage implements IStorage {
   private wallets: Map<number, Wallet>;
   private transactions: Map<number, Transaction>;
   private activities: Map<number, Activity>;
-  private bankAccounts: Map<number, BankAccount>;
   private userIdCounter = 1;
   private walletIdCounter = 1;
   private transactionIdCounter = 1;
   private activityIdCounter = 1;
-  private bankAccountIdCounter = 1;
 
   constructor() {
     this.users = new Map();
     this.wallets = new Map();
     this.transactions = new Map();
     this.activities = new Map();
-    this.bankAccounts = new Map();
     this.initializeDemoData();
   }
 
@@ -84,11 +74,7 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt: now,
-      phoneNumber: insertUser.phoneNumber || null,
-      finApiUserId: null,
-      kycStatus: "PENDING",
-      kycVerificationId: null,
-      kycVerifiedAt: null
+      phoneNumber: insertUser.phoneNumber || null
     };
     this.users.set(id, user);
     return user;
@@ -229,49 +215,7 @@ export class MemStorage implements IStorage {
     return activity;
   }
   
-  // Bank Account methods
-  async getBankAccount(id: number): Promise<BankAccount | undefined> {
-    return this.bankAccounts.get(id);
-  }
-
-  async getUserBankAccounts(userId: number): Promise<BankAccount[]> {
-    return Array.from(this.bankAccounts.values())
-      .filter(account => account.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  async createBankAccount(insertBankAccount: InsertBankAccount): Promise<BankAccount> {
-    const id = this.bankAccountIdCounter++;
-    const now = new Date();
-    const bankAccount: BankAccount = { 
-      ...insertBankAccount, 
-      id, 
-      createdAt: now,
-      lastSynced: now,
-      balance: insertBankAccount.balance || null,
-      currency: insertBankAccount.currency || null,
-      accountNumber: insertBankAccount.accountNumber || null,
-      iban: insertBankAccount.iban || null,
-      bankName: insertBankAccount.bankName || null,
-      bankId: insertBankAccount.bankId || null,
-      isVerified: insertBankAccount.isVerified || false
-    };
-    this.bankAccounts.set(id, bankAccount);
-    return bankAccount;
-  }
-
-  async updateBankAccount(id: number, bankAccountData: Partial<BankAccount>): Promise<BankAccount | undefined> {
-    const bankAccount = await this.getBankAccount(id);
-    if (!bankAccount) return undefined;
-    
-    const updatedBankAccount = { 
-      ...bankAccount, 
-      ...bankAccountData,
-      lastSynced: new Date()
-    };
-    this.bankAccounts.set(id, updatedBankAccount);
-    return updatedBankAccount;
-  }
+  // Bank Account methods have been removed as we don't need FinAPI anymore
 
   // Initialize demo data method
   private async initializeDemoData() {
