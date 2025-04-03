@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -11,6 +11,10 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   phoneNumber: text("phone_number"),
+  finApiUserId: text("finapi_user_id"),
+  kycStatus: text("kyc_status").default("PENDING"),
+  kycVerificationId: text("kyc_verification_id"),
+  kycVerifiedAt: timestamp("kyc_verified_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -77,6 +81,36 @@ export const insertActivitySchema = createInsertSchema(activities).pick({
   ipAddress: true,
 });
 
+// Bank Account schema
+export const bankAccounts = pgTable("bank_accounts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  finApiAccountId: text("finapi_account_id").notNull(),
+  accountName: text("account_name").notNull(),
+  accountNumber: text("account_number"),
+  iban: text("iban"),
+  bankName: text("bank_name"),
+  bankId: text("bank_id"),
+  balance: numeric("balance", { precision: 10, scale: 2 }),
+  currency: text("currency"),
+  isVerified: boolean("is_verified").default(false),
+  lastSynced: timestamp("last_synced"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertBankAccountSchema = createInsertSchema(bankAccounts).pick({
+  userId: true,
+  finApiAccountId: true,
+  accountName: true,
+  accountNumber: true,
+  iban: true,
+  bankName: true,
+  bankId: true,
+  balance: true,
+  currency: true,
+  isVerified: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -89,3 +123,6 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+export type BankAccount = typeof bankAccounts.$inferSelect;
+export type InsertBankAccount = z.infer<typeof insertBankAccountSchema>;

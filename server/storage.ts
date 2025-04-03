@@ -2,7 +2,8 @@ import {
   users, type User, type InsertUser,
   wallets, type Wallet, type InsertWallet,
   transactions, type Transaction, type InsertTransaction,
-  activities, type Activity, type InsertActivity
+  activities, type Activity, type InsertActivity,
+  bankAccounts, type BankAccount, type InsertBankAccount
 } from "@shared/schema";
 
 export interface IStorage {
@@ -30,6 +31,12 @@ export interface IStorage {
   getActivity(id: number): Promise<Activity | undefined>;
   getUserActivities(userId: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  
+  // Bank Account methods
+  getBankAccount(id: number): Promise<BankAccount | undefined>;
+  getUserBankAccounts(userId: number): Promise<BankAccount[]>;
+  createBankAccount(bankAccount: InsertBankAccount): Promise<BankAccount>;
+  updateBankAccount(id: number, bankAccount: Partial<BankAccount>): Promise<BankAccount | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -37,16 +44,19 @@ export class MemStorage implements IStorage {
   private wallets: Map<number, Wallet>;
   private transactions: Map<number, Transaction>;
   private activities: Map<number, Activity>;
+  private bankAccounts: Map<number, BankAccount>;
   private userIdCounter = 1;
   private walletIdCounter = 1;
   private transactionIdCounter = 1;
   private activityIdCounter = 1;
+  private bankAccountIdCounter = 1;
 
   constructor() {
     this.users = new Map();
     this.wallets = new Map();
     this.transactions = new Map();
     this.activities = new Map();
+    this.bankAccounts = new Map();
     this.initializeDemoData();
   }
 
@@ -70,7 +80,16 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const now = new Date();
-    const user: User = { ...insertUser, id, createdAt: now };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt: now,
+      phoneNumber: insertUser.phoneNumber || null,
+      finApiUserId: null,
+      kycStatus: "PENDING",
+      kycVerificationId: null,
+      kycVerifiedAt: null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -148,7 +167,15 @@ export class MemStorage implements IStorage {
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = this.transactionIdCounter++;
     const now = new Date();
-    const transaction: Transaction = { ...insertTransaction, id, createdAt: now };
+    const transaction: Transaction = { 
+      ...insertTransaction, 
+      id, 
+      createdAt: now,
+      status: insertTransaction.status || "COMPLETED",
+      senderId: insertTransaction.senderId || null,
+      receiverId: insertTransaction.receiverId || null,
+      note: insertTransaction.note || null
+    };
     this.transactions.set(id, transaction);
     
     // Update wallet balances
@@ -191,9 +218,59 @@ export class MemStorage implements IStorage {
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
     const now = new Date();
-    const activity: Activity = { ...insertActivity, id, createdAt: now };
+    const activity: Activity = { 
+      ...insertActivity, 
+      id, 
+      createdAt: now,
+      details: insertActivity.details || null,
+      ipAddress: insertActivity.ipAddress || null
+    };
     this.activities.set(id, activity);
     return activity;
+  }
+  
+  // Bank Account methods
+  async getBankAccount(id: number): Promise<BankAccount | undefined> {
+    return this.bankAccounts.get(id);
+  }
+
+  async getUserBankAccounts(userId: number): Promise<BankAccount[]> {
+    return Array.from(this.bankAccounts.values())
+      .filter(account => account.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createBankAccount(insertBankAccount: InsertBankAccount): Promise<BankAccount> {
+    const id = this.bankAccountIdCounter++;
+    const now = new Date();
+    const bankAccount: BankAccount = { 
+      ...insertBankAccount, 
+      id, 
+      createdAt: now,
+      lastSynced: now,
+      balance: insertBankAccount.balance || null,
+      currency: insertBankAccount.currency || null,
+      accountNumber: insertBankAccount.accountNumber || null,
+      iban: insertBankAccount.iban || null,
+      bankName: insertBankAccount.bankName || null,
+      bankId: insertBankAccount.bankId || null,
+      isVerified: insertBankAccount.isVerified || false
+    };
+    this.bankAccounts.set(id, bankAccount);
+    return bankAccount;
+  }
+
+  async updateBankAccount(id: number, bankAccountData: Partial<BankAccount>): Promise<BankAccount | undefined> {
+    const bankAccount = await this.getBankAccount(id);
+    if (!bankAccount) return undefined;
+    
+    const updatedBankAccount = { 
+      ...bankAccount, 
+      ...bankAccountData,
+      lastSynced: new Date()
+    };
+    this.bankAccounts.set(id, updatedBankAccount);
+    return updatedBankAccount;
   }
 
   // Initialize demo data method
@@ -332,6 +409,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Import and use PgStorage instead of MemStorage
-import { PgStorage } from './pg-storage';
-export const storage = new PgStorage();
+// Use MemStorage for development
+export const storage = new MemStorage();
