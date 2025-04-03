@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import CryptoPage from "@/pages/crypto";
+import CryptoFixedPage from "@/pages/crypto-fixed";
 import WalletPage from "@/pages/wallet";
 import TransactionsPage from "@/pages/transactions";
 import ProfilePage from "@/pages/profile";
@@ -55,7 +56,7 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/crypto" component={() => <ProtectedRoute component={CryptoPage} />} />
+      <Route path="/crypto" component={() => <ProtectedRoute component={CryptoFixedPage} />} />
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
       <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={Dashboard} />} />
