@@ -14,6 +14,7 @@ import WalletPage from "@/pages/wallet";
 import TransactionsPage from "@/pages/transactions";
 import ProfilePage from "@/pages/profile";
 import SettingsPage from "@/pages/settings";
+import AnalyticsPage from "@/pages/analytics";
 
 // Protected route component that redirects to login if not authenticated
 const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
@@ -59,7 +60,7 @@ function Router() {
       <Route path="/crypto" component={() => <ProtectedRoute component={CryptoFixedPage} />} />
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
       <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} />} />
-      <Route path="/analytics" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />

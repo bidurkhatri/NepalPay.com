@@ -50,20 +50,20 @@ const SettingsPage: React.FC = () => {
             </div>
 
             <Tabs defaultValue="appearance" className="w-full">
-              <TabsList className="grid grid-cols-4 w-full bg-black/50 border border-primary/30">
-                <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20">
+              <TabsList className="grid grid-cols-4 w-full bg-black/50 border border-primary/30 text-white">
+                <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Paintbrush className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Appearance</span>
                 </TabsTrigger>
-                <TabsTrigger value="language" className="data-[state=active]:bg-primary/20">
+                <TabsTrigger value="language" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Globe className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Language</span>
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="data-[state=active]:bg-primary/20">
+                <TabsTrigger value="notifications" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Bell className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Notifications</span>
                 </TabsTrigger>
-                <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/20">
+                <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Shield className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Privacy</span>
                 </TabsTrigger>

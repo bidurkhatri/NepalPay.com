@@ -5,6 +5,7 @@ import session from "express-session";
 import { z } from "zod";
 import { insertUserSchema, insertTransactionSchema, insertActivitySchema } from "@shared/schema";
 import MemoryStore from "memorystore";
+import Stripe from "stripe";
 
 // Extend Express.Session to include userId
 declare module 'express-session' {
@@ -330,6 +331,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(filteredUsers);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Stripe payment routes
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount || amount < 1) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      // Amount in cents
+      const amountInCents = Math.round(amount * 100);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: 'usd',
+        metadata: {
+          userId: req.session.userId!.toString(),
+          tokenAmount: (amount * 2).toString(), // $0.50 per token, so $1 = 2 tokens
+        },
+      });
+
+      // Log the payment intent creation
+      await storage.createActivity({
+        userId: req.session.userId!,
+        action: "PAYMENT_INTENT_CREATED",
+        details: `Created payment intent for $${amount} (${amount * 2} NPT tokens)`,
+        ipAddress: req.ip
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Stripe error:", error);
+      res.status(500).json({ message: "Payment processing error" });
+    }
+  });
+
+  // Stripe webhook to handle successful payments
+  app.post("/api/webhook", async (req, res) => {
+    const payload = req.body;
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+
+    try {
+      // Verify the webhook signature
+      if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
+        event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      } else {
+        // For development, we'll just use the payload directly
+        event = payload;
+      }
+
+      // Handle the event
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        
+        // Extract metadata
+        const userId = parseInt(paymentIntent.metadata.userId);
+        const tokenAmount = parseInt(paymentIntent.metadata.tokenAmount);
+        
+        if (userId && tokenAmount) {
+          // Handle token purchase success
+          // In a real app, this would mint the tokens to the user's address
+          // For now, let's just log an activity
+          await storage.createActivity({
+            userId,
+            action: "TOKEN_PURCHASE",
+            details: `Purchased ${tokenAmount} NPT tokens`,
+            ipAddress: req.ip || "webhook"
+          });
+
+          // Here you would trigger your blockchain function to mint tokens
+          // For now, let's just log it
+          console.log(`User ${userId} purchased ${tokenAmount} NPT tokens`);
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      res.status(400).send(`Webhook Error: ${error.message}`);
+      return;
     }
   });
 
