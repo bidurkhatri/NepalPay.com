@@ -335,9 +335,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment routes
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  let stripe: Stripe | null = null;
+  
+  // Only initialize Stripe if the API key is available
+  if (process.env.STRIPE_SECRET_KEY) {
+    try {
+      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    } catch (error) {
+      console.error("Failed to initialize Stripe:", error);
+    }
+  } else {
+    console.warn("STRIPE_SECRET_KEY is not set. Stripe functionality will be disabled.");
+  }
 
   app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+    // Check if Stripe is initialized
+    if (!stripe) {
+      return res.status(503).json({ message: "Payment service unavailable" });
+    }
     try {
       const { amount } = req.body;
       
@@ -376,6 +391,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe webhook to handle successful payments
   app.post("/api/webhook", async (req, res) => {
+    // Check if Stripe is initialized
+    if (!stripe) {
+      return res.status(503).json({ message: "Payment service unavailable" });
+    }
+    
     const payload = req.body;
     const sig = req.headers['stripe-signature'];
 
@@ -383,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       // Verify the webhook signature
-      if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
+      if (process.env.STRIPE_WEBHOOK_SECRET && sig && stripe) {
         event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
       } else {
         // For development, we'll just use the payload directly
