@@ -18,6 +18,14 @@ import AnalyticsPage from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
 import SectionsPage from "@/pages/sections-page";
 import BuyTokensPage from "@/pages/buy-tokens";
+
+// Superadmin Pages
+import SuperAdminIndex from "@/pages/superadmin";
+import SuperAdminDashboardPage from "@/pages/superadmin/dashboard";
+import SuperAdminStabilityPage from "@/pages/superadmin/stability";
+import SuperAdminAdminsPage from "@/pages/superadmin/admins";
+import SuperAdminFinancePage from "@/pages/superadmin/finance";
+import SuperAdminAnalyticsPage from "@/pages/superadmin/analytics";
 import { Loader2 } from "lucide-react";
 import { useBlockchain } from "@/contexts/blockchain-context";
 
@@ -95,7 +103,7 @@ const PublicRoute = ({ component: Component }: { component: React.ComponentType 
     if (portalType === 'admin' && userRole === 'ADMIN') {
       return <Redirect to="/admin-dashboard" />;
     } else if (portalType === 'superadmin' && userRole === 'OWNER') {
-      return <Redirect to="/owner-dashboard" />;
+      return <Redirect to="/superadmin/dashboard" />;
     } else {
       return <Redirect to="/dashboard" />;
     }
@@ -120,7 +128,7 @@ function Router() {
     if (portalType === 'admin') {
       return <Redirect to="/admin-dashboard" />;
     } else if (portalType === 'superadmin') {
-      return <Redirect to="/owner-dashboard" />;
+      return <Redirect to="/superadmin" />;
     } else {
       return <Redirect to="/welcome" />;
     }
@@ -151,11 +159,19 @@ function Router() {
       <Route path="/admin-analytics" component={() => <ProtectedRoute component={AnalyticsPage} requiredRole="ADMIN" />} />
       
       {/* Owner/Superadmin portal routes (superadmin.nepalipay.com) */}
-      <Route path="/owner-dashboard" component={() => <ProtectedRoute component={SectionsPage} requiredRole="OWNER" />} />
-      <Route path="/system-control" component={() => <ProtectedRoute component={Dashboard} requiredRole="OWNER" />} />
-      <Route path="/npt-stability" component={() => <ProtectedRoute component={WalletPage} requiredRole="OWNER" />} />
-      <Route path="/admin-management" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="OWNER" />} />
-      <Route path="/financial-oversight" component={() => <ProtectedRoute component={AnalyticsPage} requiredRole="OWNER" />} />
+      <Route path="/superadmin" component={() => <PublicRoute component={SuperAdminIndex} />} />
+      <Route path="/superadmin/dashboard" component={() => <ProtectedRoute component={SuperAdminDashboardPage} requiredRole="OWNER" />} />
+      <Route path="/superadmin/stability" component={() => <ProtectedRoute component={SuperAdminStabilityPage} requiredRole="OWNER" />} />
+      <Route path="/superadmin/admins" component={() => <ProtectedRoute component={SuperAdminAdminsPage} requiredRole="OWNER" />} />
+      <Route path="/superadmin/finance" component={() => <ProtectedRoute component={SuperAdminFinancePage} requiredRole="OWNER" />} />
+      <Route path="/superadmin/analytics" component={() => <ProtectedRoute component={SuperAdminAnalyticsPage} requiredRole="OWNER" />} />
+      
+      {/* Legacy owner routes - redirect to new superadmin routes */}
+      <Route path="/owner-dashboard" component={() => <Redirect to="/superadmin/dashboard" />} />
+      <Route path="/system-control" component={() => <Redirect to="/superadmin/dashboard" />} />
+      <Route path="/npt-stability" component={() => <Redirect to="/superadmin/stability" />} />
+      <Route path="/admin-management" component={() => <Redirect to="/superadmin/admins" />} />
+      <Route path="/financial-oversight" component={() => <Redirect to="/superadmin/finance" />} />
       
       {/* 404 route */}
       <Route component={NotFound} />

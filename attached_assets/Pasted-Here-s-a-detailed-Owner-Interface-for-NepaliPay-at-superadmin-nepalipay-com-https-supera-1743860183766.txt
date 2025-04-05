@@ -1,0 +1,90 @@
+Here's a detailed **Owner Interface** for **NepaliPay** at [superadmin.nepalipay.com](https://superadmin.nepalipay.com), structured explicitly around your deployed smart contracts. Each component provides clear interactions with blockchain methods to ensure comprehensive control and transparency.
+
+---
+
+# 🛡️ NepaliPay Owner Interface (Detailed)
+
+---
+
+## 🔑 **Login Page**
+- **Elements:**
+  - NepaliPay Owner Logo
+  - Text: "Owner Access Only"
+  - [🦊 **Connect Wallet (MetaMask)**]  
+    _Authenticated by blockchain owner wallet address._
+
+---
+
+## 🚦 **Dashboard Overview**
+- **Header:**
+  - "Owner Dashboard"
+  - Connected Wallet Address Display
+  - Logout (disconnect wallet)
+- **Key Metrics Cards:**
+  - 📌 NPT/USD Peg Status (Real-time via blockchain)
+  - 💰 Reserve Funds: Current USDT and Crypto balance (on-chain)
+  - 💳 Collected Fees: Total NPT (via FeeRelayer Contract)
+- **Navigation Tabs:**
+  - [⚙️ Control] | [📉 Stability] | [👤 Admin Management] | [🏦 Finance] | [📊 Analytics]
+
+---
+
+## ⚙️ **Control Panel**
+- **System Control:**
+  - System Status: Online/Paused
+  - [⏸️ Pause System] | [▶️ Resume System]  
+    _(Calls `pause()` and `unpause()` methods on NepaliPay Main Contract)_
+
+- **Contract Address Updates:**
+  - Input fields:
+    - USDT Address
+    - Price Feed Address
+    - NepaliPay Main Address
+    - NepaliPay Token (NPT) Address
+  - Button: [🔄 Update Addresses]  
+    _(Owner-only blockchain calls to update contract references)_
+
+---
+
+## 📉 **Token Stability Management**
+- **Peg Monitoring Graph:**
+  - Real-time NPT Peg status visualization (fetched on-chain)
+
+- **Token Supply Controls:**
+  - Mint Tokens:
+    - Amount input (e.g., 50,000 NPT)
+    - Button: [➕ Mint Tokens]  
+      _(Calls `mint(uint256 amount)` on NepaliPay Token Contract)_
+  - Burn Tokens:
+    - Amount input
+    - Button: [🔥 Burn Tokens]  
+      _(Calls `burn(uint256 amount)` on NepaliPay Token Contract)_
+
+- **Manual Peg Adjustment (Fallback):**
+  - Input NPR/USD value (e.g., "0.0075 USD per NPR")
+  - Button: [📌 Set Peg Manually]  
+    _(Blockchain call to adjust internal peg logic)_
+
+---
+
+## 👤 **Admin Management**
+- **Admin Overview Table:**
+  - Columns:
+    - Username
+    - Wallet Address
+    - Role Status (ADMIN)
+    - Blacklist Status
+    - Last Active (Blockchain-based timestamps)
+- **Actions:**
+  - [➕ Add New Admin]
+    - Input wallet address
+    - Assign ADMIN role  
+      _(Calls `setAdmin(address newAdmin)` method on NepaliPay Main Contract)_
+  - Remove Admin:
+    - [❌ Remove Admin]  
+      _(Blockchain call to revoke admin rights)_
+  - Blacklist Admin:
+    - [🚫 Blacklist] | [✅ Unblacklist]  
+      _(Blockchain calls for security management)_
+
+---

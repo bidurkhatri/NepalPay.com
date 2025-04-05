@@ -1,0 +1,54 @@
+## 📊 **Blockchain Analytics**
+- **Statistical Overview Graphs:**
+  - 📈 **Transaction Volume** (daily, weekly, monthly)
+    - Method: blockchain event monitoring
+  - 💳 **Loans Activity** (Loan disbursals, repayments, defaults)
+    - Method: NepaliPay Main Contract analytics
+  - 📢 **Ads Performance** (Ads posted, approved/rejected ratio, revenue)
+    - Method: blockchain method analytics
+- **Filters:**
+  - Date Range Selector (real-time blockchain querying)
+  - Admin-specific filter (activity logs)
+
+---
+
+## ⚙️ **Admin Settings**
+- **Admin Account Settings:**
+  - Update Admin Profile (Blockchain role display)
+  - Wallet Address Display (Non-editable, blockchain-based)
+- **Notifications & Alerts:**
+  - Toggle critical alerts (Loan overdue, Ad approval required, system status)
+  - Alert via blockchain event listening
+
+---
+
+## 🔗 **Direct Blockchain Contract Integrations**
+- **NepaliPay Main Contract:**  
+  [0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+  - Methods: `borrow`, `repayLoan`, `liquidateLoan`, `postAd`, `approveAd`, `rejectAd`, `blacklistUser`
+
+- **NepaliPay Token Contract:**  
+  [0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+  - Methods: `balanceOf`, `transfer`
+
+- **FeeRelayer Contract:**  
+  [0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+  - Methods: Transaction fee management & user reward claims
+
+---
+
+## 🛡️ **Security and Access Control**
+- Role-based permissions secured via blockchain
+- Admin authentication strictly through MetaMask wallets tied to blockchain roles
+- Transparent audit trails through blockchain transactions
+
+---
+
+## 🎨 **UI Design Philosophy**
+- **Color Scheme:** Professional blues and whites with clear highlights for alerts (red/orange)
+- **Typography:** Clear, readable fonts for administrative efficiency
+- **Navigation:** Structured clearly, minimal clicks, direct blockchain interaction
+
+---
+
+This Admin Interface provides robust blockchain integration, clear role-defined access, and comprehensive management aligned with your deployed NepaliPay smart contracts. 

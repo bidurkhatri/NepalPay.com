@@ -1,0 +1,145 @@
+Here's a detailed Admin Interface structure for **NepaliPay** at [admin.nepalipay.com](https://admin.nepalipay.com), explicitly aligned to your deployed smart contracts. Each section specifies blockchain actions, contract methods, and clearly defined roles for efficient management.
+
+---
+
+# 🔧 NepaliPay Admin Interface (Detailed)
+
+---
+
+## 🔑 **Login Page**
+- **Elements:**
+  - NepaliPay Admin Logo
+  - Text: "Admin Access Required"
+  - [🦊 **Connect Wallet (MetaMask)**]  
+    _Authenticates admin through blockchain wallet addresses and roles._
+
+---
+
+## 📌 **Dashboard Overview**
+- **Header:**
+  - Welcome Message: "Welcome, [Admin Username]"
+  - Current Wallet Address Display
+  - Logout (disconnect wallet)
+- **Statistical Cards:**
+  - 👥 Active Users: _Real-time blockchain query_
+  - 💳 Active Loans: _Data from NepaliPay Main Contract_
+  - 📢 Pending Ads: _Blockchain-stored pending ad counts_
+- **Navigation Tabs:**
+  - [👤 Users] | [💰 Loans] | [🏪 Ad Bazaar] | [📊 Analytics]
+
+---
+
+## 👤 **User Management**
+- **User Overview Table:**
+  - Columns:
+    - Username
+    - Wallet Address
+    - Role (USER/ADMIN/NONE)
+    - NPT Balance (`balanceOf()` NepaliPay Token Contract)
+    - Outstanding Loans (`getLoanDetails()` NepaliPay Main Contract)
+    - Account Status (Active/Blacklisted)
+- **Actions per User:**
+  - Role Assignment Dropdown:
+    - Set as USER
+    - Set as ADMIN
+    - Set as NONE
+    - [💾 Apply Role Change] _(Updates via blockchain methods in NepaliPay Main Contract)_
+  - Blacklist Toggle:
+    - [🚫 Blacklist] | [✅ Unblacklist]  
+      _(Calls `blacklistUser(address)` in NepaliPay contract)_
+  - User Transaction History:
+    - View detailed blockchain transaction history (links to BSCscan)
+
+---
+
+## 💰 **Loan Management**
+- **Loan Overview Table:**
+  - Columns:
+    - User (Wallet Address)
+    - Username
+    - Borrowed Amount (NPT)
+    - Collateral Type & Amount (ETH/BNB/BTC tokens)
+    - Loan Start Date (Blockchain timestamp)
+    - Loan Due Date (Blockchain calculated)
+    - Status (Active, Overdue, Repaid)
+- **Actions per Loan:**
+  - [🔄 Refresh Status] _(Blockchain real-time update)_
+  - [⚠️ Liquidate Loan] (only overdue loans)  
+    _(Calls `liquidateLoan(address borrower)` in NepaliPay Main Contract)_
+  - View Collateral details (blockchain verification)
+
+---
+
+## 🏪 **Ad Management**
+- **Tabs:**
+  - 📌 **Pending Ads**
+    - Columns: 
+      - Ad ID
+      - Username
+      - Ad Content (Heading & Brief)
+      - Tier (Base/Wings/Crest)
+      - Price Paid (NPT)
+      - Submission Date
+    - Actions:
+      - [✅ Approve Ad] _(Calls `approveAd(uint256 adId)` method on NepaliPay Main Contract)_
+      - [❌ Reject Ad] _(Calls `rejectAd(uint256 adId)` method on NepaliPay Main Contract)_
+
+  - ✅ **Active Ads**
+    - Columns:
+      - Ad ID
+      - Username
+      - Ad Tier
+      - Start Date
+      - Expiry Date
+      - Status (Running, Expiring Soon)
+    - Actions:
+      - [🔄 Refresh Status] _(Blockchain query to NepaliPay Main Contract)_
+      - [❌ Remove Ad] _(Calls remove method in NepaliPay Main Contract)_
+
+---
+
+## 📊 **Blockchain Analytics**
+- **Statistical Overview Graphs:**
+  - 📈 **Transaction Volume** (daily, weekly, monthly)
+    - Method: blockchain event monitoring
+  - 💳 **Loans Activity** (Loan disbursals, repayments, defaults)
+    - Method: NepaliPay Main Contract analytics
+  - 📢 **Ads Performance** (Ads posted, approved/rejected ratio, revenue)
+    - Method: blockchain method analytics
+- **Filters:**
+  - Date Range Selector (real-time blockchain querying)
+  - Admin-specific filter (activity logs)
+
+---
+
+## ⚙️ **Admin Settings**
+- **Admin Account Settings:**
+  - Update Admin Profile (Blockchain role display)
+  - Wallet Address Display (Non-editable, blockchain-based)
+- **Notifications & Alerts:**
+  - Toggle critical alerts (Loan overdue, Ad approval required, system status)
+  - Alert via blockchain event listening
+
+---
+
+## 🔗 **Direct Blockchain Contract Integrations**
+- **NepaliPay Main Contract:**  
+  [0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+  - Methods: `borrow`, `repayLoan`, `liquidateLoan`, `postAd`, `approveAd`, `rejectAd`, `blacklistUser`
+
+- **NepaliPay Token Contract:**  
+  [0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+  - Methods: `balanceOf`, `transfer`
+
+- **FeeRelayer Contract:**  
+  [0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+  - Methods: Transaction fee management & user reward claims
+
+---
+
+## 🛡️ **Security and Access Control**
+- Role-based permissions secured via blockchain
+- Admin authentication strictly through MetaMask wallets tied to blockchain roles
+- Transparent audit trails through blockchain transactions
+
+---

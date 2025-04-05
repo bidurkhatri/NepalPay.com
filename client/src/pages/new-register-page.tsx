@@ -51,7 +51,7 @@ const RegisterPage: React.FC = () => {
       toast({
         title: "Registration Successful",
         description: `Welcome, ${newUsername}! You're ready to use NepaliPay.`,
-        variant: "success",
+        variant: "default",
       });
       
       // Redirect to dashboard

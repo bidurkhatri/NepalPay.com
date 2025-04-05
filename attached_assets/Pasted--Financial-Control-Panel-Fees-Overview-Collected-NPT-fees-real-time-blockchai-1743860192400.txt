@@ -1,0 +1,71 @@
+## 🏦 **Financial Control Panel**
+- **Fees Overview:**
+  - Collected NPT fees (real-time blockchain balance from FeeRelayer)
+  - Convert Fees to Fiat/Crypto:
+    - Amount input (NPT)
+    - Button: [🔄 Swap to Fiat/Crypto]  
+      _(Interacts via blockchain liquidity pools/exchanges)_
+
+- **Ember Pool (Community Fund):**
+  - Total Available NPT funds
+  - Active Community Projects (Blockchain voting):
+    - Project List (e.g., "Clinic Fund", "School Fund")
+    - Voting Status (blockchain-based votes)
+  - Owner Voting Input:
+    - [✅ Vote/Approve Project] | [❌ Reject Project]  
+      _(Blockchain governance method calls)_
+
+---
+
+## 📊 **Comprehensive Analytics**
+- **Detailed Blockchain Reports:**
+  - 📈 Transaction Volumes:
+    - Graphical representation (Daily/Weekly/Monthly)
+  - 💳 Loan Management:
+    - Detailed loan disbursal, repayments, defaults
+  - 📢 Ad Revenue & Performance:
+    - Total revenue generated from Ads, approval/rejection metrics
+
+- **Custom Filters:**
+  - Date Range Selector
+  - Admin-specific Performance Metrics
+
+- **Real-Time Alerts:**
+  - Peg fluctuations
+  - Reserve fund changes
+  - Security breaches (failed or suspicious blockchain interactions)
+
+---
+
+## 🛠️ **Owner Settings & Security**
+- **Owner Profile Management:**
+  - Blockchain wallet address (Immutable, displayed for verification)
+- **Security Management:**
+  - Two-factor Authentication integration (MetaMask signature)
+  - Critical Actions Logging (Blockchain audit logs)
+
+---
+
+## 🔗 **Direct Smart Contract Integration**
+- **NepaliPay Main Contract:**  
+  [0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+  - `pause`, `unpause`, admin role assignment, blacklist management, ad and loan controls.
+
+- **NepaliPay Token Contract:**  
+  [0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+  - `mint`, `burn`, balance management.
+
+- **FeeRelayer Contract:**  
+  [0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+  - Fee collection, user reward management, transaction gas fee management.
+
+---
+
+## 🎨 **UI/UX Design Philosophy**
+- **Color Scheme:** Dark blue/grey theme for clarity and authoritative UI
+- **Typography:** Professional, readable, consistent
+- **Navigation:** Direct, streamlined, emphasizing critical actions and real-time blockchain data visibility.
+
+---
+
+This detailed Owner Interface integrates precise interactions with your deployed smart contracts, ensuring full blockchain transparency, security, and effective financial control.

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useBlockchain } from '@/contexts/blockchain-context';
 import { ArrowLeft, Send, Loader2, Info, Wallet, Check } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useCustomToast } from '@/lib/toast-wrapper';
 
 // For autocomplete functionality
 interface UserSuggestion {
@@ -11,7 +11,7 @@ interface UserSuggestion {
 
 const SendPage: React.FC = () => {
   const { isConnected, nptBalance, sendTokens } = useBlockchain();
-  const { toast } = useToast();
+  const toast = useCustomToast();
   const [, navigate] = useLocation();
   
   // Form state
@@ -84,7 +84,7 @@ const SendPage: React.FC = () => {
       toast({
         title: "Transaction Successful",
         description: "Your NPT tokens have been sent successfully!",
-        variant: "success",
+        variant: "default",
       });
       
       // Show avatar animation (this would be replaced with a proper animation component)

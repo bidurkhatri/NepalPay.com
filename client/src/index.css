@@ -15,8 +15,8 @@
     @apply font-sans antialiased text-foreground;
     font-family: 'Inter', sans-serif;
     background: 
-      radial-gradient(ellipse at top right, rgba(77, 123, 236, 0.1), transparent 70%),
-      radial-gradient(ellipse at top left, rgba(20, 30, 60, 0.8), transparent 70%),
+      radial-gradient(ellipse at top right, rgba(43, 108, 196, 0.15), transparent 70%),
+      radial-gradient(ellipse at top left, rgba(220, 53, 69, 0.05), transparent 70%),
       radial-gradient(ellipse at bottom, rgba(10, 20, 40, 1), rgba(5, 10, 20, 1));
     background-attachment: fixed;
     background-size: 100% 100vh;
@@ -34,8 +34,8 @@
     top: 0;
     left: 0;
     background-image: 
-      linear-gradient(rgba(77, 123, 236, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(77, 123, 236, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(var(--primary-rgb), 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--primary-rgb), 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
     z-index: -1;
     opacity: 0.3;
@@ -57,7 +57,8 @@
     --glass-background: rgba(15, 23, 42, 0.55);
     --blur-amount: 16px;
     --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --primary-rgb: 77, 123, 236; /* Futuristic blue matching our theme */
+    --primary-rgb: 43, 108, 196; /* Himalayan blue from Nepali flag */
+    --accent-rgb: 220, 53, 69; /* Crimson red from Nepali flag */
     --neon-shadow: 0 0 5px theme('colors.primary.DEFAULT'), 0 0 20px theme('colors.primary.DEFAULT');
     --primary-glow: 0 0 25px rgba(var(--primary-rgb), 0.6);
     
@@ -108,6 +109,30 @@
   .gradient-text {
     @apply font-semibold bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, theme('colors.primary.DEFAULT'), theme('colors.blue.400'));
+  }
+  
+  /* Nepal flag inspired gradient text */
+  .nepal-gradient-text {
+    @apply font-semibold bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, rgba(var(--primary-rgb), 1), rgba(var(--accent-rgb), 1));
+  }
+  
+  /* Nepal flag inspired button */
+  .nepal-button {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, 
+      rgba(var(--primary-rgb), 0.9), 
+      rgba(var(--accent-rgb), 0.9)
+    );
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    box-shadow: 
+      0 4px 18px rgba(var(--primary-rgb), 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   
   /* Button with glow effect */
@@ -453,6 +478,72 @@
     opacity: 0.3;
   }
   
+  /* Nepal flag inspired card */
+  .nepal-card {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .nepal-card:hover {
+    box-shadow: 
+      0 12px 35px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(var(--primary-rgb), 0.1),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Nepal flag inspired accent on top */
+  .nepal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, 
+      rgba(var(--primary-rgb), 0.9),
+      rgba(var(--accent-rgb), 0.9)
+    );
+  }
+  
+  /* Nepal flag inspired accent on the side */
+  .nepal-card-alt {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .nepal-card-alt::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+      rgba(var(--primary-rgb), 0.9),
+      rgba(var(--accent-rgb), 0.9)
+    );
+  }
+  
   /* Modern modal/dialog */
   .modern-dialog {
     background: rgba(15, 23, 42, 0.75);
@@ -508,6 +599,21 @@
     -webkit-backdrop-filter: blur(12px);
     border-right: 1px solid rgba(255, 255, 255, 0.04);
     padding: 1.25rem 0.75rem;
+    position: relative;
+  }
+  
+  /* Nepal flag accent on sidebar */
+  .sidebar-nav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+      rgba(var(--primary-rgb), 0.8), 
+      rgba(var(--accent-rgb), 0.8)
+    );
   }
   
   .sidebar-item {
@@ -519,9 +625,25 @@
   }
   
   .sidebar-item.active {
-    background: rgba(var(--primary-rgb), 0.12);
+    background: linear-gradient(145deg, 
+      rgba(var(--primary-rgb), 0.15),
+      rgba(var(--accent-rgb), 0.05)
+    );
     color: white;
     box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15);
+    position: relative;
+  }
+  
+  .sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 6px;
+    height: 20px;
+    border-radius: 0 4px 4px 0;
+    background: rgba(var(--accent-rgb), 0.8);
+    transform: translateY(-50%);
   }
   
   /* Enhanced scrollbar */
