@@ -32,6 +32,13 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Transaction type definition
 interface Transaction {
@@ -63,6 +70,23 @@ const NepaliPayTokenPage: React.FC = () => {
   const [sendingTokens, setSendingTokens] = useState(false);
   const [transactionHistory, setTransactionHistory] = useState<Transaction[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [collateralType, setCollateralType] = useState('bnb');
+  const [collateralAmount, setCollateralAmount] = useState('');
+  const [loanAmount, setLoanAmount] = useState('');
+  
+  // Loan-to-Value (LTV) ratios for different collateral types
+  const ltv = {
+    bnb: 0.75, // 75% 
+    eth: 0.70, // 70%
+    btc: 0.65  // 65%
+  };
+  
+  // Mock exchange rates to NPT (for UI demo)
+  const exchangeRates = {
+    bnb: 1250, // 1 BNB = 1250 NPT
+    eth: 1800, // 1 ETH = 1800 NPT
+    btc: 25000 // 1 BTC = 25000 NPT
+  };
 
   // Demo or real wallet address
   const displayAddress = userAddress || '0xfdb1824E50b2e04Ec94D1270604C1F0319fcDE81';
@@ -87,6 +111,17 @@ const NepaliPayTokenPage: React.FC = () => {
     }
   };
   
+  // Calculate loan amount based on collateral
+  useEffect(() => {
+    if (collateralAmount && parseFloat(collateralAmount) > 0) {
+      // Calculate the maximum loan amount based on collateral type and LTV ratio
+      const maxLoan = parseFloat(collateralAmount) * exchangeRates[collateralType as keyof typeof exchangeRates] * ltv[collateralType as keyof typeof ltv];
+      setLoanAmount(maxLoan.toFixed(2));
+    } else {
+      setLoanAmount('');
+    }
+  }, [collateralAmount, collateralType]);
+
   // Load transaction history
   useEffect(() => {
     // For demo purposes, generate some sample transactions
@@ -545,35 +580,67 @@ const NepaliPayTokenPage: React.FC = () => {
                           id="collateral-amount"
                           type="number"
                           placeholder="0.0"
+                          value={collateralAmount}
+                          onChange={(e) => setCollateralAmount(e.target.value)}
                           className="bg-[#0A1022] border-[#1E2A4A] pr-16"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                          NPT
+                          {collateralType.toUpperCase()}
                         </div>
                       </div>
                     </div>
                     
+                    <div className="space-y-2 mb-4">
+                      <Label htmlFor="collateral-type" className="text-white">Collateral Type</Label>
+                      <select
+                        id="collateral-type"
+                        className="w-full bg-[#0A1022] border-[#1E2A4A] rounded-md p-2 text-white"
+                        value={collateralType}
+                        onChange={(e) => setCollateralType(e.target.value)}
+                      >
+                        <option value="bnb">BNB</option>
+                        <option value="eth">ETH</option>
+                        <option value="btc">BTC</option>
+                      </select>
+                    </div>
+
                     <div className="p-4 rounded-lg bg-[#0D1426] border border-[#1E2A4A] space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Current Collateral:</span>
-                        <span className="text-white">0.0 NPT</span>
+                        <span className="text-white">{collateralAmount || '0.0'} {collateralType.toUpperCase()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Estimated Value:</span>
+                        <span className="text-white">~{collateralAmount && parseFloat(collateralAmount) > 0 
+                          ? (parseFloat(collateralAmount) * exchangeRates[collateralType as keyof typeof exchangeRates]).toFixed(2) 
+                          : '0.0'} NPT</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Max Loan Available:</span>
-                        <span className="text-white">0.0 NPT</span>
+                        <span className="text-white">{loanAmount || '0.0'} NPT</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Required Ratio:</span>
-                        <span className="text-white">150%</span>
+                        <span className="text-white">{Math.round(100 / ltv[collateralType as keyof typeof ltv])}%</span>
                       </div>
                     </div>
                     
                     <Button 
                       className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
                       onClick={() => {
+                        if (!collateralAmount || parseFloat(collateralAmount) <= 0) {
+                          toast({
+                            title: "Invalid Amount",
+                            description: "Please enter a valid collateral amount",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        // Add collateral (would integrate with blockchain)
                         toast({
                           title: "Collateral Added",
-                          description: "Your collateral has been added successfully",
+                          description: `Successfully added ${collateralAmount} ${collateralType.toUpperCase()} as collateral`,
                         });
                       }}
                     >
@@ -598,6 +665,8 @@ const NepaliPayTokenPage: React.FC = () => {
                           type="number"
                           placeholder="0.0"
                           className="bg-[#0A1022] border-[#1E2A4A] pr-16"
+                          value={loanAmount}
+                          onChange={(e) => setLoanAmount(e.target.value)}
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                           NPT
@@ -612,7 +681,7 @@ const NepaliPayTokenPage: React.FC = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Required Collateral:</span>
-                        <span className="text-white">150%</span>
+                        <span className="text-white">{Math.round(100 / ltv[collateralType as keyof typeof ltv])}%</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Loan Term:</span>
@@ -631,6 +700,38 @@ const NepaliPayTokenPage: React.FC = () => {
                     <Button 
                       className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
                       onClick={() => {
+                        if (!loanAmount || parseFloat(loanAmount) <= 0) {
+                          toast({
+                            title: "Invalid Amount",
+                            description: "Please enter a valid loan amount",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        if (!collateralAmount || parseFloat(collateralAmount) <= 0) {
+                          toast({
+                            title: "Missing Collateral",
+                            description: "You need to add collateral before taking a loan",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        const maxLoanValue = parseFloat(collateralAmount) * 
+                          exchangeRates[collateralType as keyof typeof exchangeRates] * 
+                          ltv[collateralType as keyof typeof ltv];
+                          
+                        if (parseFloat(loanAmount) > maxLoanValue) {
+                          toast({
+                            title: "Insufficient Collateral",
+                            description: `Maximum loan based on your collateral is ${maxLoanValue.toFixed(2)} NPT`,
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        // Process loan (would integrate with blockchain)
                         toast({
                           title: "Loan Request Submitted",
                           description: "Your loan request has been submitted",
