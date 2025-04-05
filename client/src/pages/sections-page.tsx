@@ -284,14 +284,14 @@ const SectionsPage: React.FC = () => {
       {/* Main Content */}
       <main>
         {/* Hero Section */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 relative">
+        <section className="py-10 px-4 sm:px-6 lg:px-8 relative">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute w-[500px] h-[500px] blur-[100px] rounded-full -top-20 -right-20 bg-primary/20 opacity-30"></div>
             <div className="absolute w-[600px] h-[600px] blur-[120px] rounded-full -bottom-40 -left-40 bg-blue-600/10 opacity-30"></div>
           </div>
           
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <h1 className="text-3xl md:text-4xl font-bold gradient-text">
                 Welcome{username ? `, ${username}` : ''}!
               </h1>
@@ -318,103 +318,196 @@ const SectionsPage: React.FC = () => {
               </div>
             )}
             
-            {/* Dashboard cards */}
+            {/* Main Grid - Nepal Inspired */}
             {isConnected && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div className="cyber-card">
+              <>
+                {/* Balance Card */}
+                <div className="glass-card bg-gray-900/70 mb-6">
                   <div className="card-highlight"></div>
-                  <div className="card-content">
-                    <h3 className="text-lg font-medium mb-2">NPT Balance</h3>
-                    <div className="flex items-baseline">
-                      <span className="text-2xl font-bold">{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                      <span className="ml-2 text-sm text-gray-400">NPT</span>
-                    </div>
-                    <div className="mt-4">
-                      <Link href="/buy-tokens" className="text-sm text-primary flex items-center">
-                        Buy more tokens
-                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="cyber-card">
-                  <div className="card-highlight"></div>
-                  <div className="card-content">
-                    <h3 className="text-lg font-medium mb-2">Loan Status</h3>
-                    {parseFloat(userDebt) > 0 ? (
-                      <div>
+                  <div className="card-content py-4 px-1">
+                    <div className="flex flex-col md:flex-row items-center justify-between">
+                      <div className="flex flex-col items-center md:items-start">
+                        <span className="text-gray-400 text-sm">Current Balance</span>
                         <div className="flex items-baseline">
-                          <span className="text-2xl font-bold text-red-400">{parseFloat(userDebt).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          <span className="ml-2 text-sm text-gray-400">NPT owed</span>
+                          <span className="text-3xl font-bold text-white">{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          <span className="ml-2 text-lg font-medium text-gray-300">NPT</span>
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">
-                          Collateral: {parseFloat(userCollaterals.nptValue).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT value
-                        </div>
+                        <span className="text-sm text-gray-400">(~{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPR)</span>
                       </div>
-                    ) : (
-                      <div>
-                        <div className="text-green-400 mb-1">No active loans</div>
-                        <div className="text-sm text-gray-400">
-                          You can borrow up to {parseFloat(userCollaterals.nptValue) * 0.66} NPT
-                        </div>
+                      
+                      <div className="flex mt-4 md:mt-0 gap-3">
+                        <Link href="/buy-tokens">
+                          <button className="modern-button bg-gradient-to-r from-green-600 to-green-500">
+                            <Plus className="mr-1 h-4 w-4" />
+                            Add Funds
+                          </button>
+                        </Link>
+                        <Link href="/wallet">
+                          <button className="modern-button bg-gradient-to-r from-orange-600 to-orange-500">
+                            <ArrowDownCircle className="mr-1 h-4 w-4" />
+                            Withdraw
+                          </button>
+                        </Link>
                       </div>
-                    )}
-                    <div className="mt-4">
-                      <Link href="/loans" className="text-sm text-primary flex items-center">
-                        Manage loans
-                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                      </Link>
                     </div>
                   </div>
                 </div>
                 
-                <div className="cyber-card">
-                  <div className="card-highlight"></div>
-                  <div className="card-content">
-                    <h3 className="text-lg font-medium mb-2">Rewards</h3>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-gray-800/60 rounded p-2">
-                        <div className="text-gray-400">Referrals</div>
-                        <div className="text-lg font-bold">{referralCount}</div>
+                {/* Main Grid - Primary Actions (Nepal Style) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <Link href="/send" className="cyber-card bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border-blue-500/20 hover:border-blue-500/30 hover:bg-gradient-to-br hover:from-blue-500/15 hover:to-indigo-600/15">
+                    <div className="card-highlight"></div>
+                    <div className="card-content text-center py-6">
+                      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3">
+                        <Send className="h-6 w-6 text-white" />
                       </div>
-                      <div className="bg-gray-800/60 rounded p-2">
-                        <div className="text-gray-400">Transactions</div>
-                        <div className="text-lg font-bold">{txCount}/10</div>
-                      </div>
-                      <div className="bg-gray-800/60 rounded p-2">
-                        <div className="text-gray-400">Avatars</div>
-                        <div className="text-lg font-bold">{avatars.length}/5</div>
-                      </div>
-                      <div className="bg-primary/10 rounded p-2">
-                        <div className="text-primary">Claimable</div>
-                        <div className="text-lg font-bold">
-                          {avatars.length >= 5 ? 5 : 0} NPT
-                        </div>
-                      </div>
+                      <h3 className="text-lg font-semibold text-white">Send NPT</h3>
                     </div>
-                    <div className="mt-4">
-                      <Link href="/rewards" className="text-sm text-primary flex items-center">
-                        View all rewards
-                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                      </Link>
+                  </Link>
+                  
+                  <Link href="/borrow" className="cyber-card bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20 hover:border-purple-500/30 hover:bg-gradient-to-br hover:from-purple-500/15 hover:to-indigo-500/15">
+                    <div className="card-highlight"></div>
+                    <div className="card-content text-center py-6">
+                      <div className="bg-gradient-to-br from-purple-500 to-indigo-500 w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3">
+                        <Shield className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white">Borrow</h3>
+                    </div>
+                  </Link>
+                  
+                  <Link href="/rewards" className="cyber-card bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/20 hover:border-amber-500/30 hover:bg-gradient-to-br hover:from-amber-500/15 hover:to-yellow-500/15">
+                    <div className="card-highlight"></div>
+                    <div className="card-content text-center py-6">
+                      <div className="bg-gradient-to-br from-amber-500 to-yellow-500 w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3">
+                        <Gift className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white">Rewards</h3>
+                    </div>
+                  </Link>
+                  
+                  <Link href="/ad-bazaar" className="cyber-card bg-gradient-to-br from-pink-500/10 to-rose-500/10 border-pink-500/20 hover:border-pink-500/30 hover:bg-gradient-to-br hover:from-pink-500/15 hover:to-rose-500/15">
+                    <div className="card-highlight"></div>
+                    <div className="card-content text-center py-6">
+                      <div className="bg-gradient-to-br from-pink-500 to-rose-500 w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3">
+                        <Store className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white">Ad Bazaar</h3>
+                    </div>
+                  </Link>
+                </div>
+                
+                {/* Loan Status & Rewards Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="cyber-card">
+                    <div className="card-highlight"></div>
+                    <div className="card-content">
+                      <h3 className="text-lg font-medium mb-3 flex items-center">
+                        <Shield className="mr-2 h-5 w-5 text-purple-400" />
+                        Loan Status
+                      </h3>
+                      {parseFloat(userDebt) > 0 ? (
+                        <div>
+                          <div className="flex items-baseline">
+                            <span className="text-2xl font-bold text-red-400">{parseFloat(userDebt).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span className="ml-2 text-sm text-gray-400">NPT owed</span>
+                          </div>
+                          <div className="mt-2 text-sm text-gray-400 flex items-center">
+                            <span className="px-2 py-0.5 bg-red-900/30 text-red-400 rounded-full text-xs font-medium mr-2">5% interest</span>
+                            <span>Due in 30 days</span>
+                          </div>
+                          <div className="mt-2 text-xs text-gray-400">
+                            Collateral: {parseFloat(userCollaterals.nptValue).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT value
+                          </div>
+                          <div className="mt-4 flex gap-2">
+                            <Link href="/borrow">
+                              <button className="modern-button-outline text-sm py-1.5">
+                                Add Collateral
+                              </button>
+                            </Link>
+                            <Link href="/borrow">
+                              <button className="modern-button bg-gradient-to-r from-red-600 to-red-500 text-sm py-1.5">
+                                Repay Loan
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-green-400 mb-1 flex items-center">
+                            <span className="px-2 py-0.5 bg-green-900/30 text-green-400 rounded-full text-xs font-medium mr-2">Available</span>
+                            <span>No active loans</span>
+                          </div>
+                          <div className="text-sm text-gray-400 mt-2">
+                            You can borrow up to {parseFloat(userCollaterals.nptValue) * 0.66} NPT with your current collateral
+                          </div>
+                          <div className="mt-4">
+                            <Link href="/borrow">
+                              <button className="modern-button bg-gradient-to-r from-purple-600 to-indigo-600 text-sm">
+                                Take a Loan
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="cyber-card">
+                    <div className="card-highlight"></div>
+                    <div className="card-content">
+                      <h3 className="text-lg font-medium mb-3 flex items-center">
+                        <Gift className="mr-2 h-5 w-5 text-amber-400" />
+                        Rewards Summary
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="glass-card bg-gray-800/60 rounded p-3">
+                          <div className="text-gray-400 mb-1">Referrals</div>
+                          <div className="text-lg font-bold flex items-baseline">
+                            {referralCount}
+                            <span className="ml-2 text-xs text-primary">{referralCount > 0 ? '10 NPT claimable' : ''}</span>
+                          </div>
+                        </div>
+                        <div className="glass-card bg-gray-800/60 rounded p-3">
+                          <div className="text-gray-400 mb-1">Transactions</div>
+                          <div className="text-lg font-bold flex items-center">
+                            <div className="mr-2">{txCount}/10</div>
+                            <div className="h-1 flex-grow bg-gray-700 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full" 
+                                style={{ width: `${(txCount / 10) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="glass-card bg-gray-800/60 rounded p-3">
+                          <div className="text-gray-400 mb-1">Avatars</div>
+                          <div className="text-lg font-bold flex items-baseline">
+                            {avatars.length}/5
+                            <span className="ml-2 text-xs text-amber-400">{avatars.length >= 5 ? '+5 NPT' : ''}</span>
+                          </div>
+                        </div>
+                        <Link href="/rewards" className="glass-card bg-primary/10 rounded p-3 flex flex-col justify-center items-center hover:bg-primary/15 transition-colors">
+                          <Gift className="h-5 w-5 text-primary mb-1" />
+                          <span className="text-primary">View Rewards</span>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
             
-            {/* Features grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sections.map((section, index) => (
-                <Link key={index} href={section.path} className={`cyber-card hover:translate-y-[-4px] transition-all ${section.featured ? 'bg-primary/10 border-primary/20' : ''}`}>
-                  <div className="card-highlight"></div>
-                  <div className="card-content">
-                    <div className={`w-16 h-16 rounded-lg mb-4 flex items-center justify-center bg-gradient-to-br ${section.color} text-white`}>
-                      {section.icon}
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-                    <p className="text-gray-400">{section.description}</p>
+            {/* Secondary Features Grid */}
+            <h2 className="text-xl font-semibold mb-4 text-gray-100">More Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              {sections.slice(4).map((section, index) => (
+                <Link key={index} href={section.path} className="cyber-card hover:translate-y-[-4px] transition-all flex items-center p-4">
+                  <div className={`w-10 h-10 rounded-lg mr-3 flex items-center justify-center bg-gradient-to-br ${section.color} text-white`}>
+                    {section.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{section.title}</h3>
+                    <p className="text-xs text-gray-400">{section.description}</p>
                   </div>
                 </Link>
               ))}
@@ -423,7 +516,7 @@ const SectionsPage: React.FC = () => {
         </section>
         
         {/* Contract Links Section */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900/30">
+        <section className="py-10 px-4 sm:px-6 lg:px-8 bg-gray-900/30">
           <div className="max-w-5xl mx-auto">
             <ContractLinks contracts={contracts} />
           </div>
