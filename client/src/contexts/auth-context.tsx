@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { User, LoginCredentials, RegisterData } from '@/types';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -12,12 +11,11 @@ interface AuthContextType {
   checkAuth: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const { toast } = useToast();
 
   const checkAuth = async () => {
     try {
@@ -46,17 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiRequest('POST', '/api/login', credentials);
       const userData = await res.json();
       setUser(userData);
-      toast({
-        title: 'Login successful',
-        description: `Welcome back, ${userData.firstName}!`,
-      });
+      // Success notification is handled in the login component
     } catch (error) {
       console.error('Login error', error);
-      toast({
-        title: 'Login failed',
-        description: error instanceof Error ? error.message : 'Invalid credentials',
-        variant: 'destructive',
-      });
+      // Error notification is handled in the login component
       throw error;
     } finally {
       setLoading(false);
@@ -69,17 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await apiRequest('POST', '/api/register', data);
       const userData = await res.json();
       setUser(userData);
-      toast({
-        title: 'Registration successful',
-        description: `Welcome, ${userData.firstName}!`,
-      });
+      // Success notification is handled in the registration component
     } catch (error) {
       console.error('Registration error', error);
-      toast({
-        title: 'Registration failed',
-        description: error instanceof Error ? error.message : 'Could not create account',
-        variant: 'destructive',
-      });
+      // Error notification is handled in the registration component
       throw error;
     } finally {
       setLoading(false);
@@ -91,17 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       await apiRequest('POST', '/api/logout');
       setUser(null);
-      toast({
-        title: 'Logged out',
-        description: 'You have been successfully logged out',
-      });
+      // Success notification is handled in the logout component
     } catch (error) {
       console.error('Logout error', error);
-      toast({
-        title: 'Logout failed',
-        description: 'Could not log out. Please try again.',
-        variant: 'destructive',
-      });
+      // Error notification is handled in the logout component
     } finally {
       setLoading(false);
     }
@@ -120,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
