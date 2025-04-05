@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { useWallet } from '@/contexts/wallet-context';
+import { useBlockchain } from '@/contexts/blockchain-context';
 import Sidebar from '@/components/sidebar';
 import Header from '@/components/header';
 import MobileNavigation from '@/components/mobile-navigation';
@@ -37,6 +38,7 @@ import { Loader2, ArrowRight, RefreshCw, Wallet as WalletIcon, Coins } from 'luc
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { wallet, transactions, activities, loading, stats, mobileTopup, utilityPayment } = useWallet();
+  const { nptBalance, isConnected, connectWallet } = useBlockchain();
   const { toast } = useToast();
   
   const [mobileTopupOpen, setMobileTopupOpen] = useState(false);
@@ -117,13 +119,19 @@ const Dashboard: React.FC = () => {
                 <Badge variant="outline" className="py-2 flex items-center gap-1 border-primary bg-primary/10 text-white hover:text-white glow">
                   <WalletIcon className="h-3.5 w-3.5" />
                   <span>NPT Token:</span>
-                  <span className="font-semibold">1.23 NPT</span>
+                  <span className="font-semibold">{nptBalance} NPT</span>
                 </Badge>
-                <Button variant="outline" size="sm" className="text-xs flex items-center border-primary/50 bg-primary/10 text-white hover:bg-primary/20 transition-all duration-300 glow" asChild>
-                  <Link href="/crypto">
-                    <Coins className="h-3.5 w-3.5 mr-1" /> Manage
-                  </Link>
-                </Button>
+                {isConnected ? (
+                  <Button variant="outline" size="sm" className="text-xs flex items-center border-primary/50 bg-primary/10 text-white hover:bg-primary/20 transition-all duration-300 glow" asChild>
+                    <Link href="/crypto">
+                      <Coins className="h-3.5 w-3.5 mr-1" /> Manage
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" className="text-xs flex items-center border-primary/50 bg-primary/10 text-white hover:bg-primary/20 transition-all duration-300 glow" onClick={connectWallet}>
+                    <Coins className="h-3.5 w-3.5 mr-1" /> Connect Wallet
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -367,10 +375,10 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <WalletIcon className="h-6 w-6 text-primary" />
-                <span className="text-2xl font-bold">1.23 NPT</span>
+                <span className="text-2xl font-bold">{nptBalance} NPT</span>
               </div>
               <div className="mt-1 text-xs text-gray-500">
-                ≈ NPR 1,230.00
+                ≈ NPR {(parseFloat(nptBalance) * 1000).toLocaleString(undefined, {maximumFractionDigits: 2})}
               </div>
             </div>
             

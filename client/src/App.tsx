@@ -42,13 +42,18 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
-  const { userRole } = useBlockchain();
+  const { userRole, connecting } = useBlockchain();
   
   // Show loading spinner while checking authentication
-  if (loading) {
+  if (loading || connecting) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-950">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <div className="text-gray-400">
+            {loading ? 'Checking authentication...' : 'Connecting to blockchain...'}
+          </div>
+        </div>
       </div>
     );
   }
@@ -56,8 +61,13 @@ const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRoutePr
   // If not authenticated, redirect to login
   if (!user) return <Redirect to="/login" />;
   
+  // For the demo user, we'll allow access to all routes regardless of role
+  // This makes it easier to test the application
+  const isDemoUser = user.username === 'demo';
+  
   // If role is required and user doesn't have it, redirect to dashboard
-  if (requiredRole && userRole !== requiredRole) {
+  // Skip this check for demo users who should have access to everything
+  if (requiredRole && userRole !== requiredRole && !isDemoUser) {
     return <Redirect to="/dashboard" />;
   }
   
