@@ -1,0 +1,1356 @@
+here are all the smart contract codes that are deployed in the blockchain that will work in the app .
+
+nepalipay token : https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code
+
+nepalipay : https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code
+
+feerelayer: https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code
+
+create these as links for following roles ,
+for User: nepalipay.com/sections
+For admins: admin.nepalipay.com
+For owner: superadmin.nepalipay.com
+
+
+
+---
+
+### **App Overview**
+- **Purpose**: A blockchain-based financial platform on BSC, pegging 1 NPT = 1 NPR, enabling payments, loans, ads, and rewards for Nepali users, admins, and owners.
+- **Contracts**:
+  - **NepaliPayToken (0x69d34B25809b346702C21EB0E22EAD8C1de58D66)**: 1M NPT supply, pegged via Chainlink INR/USD, mint/burn with USDT.
+  - **NepaliPay (0xe2d189f6696ee8b247ceae97fe3f1f2879054553)**: Core payment, loan, and ad system with rebate, referral, cashback, avatars, and ad bazaar.
+  - **FeeRelayer (0x7ff2271749409f9137dac1e082962e21cc99aee6)**: Calculates dynamic NPT gas fees.
+
+---
+
+### **Features by Section**
+
+#### **1. User Section (nepalipay.com/sections)**
+**POV**: Everyday Nepali users—small vendors, workers, students—seeking affordable, blockchain-based financial tools.
+
+##### **Features**
+1. **Wallet Management**:
+   - Register with a username (via `setUsername`)—e.g., "RajuKtm".
+   - View NPT balance (`userBalances`) and USDT reserve.
+   - Deposit NPT/USDT (`depositTokens`, `mint` NPT with USDT).
+   - Withdraw NPT (`withdrawTokens`) to wallet (e.g., MetaMask).
+
+2. **Payments**:
+   - Send NPT to others (`sendTokens`)—e.g., pay 500 NPT (~500 NPR) to "SitaPkr" for goods.
+   - Dynamic gas fees in NPT (`getDynamicGasFee`, capped at 1,000 NPT).
+
+3. **Loans**:
+   - Add collateral (BNB, BSC ETH, BSC BTC via `addCollateral`)—e.g., 1 BNB (~300 NPT value).
+   - Take loans (`takeLoan`) up to 50,000 NPT—e.g., borrow 200 NPT with 300 NPT collateral.
+   - Repay loans (`repayLoan`)—early repayment earns 50% gas fee rebate (`rebatePercentage`).
+
+4. **Rewards**:
+   - **Referral**: Invite friends (`setUsername` with referrer)—earn 10 NPT (`claimReferralReward`).
+   - **Cashback**: Send 10+ txs (`txCount`)—claim 0.1% balance cashback (`claimCashback`).
+   - **Holographic Avatars**: Each `sendTokens` mints an avatar—collect 5 for 5 NPT bonus (`claimAvatarBonus`).
+
+5. **Ad Bazaar Participation**:
+   - Post ads (`bidForFlame`)—e.g., "Fresh Momo, 20 NPT" for 500 NPT (Base, 1 day) or 1,000 NPT (Wings, 1 day).
+   - Bid for Crest (15,000+ NPT, 7 days)—e.g., "Gold Rings, 10,000 NPT".
+   - Browse ads—visit sellers IRL using contact details.
+
+##### **Workflow**
+- **User Onboarding**: Connect wallet → Set username → Deposit NPT/USDT.
+- **Payment**: Select recipient → Enter amount → Confirm tx (gas fee shown) → Avatar minted.
+- **Loan**: Add collateral → Request loan → Repay with NPT → Claim rebate if early.
+- **Rewards**: Refer friend → Claim 10 NPT; Send 10 txs → Claim cashback; Collect 5 avatars → Claim bonus.
+- **Ads**: Post ad (Base/Wings/Crest) → Wait for admin approval → Browse ads → Contact seller.
+
+##### **Concepts/Ideas**
+- **Accessibility**: Simple UI for Nepal’s low-tech users—e.g., Nepali language option.
+- **Gamification**: Avatars and rewards encourage usage—e.g., "Yeti" avatar for txs.
+- **Local Utility**: Ads for small vendors (e.g., momo stalls) boost micro-commerce.
+
+---
+
+#### **2. Admin Panel (admin.nepalipay.com)**
+**POV**: Local admins (e.g., NepaliPay staff) managing loans, ads, and user verification with controlled access.
+
+##### **Features**
+1. **User Management**:
+   - Assign roles (`setRole`)—e.g., promote "RajuKtm" to USER or ADMIN.
+   - View user details (`userNames`, `userBalances`, `userDebts`).
+
+2. **Loan Oversight**:
+   - Monitor loans (`userDebts`, `userCollaterals`, `loanStartTimestamps`).
+   - Liquidate overdue loans (`liquidate`)—e.g., seize 1 BNB collateral if 30 days past due.
+
+3. **Ad Bazaar Moderation**:
+   - Approve/reject ads (`approveFlame`, `rejectFlame`)—e.g., approve "Fresh Momo" or reject spam.
+   - View pending/active ads (`adFlames`)—e.g., Crest: "Gold Rings, 15,000 NPT".
+
+4. **Analytics**:
+   - Track tx volume (`TokensSent` events), loan activity (`LoanTaken`, `LoanRepaid`), ad postings (`FlamePosted`).
+
+##### **Workflow**
+- **User Role**: Review new user → Assign USER role → Notify via app.
+- **Loan**: Check overdue loans → Liquidate if >30 days → Transfer collateral (BNB/ETH/BTC).
+- **Ads**: Review ad (`adFields`) → Approve if valid → Reject with refund if spam → Update UI.
+- **Monitor**: Dashboard shows txs, loans, ads—filter by date/user.
+
+##### **Concepts/Ideas**
+- **Trust**: Admins ensure ad quality—e.g., no scams in bazaar.
+- **Efficiency**: Bulk approval/rejection UI—e.g., process 10 ads at once.
+- **Transparency**: Log actions (e.g., `FlameApproved`)—visible to owner.
+
+---
+
+#### **3. Owner Dashboard (superadmin.nepalipay.com)**
+**POV**: You, the owner, overseeing the ecosystem, stabilizing NPT, and managing emergencies.
+
+##### **Features**
+1. **System Control**:
+   - Pause/unpause contracts (`pause`, `unpause`)—e.g., halt during exploit.
+   - Update addresses (`setUsdtAddress`, `setPriceFeedAddress` in NPT; `setNepaliPayAddress` in `FeeRelayer`).
+
+2. **NPT Stability**:
+   - Emergency mint/burn (`emergencyMint`, `emergencyBurn`)—e.g., mint 50,000 NPT if USDT reserve low.
+   - Set NPR/USD fallback (`setNprUsdFallback`)—e.g., $0.008 if Chainlink fails.
+   - Monitor USDT reserve (`getUsdtReserve`)—ensure ~7,500 USDT for 1M NPT.
+
+3. **Admin Management**:
+   - Assign/remove admins (`setRole`)—e.g., add "Admin1" as ADMIN.
+   - Blacklist users (`blacklistAddress`)—e.g., block scammer wallet.
+
+4. **Financial Oversight**:
+   - View fees (`feeReserve`, `emberPool`)—e.g., 95% ad revenue (dev share).
+   - Swap NPT to fiat (`swapToFiat`)—e.g., 15,000 NPT → USDT → bank payout.
+   - Vote ember pool causes (`voteEmberPool`)—e.g., "Fund school" with 5% ad fees.
+
+5. **Analytics**:
+   - Total txs (`TokensSent`), loans (`LoanTaken`), ads (`FlamePosted`), rewards (`ReferralClaimed`, etc.).
+   - Peg health—NPR/USD rate (`getNprUsdRate`) vs. reserve.
+
+##### **Workflow**
+- **Stability**: Check `getNprUsdRate` → If off-peg (e.g., $0.006), mint/burn NPT → Update fallback if feed fails.
+- **Admin**: Add new admin → Review admin actions (e.g., ad approvals) → Blacklist if abuse detected.
+- **Finance**: Collect ad revenue → Swap to fiat → Disburse ember pool funds.
+- **Emergency**: Pause if exploit → Fix (e.g., update feed address) → Unpause.
+
+##### **Concepts/Ideas**
+- **Peg Defense**: Auto-notify if reserve < 7,000 USDT—trigger emergency mint.
+- **Audit Trail**: Log all owner actions (e.g., `emergencyMint`)—BSC transparency.
+- **Scalability**: Add new Chainlink feeds (e.g., BTC/USD) via `setPriceFeedAddress` later.
+
+---
+
+### **General Concepts & Ideas**
+- **BSC Advantage**: Low fees (~$0.01/tx) make NPT viable for Nepal’s micro-transactions—e.g., 20 NPT chai payments.
+- **Nepal Focus**: Ads for local vendors, loans for small farmers—e.g., 200 NPT loan for seeds.
+- **Web3 Empowerment**: Users own wallets, admins moderate, owner stabilizes—decentralized yet controlled.
+- **Workflow Simplicity**: App UI mirrors contract calls—e.g., "Send NPT" button → `sendTokens`.
+
+---
+
+### **Size Check**
+- **NPT**: ~7-8KB.
+- **NepaliPay**: ~22KB.
+- **FeeRelayer**: ~10-15KB—all fit < 24,576 bytes.
+Let’s dive into the **User Section** of the `NepaliPay` app (`nepalipay.com/sections`) from the user’s perspective—focusing on their flow, features, UI, and UX concepts. This will reflect the capabilities of the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and cater to everyday Nepali users (e.g., vendors, workers, students) using BSC. The goal is a simple, engaging, and practical experience tied to Nepal’s context.
+
+---
+
+### **User Perspective**
+**POV**: Imagine Raju, a Kathmandu momo vendor, or Sita, a Pokhara student—new to blockchain but eager for affordable, local financial tools. They want to pay, borrow, earn rewards, and advertise with NPT (1 NPT = 1 NPR), trusting the app’s simplicity and security.
+
+---
+
+### **User Flow**
+1. **Onboarding**:
+   - **Step**: Raju visits `nepalipay.com/sections`, clicks "Get Started".
+   - **Action**: Connects MetaMask (BSC network) → Signs tx to set username (e.g., "RajuKtm") via `setUsername`.
+   - **Outcome**: Wallet linked, username set, sees welcome screen with 0 NPT balance.
+
+2. **Funding Wallet**:
+   - **Step**: Raju clicks "Add Funds".
+   - **Action**: Chooses NPT or USDT → Deposits 1,000 NPT (`depositTokens`) or mints 1,000 NPT with ~7.5 USDT (`mint`).
+   - **Outcome**: Balance shows 1,000 NPT (~1,000 NPR).
+
+3. **Sending Payments**:
+   - **Step**: Raju selects "Send NPT" → Enters "SitaPkr" and 500 NPT for momos.
+   - **Action**: Signs `sendTokens` tx—pays 500 NPT + ~5 NPT fee (0.05% transfer fee + gas).
+   - **Outcome**: Sita gets 500 NPT, Raju earns a "Yeti" avatar.
+
+4. **Taking a Loan**:
+   - **Step**: Raju clicks "Borrow" → Adds 1 BNB collateral (~300 NPT value).
+   - **Action**: Signs `addCollateral` → Requests 200 NPT loan (`takeLoan`).
+   - **Outcome**: Gets 200 NPT, collateral locked, pays ~5 NPT gas fee.
+
+5. **Repaying Loan**:
+   - **Step**: After 10 days, Raju clicks "Repay Loan" → Pays 205 NPT (200 + 5% interest).
+   - **Action**: Signs `repayLoan`—gets 50% gas fee rebate (~2.5 NPT) since <15 days.
+   - **Outcome**: Debt cleared, collateral available, rebate added.
+
+6. **Earning Rewards**:
+   - **Step**: Raju refers Sita → She joins as "SitaPkr" with Raju’s referral.
+   - **Action**: Raju claims 10 NPT (`claimReferralReward`) after 10 txs, claims cashback (`claimCashback`), collects 5 avatars for 5 NPT (`claimAvatarBonus`).
+   - **Outcome**: Earns 15+ NPT rewards.
+
+7. **Posting Ads**:
+   - **Step**: Raju clicks "Ad Bazaar" → Posts "Fresh Momos, 20 NPT" for 500 NPT (Base).
+   - **Action**: Signs `bidForFlame`—awaits admin approval.
+   - **Outcome**: Ad live for 1 day—customers call Raju’s number.
+
+8. **Browsing Ads**:
+   - **Step**: Sita clicks "Browse Ads" → Sees Raju’s momo ad.
+   - **Action**: Contacts Raju via phone → Pays 20 NPT in-person.
+   - **Outcome**: Local trade completed.
+
+---
+
+### **Features**
+1. **Wallet**:
+   - View NPT balance, USDT reserve, collateral (BNB/ETH/BTC).
+   - Deposit NPT/USDT, withdraw NPT, mint NPT with USDT.
+
+2. **Payments**:
+   - Send NPT to usernames—e.g., 500 NPT to "SitaPkr".
+   - Fee transparency—e.g., ~5 NPT gas + transfer fee.
+
+3. **Loans**:
+   - Add BNB/ETH/BTC collateral—e.g., 1 BNB (~300 NPR).
+   - Borrow up to 50,000 NPT—e.g., 200 NPT loan.
+   - Repay with rebate—50% gas back if <15 days.
+
+4. **Rewards**:
+   - Referral: 10 NPT per friend.
+   - Cashback: 0.1% balance after 10 txs.
+   - Avatars: Collect 5 for 5 NPT—e.g., "Yeti", "Everest".
+
+5. **Ad Bazaar**:
+   - Post ads: Base (500 NPT, 1 day), Wings (1,000 NPT, 1 day), Crest (15,000+ NPT, 7 days).
+   - Browse ads: Filter by tier—e.g., "Fresh Momos" in Base.
+
+---
+
+### **UI Concept**
+- **Homepage**: 
+  - **Top Bar**: Wallet connect, NPT balance (e.g., "1,000 NPT"), "Add Funds".
+  - **Main**: Buttons—"Send NPT", "Borrow", "Rewards", "Ad Bazaar", "Browse Ads".
+  - **Footer**: Links—FAQ, Support, Terms.
+
+- **Send NPT**: 
+  - Input: Username (e.g., "SitaPkr"), Amount (e.g., 500 NPT).
+  - Preview: Fee (~5 NPT), Total (505 NPT), Avatar earned ("Yeti").
+  - Button: "Confirm" → MetaMask popup.
+
+- **Borrow**: 
+  - Tabs: "Add Collateral" (BNB/ETH/BTC dropdown), "Take Loan" (amount slider).
+  - Display: Collateral value (e.g., "1 BNB = 300 NPT"), Loan terms (5% interest, 30 days).
+  - Button: "Borrow" → MetaMask.
+
+- **Rewards**: 
+  - Sections: Referral (link to share), Cashback (tx counter: 7/10), Avatars (gallery: "Yeti", "Everest").
+  - Buttons: "Claim" for each—MetaMask popup.
+
+- **Ad Bazaar**: 
+  - **Post Ad**: Form—Heading, Description, Business, Location, Contact, Tier (Base/Wings/Crest).
+  - **Browse Ads**: List—Crest at top, Wings on sides, Base scrolls below—e.g., "Fresh Momos - 20 NPT - Raju’s Stall - KTM - +977-...".
+
+- **Theme**: Nepal-inspired—Everest blue, prayer flag colors, simple icons (e.g., momo for ads).
+
+---
+
+### **UX Concept**
+- **Simplicity**: 
+  - **POV**: Raju doesn’t know blockchain—UI hides complexity (e.g., "Send 500 NPR" not "Sign `sendTokens`").
+  - **Flow**: One-click actions—e.g., "Send" → Fee preview → Confirm, no jargon.
+
+- **Engagement**: 
+  - **Rewards**: Gamified—e.g., "Collect 3 more avatars for 5 NPR!" with progress bars.
+  - **Ads**: Visual—e.g., Base ads scroll like a marketplace ticker, Crest glows at top.
+
+- **Trust**: 
+  - **Transparency**: Show fees upfront—e.g., "Total: 505 NPR (500 + 5 fee)".
+  - **Support**: Chat bubble—e.g., "Need help? Ask us!" in Nepali.
+
+- **Accessibility**: 
+  - **Language**: Nepali/English toggle—e.g., "Pay" = "भुक्तानी गर्नुहोस्".
+  - **Mobile-First**: Responsive—Raju uses a $50 Android—big buttons, no clutter.
+
+- **Feedback**: 
+  - **Visual**: Success popups—e.g., "Payment Sent! +Yeti Avatar" with animation.
+  - **Alerts**: "Loan due in 5 days" notifications—MetaMask push optional.
+
+---
+
+### **User Flow Example (Raju’s Day)**
+- **Morning**: Logs in → Sees 1,000 NPT → Sends 500 NPT to "SitaPkr" for supplies → Gets "Yeti" avatar.
+- **Afternoon**: Adds 1 BNB collateral → Borrows 200 NPT → Pays supplier → Posts "Fresh Momos" ad (500 NPT).
+- **Evening**: Claims 10 NPT for referring Sita → Browses ads → Calls "Lila’s Tea" for chai.
+
+---
+
+### **Concepts & Ideas**
+- **Local Flavor**: Avatars like "Yeti", "Phewa Lake"—Nepal pride boosts engagement.
+- **Micro-Finance**: Loans for small needs—e.g., 200 NPT for ingredients—empowers vendors.
+- **Community**: Ad Bazaar as a digital "haat bazaar"—e.g., "Raju’s Momos" next to "Sita’s Chai".
+- **Education**: Tooltips—e.g., "NPT = NPR on blockchain!"—teach Web3 simply.
+
+---
+Let’s explore the **Admin Panel** of the `NepaliPay` app (`admin.nepalipay.com`) from the admin’s perspective—focusing on their flow, features, UI, UX concepts, and ideas. This will leverage the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and cater to NepaliPay staff managing users, loans, and ads with controlled access on BSC.
+
+---
+
+### **Admin Perspective**
+**POV**: Imagine Anil, a NepaliPay staff member in Kathmandu—tech-savvy but busy, tasked with ensuring smooth operations, approving ads, and managing loans. Anil needs tools to moderate, monitor, and maintain trust in the platform, balancing efficiency with oversight.
+
+---
+
+### **Admin Flow**
+1. **Login & Dashboard**:
+   - **Step**: Anil visits `admin.nepalipay.com`, logs in with wallet (MetaMask, BSC network).
+   - **Action**: Signs tx to verify `userRoles[msg.sender] == Role.ADMIN` (set via `setRole` by owner).
+   - **Outcome**: Sees dashboard—overview of users, loans, ads.
+
+2. **User Management**:
+   - **Step**: Anil clicks "Users" → Sees new registrant "RajuKtm".
+   - **Action**: Assigns USER role (`setRole`)—signs tx.
+   - **Outcome**: "RajuKtm" activated, notified via app.
+
+3. **Loan Oversight**:
+   - **Step**: Anil selects "Loans" → Spots overdue loan (e.g., "SitaPkr", 200 NPT, 35 days).
+   - **Action**: Initiates `liquidate`—signs tx to seize 1 BNB collateral.
+   - **Outcome**: Debt cleared, collateral transferred, "SitaPkr" updated.
+
+4. **Ad Moderation**:
+   - **Step**: Anil clicks "Ad Bazaar" → Reviews pending ad "Fresh Momos, 20 NPT" (500 NPT, Base).
+   - **Action**: Approves (`approveFlame`) or rejects (`rejectFlame`)—signs tx.
+   - **Outcome**: Ad live or refunded, UI reflects status.
+
+5. **Analytics & Monitoring**:
+   - **Step**: Anil views "Analytics" → Checks daily txs, loan volume, ad revenue.
+   - **Action**: Filters by date/user—e.g., "RajuKtm" sent 1,500 NPT this week.
+   - **Outcome**: Insights guide moderation—e.g., flag suspicious activity.
+
+---
+
+### **Features**
+1. **User Management**:
+   - Assign roles (`setRole`)—NONE to USER or ADMIN.
+   - View user data (`userNames`, `userBalances`, `userDebts`, `userCollaterals`).
+
+2. **Loan Oversight**:
+   - Monitor loans (`userDebts`, `loanStartTimestamps`, `userCollaterals`).
+   - Liquidate overdue loans (`liquidate`)—seize BNB/ETH/BTC collateral.
+
+3. **Ad Bazaar Moderation**:
+   - Approve/reject ads (`approveFlame`, `rejectFlame`)—e.g., "Gold Rings, 15,000 NPT".
+   - View ad details (`adFlames`)—tier, bid, fields (heading, description, etc.).
+
+4. **Analytics**:
+   - Tx volume (`TokensSent` events)—e.g., 10,000 NPT/day.
+   - Loan stats (`LoanTaken`, `LoanRepaid`, `LoanLiquidated`).
+   - Ad activity (`FlamePosted`, `FlameApproved`)—e.g., 50 Base ads, 5 Crest bids.
+
+5. **Support**:
+   - Flag users for owner review—e.g., high tx volume suspect.
+   - Notify users—e.g., "Ad approved" via app.
+
+---
+
+### **UI Concept**
+- **Dashboard**: 
+  - **Top Bar**: Wallet status ("Admin: AnilKtm"), Logout.
+  - **Cards**: "Active Users: 1,000", "Loans: 50", "Pending Ads: 10", "Daily Txs: 5,000 NPT".
+  - **Tabs**: "Users", "Loans", "Ad Bazaar", "Analytics".
+
+- **Users**: 
+  - **Table**: Columns—Username, Role, Balance, Debt, Actions (Assign Role).
+  - **Filter**: Search by username—e.g., "RajuKtm".
+  - **Button**: "Set Role" → Dropdown (USER/ADMIN) → MetaMask popup.
+
+- **Loans**: 
+  - **Table**: Columns—Username, Debt, Collateral (BNB/ETH/BTC), Due Date, Status (Active/Overdue).
+  - **Filter**: Sort by overdue—e.g., >30 days.
+  - **Button**: "Liquidate" for overdue—MetaMask popup.
+
+- **Ad Bazaar**: 
+  - **Pending List**: Cards—e.g., "Fresh Momos - 20 NPT - Raju’s Stall - 500 NPT - Base".
+  - **Active List**: Filter by tier (Crest/Wings/Base)—e.g., "Gold Rings - 15,000 NPT".
+  - **Buttons**: "Approve" / "Reject" → MetaMask popup.
+
+- **Analytics**: 
+  - **Graphs**: Tx volume (line), Loan activity (bar), Ad revenue (pie)—e.g., 95% to dev, 5% to ember pool.
+  - **Filter**: Date range, user—e.g., "Last 7 days", "SitaPkr".
+  - **Export**: Download CSV—e.g., "Txs_2025-04.csv".
+
+- **Theme**: Clean, professional—blue/white (trust), Nepali flag accents—e.g., red triangle borders.
+
+---
+
+### **UX Concept**
+- **Efficiency**: 
+  - **POV**: Anil manages 50 ads daily—UI prioritizes speed.
+  - **Flow**: Bulk actions—e.g., "Approve All" for 10 ads → One MetaMask tx (`approveFlame` loop off-chain).
+
+- **Clarity**: 
+  - **Transparency**: Ad details expand—e.g., "Contact: +977-..."—no guesswork.
+  - **Status**: Color-coded—Green (Approved), Red (Overdue), Yellow (Pending).
+
+- **Control**: 
+  - **Moderation**: Reject with reason—e.g., "Spam" dropdown → User notified.
+  - **Alerts**: "5 loans overdue" popup—click to action.
+
+- **Accessibility**: 
+  - **Language**: Nepali/English—e.g., "Loans" = "ऋण".
+  - **Desktop Focus**: Anil uses a laptop—wide tables, keyboard shortcuts (e.g., "A" to approve).
+
+- **Feedback**: 
+  - **Visual**: "Ad Approved" toast—e.g., green checkmark.
+  - **Logs**: Action history—e.g., "Anil approved ad #123 at 10:00 AM".
+
+---
+
+### **Admin Flow Example (Anil’s Day)**
+- **Morning**: Logs in → Sees 10 pending ads → Approves 8, rejects 2 (spam) → Updates UI.
+- **Afternoon**: Checks loans → Liquidates "SitaPkr" overdue loan → Transfers 1 BNB to wallet.
+- **Evening**: Reviews analytics → Notes 5,000 NPT txs → Flags "RajuKtm" for high activity → Notifies owner.
+
+---
+
+### **Concepts & Ideas**
+- **Trust**: Anil’s moderation builds user confidence—e.g., no fake ads like "Free Gold".
+- **Automation**: Suggest bulk liquidation—e.g., "Liquidate all overdue >30 days" button.
+- **Local Insight**: Highlight Nepal-specific trends—e.g., "Top Ad: Momo Stalls".
+- **Auditability**: Exportable logs—e.g., "Anil liquidated #456" for owner review.
+- **Scalability**: Filter by region—e.g., "Kathmandu loans"—as user base grows.
+
+Let’s explore the **Owner Dashboard** (`superadmin.nepalipay.com`) from the superadmin’s (owner’s) perspective—detailing the flow, features, UI, UX concepts, and ideas. This leverages the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and focuses on you, the owner, managing the entire `NepaliPay` ecosystem on BSC—ensuring stability, profitability, and control.
+
+---
+
+### **Superadmin (Owner) Perspective**
+**POV**: You’re the visionary behind `NepaliPay`, a Nepal-focused Web3 platform. Your goal is to maintain the 1 NPT = 1 NPR peg, oversee operations, manage emergencies, and drive growth—balancing hands-off automation with decisive intervention when needed.
+
+---
+
+### **Owner Flow**
+1. **Login & Overview**:
+   - **Step**: You visit `superadmin.nepalipay.com`, log in with your wallet (MetaMask, BSC).
+   - **Action**: Signs tx to verify `msg.sender == owner()`—access granted as deployer.
+   - **Outcome**: Dashboard shows system health—NPT peg, USDT reserve, revenue.
+
+2. **System Control**:
+   - **Step**: You click "Settings" → Update USDT address due to a BSC upgrade.
+   - **Action**: Signs `setUsdtAddress` tx—e.g., new USDT at `0xNewAddress`.
+   - **Outcome**: NPT now uses updated USDT—system adapts.
+
+3. **NPT Stability**:
+   - **Step**: You see NPT peg at $0.006 (vs. $0.0075) → Click "Stabilize".
+   - **Action**: Signs `emergencyMint` for 50,000 NPT to inject liquidity—distributes to reserve.
+   - **Outcome**: Peg restores to ~$0.0075—reserve bolstered.
+
+4. **Admin Management**:
+   - **Step**: You select "Admins" → Add "AnilKtm" as admin.
+   - **Action**: Signs `setRole` tx—assigns ADMIN role.
+   - **Outcome**: Anil gains admin access—team grows.
+
+5. **Financial Oversight**:
+   - **Step**: You click "Finance" → See 50,000 NPT in `feeReserve` → Swap to fiat.
+   - **Action**: Signs `swapToFiat`—converts 15,000 NPT to USDT → Off-chain bank transfer.
+   - **Outcome**: Funds in your account—5% ember pool voted for "School Fund".
+
+6. **Emergency Response**:
+   - **Step**: You detect an exploit → Click "Pause System".
+   - **Action**: Signs `pause` tx on NPT and `NepaliPay`—halts transfers.
+   - **Outcome**: System frozen—fixes deployed → `unpause` restores operations.
+
+7. **Analytics**:
+   - **Step**: You view "Analytics" → Check 10,000 daily txs, 50 loans.
+   - **Action**: Filters by admin—e.g., "AnilKtm" approved 100 ads.
+   - **Outcome**: Insights guide scaling—e.g., hire more admins.
+
+---
+
+### **Features**
+1. **System Control**:
+   - Pause/unpause NPT (`pause`, `unpause`) and `NepaliPay`.
+   - Update addresses:
+     - NPT: `setUsdtAddress`, `setPriceFeedAddress`.
+     - `NepaliPay`: Implicit via deployment (e.g., new NPT address).
+     - `FeeRelayer`: `setNepaliPayAddress`, `setNPTAddress`.
+
+2. **NPT Stability**:
+   - Emergency mint/burn (`emergencyMint`, `emergencyBurn`)—e.g., 50,000 NPT.
+   - Set NPR/USD fallback (`setNprUsdFallback`)—e.g., $0.008 if Chainlink fails.
+   - Monitor USDT reserve (`getUsdtReserve`), peg rate (`getNprUsdRate`).
+
+3. **Admin Management**:
+   - Assign/remove admins (`setRole`)—e.g., NONE/USER/ADMIN.
+   - Blacklist users (`blacklistAddress`)—e.g., block scammer wallet.
+
+4. **Financial Oversight**:
+   - View fees (`feeReserve`, `emberPool`)—e.g., 95% ad revenue (50,000 NPT).
+   - Swap NPT to fiat (`swapToFiat`)—e.g., 15,000 NPT → USDT → NPR bank.
+   - Vote ember pool causes (`voteEmberPool`)—e.g., "Clinic Fund" with 2,500 NPT.
+
+5. **Analytics**:
+   - Tx volume (`TokensSent`), loans (`LoanTaken`, `LoanRepaid`), ads (`FlamePosted`).
+   - Rewards (`ReferralClaimed`, `CashbackClaimed`, `AvatarBonusClaimed`).
+   - Admin activity (`RoleAssigned`, `FlameApproved`).
+
+---
+
+### **UI Concept**
+- **Dashboard**: 
+  - **Top Bar**: Wallet ("Owner: 0x..."), Logout, Alerts (e.g., "Peg off by 5%").
+  - **Cards**: "NPT Peg: $0.0075", "USDT Reserve: 7,500", "Fee Reserve: 50,000 NPT", "Ember Pool: 2,500 NPT".
+  - **Tabs**: "Control", "Stability", "Admins", "Finance", "Analytics".
+
+- **Control**: 
+  - **Sections**: "Pause System" (toggle), "Update Addresses" (forms—USDT, Price Feed).
+  - **Buttons**: "Pause NPT", "Update USDT" → MetaMask popup.
+
+- **Stability**: 
+  - **Graph**: NPT/USD vs. NPR/USD—e.g., $0.0075 line, Chainlink avg.
+  - **Inputs**: "Mint NPT" (amount, to), "Burn NPT" (amount), "Set Fallback" (e.g., $0.008).
+  - **Button**: "Execute" → MetaMask.
+
+- **Admins**: 
+  - **Table**: Columns—Username, Role, Actions (Assign/Remove).
+  - **Filter**: Search—e.g., "AnilKtm".
+  - **Buttons**: "Add Admin" (address, role dropdown) → MetaMask.
+
+- **Finance**: 
+  - **Cards**: "Fee Reserve: 50,000 NPT", "Ember Pool: 2,500 NPT".
+  - **Form**: "Swap to Fiat" (NPT amount, bank details)—e.g., 15,000 NPT.
+  - **Vote**: "Ember Causes" (list—e.g., "School Fund") → "Vote" button.
+  - **Button**: "Swap" → MetaMask.
+
+- **Analytics**: 
+  - **Graphs**: Tx volume (line), Loans (bar), Ads (pie)—e.g., 50% Base, 10% Crest.
+  - **Filter**: Date, admin—e.g., "Last 30 days", "AnilKtm".
+  - **Export**: "Download Report" (CSV).
+
+- **Theme**: Authority vibe—dark blue/grey, Nepal flag red accents—e.g., red "Pause" button.
+
+---
+
+### **UX Concept**
+- **Control**: 
+  - **POV**: You need instant power—UI prioritizes one-click actions.
+  - **Flow**: "Pause" → Confirm → Done—MetaMask pops up fast.
+
+- **Clarity**: 
+  - **Transparency**: Real-time peg (e.g., "$0.0075 ± 0.0001")—green if stable, red if off.
+  - **Status**: Admin actions log—e.g., "Anil approved ad #123 at 10:00 AM".
+
+- **Proactivity**: 
+  - **Alerts**: "USDT reserve < 7,000!"—click to mint.
+  - **Suggestions**: "Peg low—mint 50,000 NPT?"—pre-filled tx.
+
+- **Efficiency**: 
+  - **Batch**: "Update All Addresses" form—e.g., USDT + Feed in one tx.
+  - **Shortcuts**: Hotkeys—e.g., "P" to pause, "M" to mint.
+
+- **Security**: 
+  - **Confirmation**: Double-check—e.g., "Pause NPT? Yes/No" modal.
+  - **Logs**: Audit trail—e.g., "Minted 50,000 NPT at 12:00 PM".
+
+---
+
+### **Owner Flow Example (Your Day)**
+- **Morning**: Log in → See peg at $0.0075, reserve at 7,500 USDT → All good.
+- **Afternoon**: Alert: "Peg dropped to $0.006" → Mint 50,000 NPT → Peg restores.
+- **Evening**: Check finance → Swap 15,000 NPT to fiat → Vote "Clinic Fund" → Review Anil’s 100 ad approvals.
+
+---
+
+### **Concepts & Ideas**
+- **Stability Hub**: Peg health dashboard—e.g., "Reserve: 100% backed" in green.
+- **Automation**: Auto-mint/burn thresholds—e.g., mint if reserve < 90% (future upgrade).
+- **Nepal Vision**: Ember pool impact—e.g., "Funded 5 schools" stats.
+- **Profitability**: Revenue tracker—e.g., "50,000 NPR this week" from ads.
+- **Incident Ready**: "Emergency Kit"—one-click pause + blacklist UI.
+
+---
+Below is a comprehensive list of every feature in the `NepaliPay` app, covering the **User Section** (`nepalipay.com/sections`), **Admin Panel** (`admin.nepalipay.com`), and **Owner Dashboard** (`superadmin.nepalipay.com`). For each feature, I’ll detail how it works, how it should look and be visible, where it’s available in the app, and what it does. This aligns with the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and reflects Nepal’s context on BSC.
+
+---
+
+### **1. User Section (nepalipay.com/sections)**
+
+#### **Wallet Management**
+1. **Register Username**
+   - **How It Works**: User connects wallet (MetaMask), enters a unique username (3-32 chars), optionally adds a referrer, signs `setUsername` tx—registers as USER role.
+   - **Look & Visibility**: Form—text box ("Enter Username: RajuKtm"), optional referrer field ("Referred by: SitaPkr"), "Register" button (blue, bold). Success popup: "Welcome, RajuKtm!".
+   - **Where**: Homepage → "Get Started" button → Modal or onboarding page.
+   - **What It Does**: Links wallet to a username, activates account, enables referral rewards.
+
+2. **View Balance**
+   - **How It Works**: Fetches `userBalances` (NPT) and `userCollaterals` (BNB/ETH/BTC) from `NepaliPay`, `getUsdtReserve` from NPT—displays real-time.
+   - **Look & Visibility**: Top bar—e.g., "Balance: 1,000 NPT | Collateral: 1 BNB" (white text, blue background), clickable to expand details (e.g., "BNB: 1, ETH: 0, BTC: 0").
+   - **Where**: Always visible in top bar across all pages.
+   - **What It Does**: Shows user’s NPT and collateral holdings—core financial overview.
+
+3. **Deposit Funds**
+   - **How It Works**: User selects NPT or USDT, enters amount, signs `depositTokens` (NPT) or `mint` (USDT → NPT)—updates `userBalances`.
+   - **Look & Visibility**: "Add Funds" button (green, top bar) → Modal: Dropdown (NPT/USDT), input ("Amount: 1,000"), "Deposit" button. Success: "Added 1,000 NPT!".
+   - **Where**: Homepage → "Add Funds" or Wallet page.
+   - **What It Does**: Funds wallet with NPT—direct deposit or USDT minting.
+
+4. **Withdraw Funds**
+   - **How It Works**: User enters NPT amount, signs `withdrawTokens`—deducts from `userBalances`, pays gas fee, transfers to wallet.
+   - **Look & Visibility**: "Withdraw" button (orange, top bar) → Modal: Input ("Amount: 500 NPT"), fee preview ("~5 NPT"), "Withdraw" button. Success: "Withdrawn 500 NPT!".
+   - **Where**: Homepage → "Withdraw" or Wallet page.
+   - **What It Does**: Moves NPT back to user’s external wallet (e.g., MetaMask).
+
+#### **Payments**
+5. **Send NPT**
+   - **How It Works**: User enters recipient username and amount, signs `sendTokens`—deducts NPT + fees (`transferFeePercentage` + gas), mints avatar, updates `txCount`.
+   - **Look & Visibility**: "Send NPT" button (blue, homepage) → Form: Recipient ("SitaPkr"), Amount ("500 NPT"), Description ("Momos"), Fee ("~5 NPT"), "Send" button. Success: "Sent! +Yeti Avatar".
+   - **Where**: Homepage → "Send NPT" or Payments page.
+   - **What It Does**: Transfers NPT to another user—core payment feature.
+
+#### **Loans**
+6. **Add Collateral**
+   - **How It Works**: User selects BNB/ETH/BTC, enters amount, signs `addCollateral`—locks collateral, updates `userCollaterals.nptValue`.
+   - **Look & Visibility**: "Borrow" tab → "Add Collateral" section: Dropdown (BNB/ETH/BTC), Input ("1 BNB"), Value ("~300 NPT"), "Add" button (green). Success: "Collateral Added!".
+   - **Where**: Homepage → "Borrow" → "Add Collateral".
+   - **What It Does**: Secures loan eligibility—locks crypto for NPT borrowing.
+
+7. **Take Loan**
+   - **How It Works**: User enters NPT amount, signs `takeLoan`—checks collateral (150% min), adds debt to `userDebts`, transfers NPT.
+   - **Look & Visibility**: "Borrow" tab → "Take Loan": Slider (0-50,000 NPT), Collateral check ("300 NPT available"), Interest ("5%"), "Borrow" button (blue). Success: "Borrowed 200 NPT!".
+   - **Where**: Homepage → "Borrow" → "Take Loan".
+   - **What It Does**: Provides NPT loan against collateral—financial flexibility.
+
+8. **Repay Loan**
+   - **How It Works**: User enters repayment amount, signs `repayLoan`—deducts NPT + gas, clears `userDebts`, refunds collateral if zero, gives rebate if <15 days.
+   - **Look & Visibility**: "Borrow" tab → "Repay Loan": Debt ("205 NPT"), Input ("205 NPT"), Rebate ("~2.5 NPT if early"), "Repay" button (red). Success: "Repaid! +2.5 NPT".
+   - **Where**: Homepage → "Borrow" → "Repay Loan".
+   - **What It Does**: Settles loan, unlocks collateral—offers early repayment incentive.
+
+#### **Rewards**
+9. **Referral Reward**
+   - **How It Works**: User shares referral link, friend joins via `setUsername`, user signs `claimReferralReward`—gets 10 NPT from `feeReserve`.
+   - **Look & Visibility**: "Rewards" tab → "Referral": Link ("nepalipay.com/ref/RajuKtm"), Claimable ("10 NPT, 1 referral"), "Claim" button (green). Success: "Claimed 10 NPT!".
+   - **Where**: Homepage → "Rewards" → "Referral".
+   - **What It Does**: Incentivizes growth—earns NPT for inviting users.
+
+10. **Cashback Reward**
+    - **How It Works**: User completes 10 txs (`txCount`), signs `claimCashback`—gets 0.1% of balance from `feeReserve`, resets counter.
+    - **Look & Visibility**: "Rewards" tab → "Cashback": Counter ("7/10 txs"), Claimable ("1 NPT at 10"), "Claim" button (disabled until 10). Success: "Claimed 1 NPT!".
+    - **Where**: Homepage → "Rewards" → "Cashback".
+    - **What It Does**: Rewards frequent use—small NPT bonus.
+
+11. **Holographic Avatars**
+    - **How It Works**: Each `sendTokens` mints an avatar (`avatars`), user collects 5, signs `claimAvatarBonus`—gets 5 NPT from `feeReserve`.
+    - **Look & Visibility**: "Rewards" tab → "Avatars": Gallery ("Yeti", "Everest", 3/5 collected), "Claim 5 NPT" button (green at 5). Success: "Claimed 5 NPT!".
+    - **Where**: Homepage → "Rewards" → "Avatars".
+    - **What It Does**: Gamifies payments—collectible avatars with rewards.
+
+#### **Ad Bazaar**
+12. **Post Ad**
+    - **How It Works**: User fills ad form, selects tier (Base: 500 NPT, Wings: 1,000 NPT, Crest: 15,000+ NPT), signs `bidForFlame`—awaits admin approval.
+    - **Look & Visibility**: "Ad Bazaar" tab → "Post Ad": Form (Heading: "Fresh Momos", Description: "20 NPT, spicy...", Business: "Raju’s Stall", Location: "KTM", Contact: "+977-..."), Tier dropdown, "Post" button (blue). Pending: "Awaiting Approval".
+    - **Where**: Homepage → "Ad Bazaar" → "Post Ad".
+    - **What It Does**: Advertises goods/services—drives local trade.
+
+13. **Browse Ads**
+    - **How It Works**: Displays approved ads (`adFlames`)—users contact sellers IRL.
+    - **Look & Visibility**: "Ad Bazaar" tab → "Browse Ads": List—Crest (top banner: "Gold Rings - 10,000 NPT"), Wings (side banners), Base (scroll: "Fresh Momos - 20 NPT"). Details expand on click.
+    - **Where**: Homepage → "Ad Bazaar" → "Browse Ads".
+    - **What It Does**: Connects buyers to sellers—digital marketplace.
+
+---
+
+### **2. Admin Panel (admin.nepalipay.com)**
+
+#### **User Management**
+1. **Assign Roles**
+   - **How It Works**: Admin selects user, assigns role (NONE/USER/ADMIN), signs `setRole`—updates `userRoles`.
+   - **Look & Visibility**: "Users" tab → Table: Username ("RajuKtm"), Role ("NONE"), Action ("Set Role" dropdown → USER/ADMIN), "Apply" button (blue). Success: "Role Set!".
+   - **Where**: Admin homepage → "Users".
+   - **What It Does**: Activates users or promotes admins—controls access.
+
+2. **View User Details**
+   - **How It Works**: Fetches `userNames`, `userBalances`, `userDebts`, `userCollaterals`—displays profile.
+   - **Look & Visibility**: "Users" tab → Search ("RajuKtm") → Profile card: "Balance: 1,000 NPT, Debt: 205 NPT, Collateral: 1 BNB".
+   - **Where**: Admin homepage → "Users" → User row click.
+   - **What It Does**: Monitors user activity—basis for moderation.
+
+#### **Loan Oversight**
+3. **Monitor Loans**
+   - **How It Works**: Fetches `userDebts`, `loanStartTimestamps`, `userCollaterals`—shows loan status.
+   - **Look & Visibility**: "Loans" tab → Table: Username ("SitaPkr"), Debt ("205 NPT"), Collateral ("1 BNB"), Due ("35 days ago"), Status ("Overdue" in red).
+   - **Where**: Admin homepage → "Loans".
+   - **What It Does**: Tracks loan health—identifies issues.
+
+4. **Liquidate Overdue Loans**
+   - **How It Works**: Admin selects overdue loan, signs `liquidate`—seizes collateral, clears debt.
+   - **Look & Visibility**: "Loans" tab → Overdue filter → "Liquidate" button (red) next to "SitaPkr". Success: "Liquidated! 1 BNB seized".
+   - **Where**: Admin homepage → "Loans" → Overdue row.
+   - **What It Does**: Recovers funds—protects system integrity.
+
+#### **Ad Bazaar Moderation**
+5. **Approve/Reject Ads**
+   - **How It Works**: Admin reviews `adFlames`, signs `approveFlame` (posts ad) or `rejectFlame` (refunds NPT)—updates status.
+   - **Look & Visibility**: "Ad Bazaar" tab → Pending list: Card ("Fresh Momos - 20 NPT - 500 NPT - Base"), "Approve" (green) / "Reject" (red) buttons. Success: "Approved!" or "Refunded!".
+   - **Where**: Admin homepage → "Ad Bazaar" → "Pending Ads".
+   - **What It Does**: Ensures ad quality—filters spam.
+
+6. **View Active Ads**
+   - **How It Works**: Fetches approved `adFlames`—displays live ads.
+   - **Look & Visibility**: "Ad Bazaar" tab → Active list: Filter (Crest/Wings/Base), Card ("Gold Rings - 10,000 NPT - Crest - 7d left").
+   - **Where**: Admin homepage → "Ad Bazaar" → "Active Ads".
+   - **What It Does**: Monitors ad ecosystem—tracks performance.
+
+#### **Analytics**
+7. **View Analytics**
+   - **How It Works**: Aggregates events (`TokensSent`, `LoanTaken`, etc.)—displays trends.
+   - **Look & Visibility**: "Analytics" tab → Graphs: Tx volume (line: "5,000 NPT/day"), Loans (bar: "50 active"), Ads (pie: "50% Base"). Filter: Date/Admin.
+   - **Where**: Admin homepage → "Analytics".
+   - **What It Does**: Provides insights—guides moderation decisions.
+
+---
+
+### **3. Owner Dashboard (superadmin.nepalipay.com)**
+
+#### **System Control**
+1. **Pause/Unpause System**
+   - **How It Works**: Signs `pause`/`unpause` on NPT and `NepaliPay`—halts/resumes transfers.
+   - **Look & Visibility**: "Control" tab → Toggle ("Pause System: Off" → Red when On), "Confirm" button. Success: "Paused!" or "Resumed!".
+   - **Where**: Owner homepage → "Control".
+   - **What It Does**: Freezes operations—emergency response.
+
+2. **Update Addresses**
+   - **How It Works**: Signs `setUsdtAddress`, `setPriceFeedAddress` (NPT), `setNepaliPayAddress`, `setNPTAddress` (`FeeRelayer`)—updates contract links.
+   - **Look & Visibility**: "Control" tab → Form: Fields ("USDT: 0x55d...", "Feed: 0xeF0..."), "Update" button (blue). Success: "Address Updated!".
+   - **Where**: Owner homepage → "Control" → "Addresses".
+   - **What It Does**: Adapts to network changes—e.g., new USDT contract.
+
+#### **NPT Stability**
+3. **Emergency Mint/Burn**
+   - **How It Works**: Signs `emergencyMint` (adds NPT) or `emergencyBurn` (removes NPT)—adjusts supply.
+   - **Look & Visibility**: "Stability" tab → Inputs: "Mint To" (address), "Amount" (50,000 NPT), "Burn" (50,000 NPT), "Execute" buttons (green/red). Success: "Minted!" or "Burned!".
+   - **Where**: Owner homepage → "Stability".
+   - **What It Does**: Corrects peg—e.g., mints if reserve low.
+
+4. **Set NPR/USD Fallback**
+   - **How It Works**: Signs `setNprUsdFallback`—updates fallback rate if Chainlink fails.
+   - **Look & Visibility**: "Stability" tab → Input ("Fallback: $0.0075"), "Set" button (blue). Success: "Fallback Set!".
+   - **Where**: Owner homepage → "Stability" → "Fallback".
+   - **What It Does**: Ensures peg stability—backup for feed issues.
+
+5. **Monitor Peg & Reserve**
+   - **How It Works**: Fetches `getNprUsdRate` (peg), `getUsdtReserve` (USDT)—displays health.
+   - **Look & Visibility**: "Stability" tab → Cards: "Peg: $0.0075" (green if ±5%), "Reserve: 7,500 USDT" (red if <7,000).
+   - **Where**: Owner homepage → "Stability".
+   - **What It Does**: Tracks NPT stability—alerts for action.
+
+#### **Admin Management**
+6. **Assign/Remove Admins**
+   - **How It Works**: Signs `setRole`—updates `userRoles` to NONE/USER/ADMIN.
+   - **Look & Visibility**: "Admins" tab → Table: Username ("AnilKtm"), Role ("ADMIN"), Action ("Set Role" dropdown), "Apply" button (blue). Success: "Role Set!".
+   - **Where**: Owner homepage → "Admins".
+   - **What It Does**: Manages admin team—controls access.
+
+7. **Blacklist Users**
+   - **How It Works**: Signs `blacklistAddress`—blocks/unblocks user transfers.
+   - **Look & Visibility**: "Admins" tab → Search ("RajuKtm") → Toggle ("Blacklist: Off" → Red when On), "Confirm" button. Success: "Blacklisted!".
+   - **Where**: Owner homepage → "Admins" → User profile.
+   - **What It Does**: Stops scammers—protects system.
+
+#### **Financial Oversight**
+8. **View Fees**
+   - **How It Works**: Fetches `feeReserve` (gas fees), `emberPool` (5% ad revenue)—displays totals.
+   - **Look & Visibility**: "Finance" tab → Cards: "Fee Reserve: 50,000 NPT", "Ember Pool: 2,500 NPT".
+   - **Where**: Owner homepage → "Finance".
+   - **What It Does**: Tracks revenue—basis for withdrawals.
+
+9. **Swap to Fiat**
+   - **How It Works**: Signs `swapToFiat`—converts NPT to USDT, off-chain to bank.
+   - **Look & Visibility**: "Finance" tab → Form: Amount ("15,000 NPT"), Bank Details ("Account: 123..."), "Swap" button (blue). Success: "Swapped!".
+   - **Where**: Owner homepage → "Finance" → "Swap to Fiat".
+   - **What It Does**: Withdraws profits—converts NPT to NPR.
+
+10. **Vote Ember Pool**
+    - **How It Works**: Signs `voteEmberPool`—allocates 5% ad revenue to causes.
+    - **Look & Visibility**: "Finance" tab → List: "School Fund (1,000 NPT)", "Clinic Fund (1,500 NPT)", "Vote" buttons (blue). Success: "Voted!".
+    - **Where**: Owner homepage → "Finance" → "Ember Pool".
+    - **What It Does**: Funds community projects—enhances goodwill.
+
+#### **Analytics**
+11. **View Analytics**
+    - **How It Works**: Aggregates events (`TokensSent`, `LoanTaken`, etc.)—shows ecosystem trends.
+    - **Look & Visibility**: "Analytics" tab → Graphs: Tx volume (line: "10,000 NPT/day"), Loans (bar: "50"), Ads (pie: "50% Base"), Rewards (table: "100 referrals"). Filter: Date/Admin.
+    - **Where**: Owner homepage → "Analytics".
+    - **What It Does**: Guides strategy—e.g., scale ads if Base dominates.
+
+---
+
+### **Summary**
+- **User (13 Features)**: Wallet (4), Payments (1), Loans (3), Rewards (3), Ad Bazaar (2)—everyday Nepal tools.
+- **Admin (7 Features)**: User Management (2), Loans (2), Ad Bazaar (2), Analytics (1)—moderation focus.
+- **Owner (11 Features)**: Control (2), Stability (3), Admin (2), Finance (3), Analytics (1)—ecosystem oversight.
+
+Below is a comprehensive, deeply detailed document about the **NepaliPay** app, written from an application perspective with a focus on its purpose, functionality, user experience, and operational ecosystem—rather than the underlying blockchain or smart contract specifics (though I’ll reference them lightly for context). This is crafted as if I’m a world-class detail writer, aiming to capture every nuance of the app’s design, intent, and execution for users, admins, and the owner in Nepal. It’s expansive, vivid, and thorough—leaving no stone unturned.
+
+---
+
+# NepaliPay: A Comprehensive Exploration of Nepal’s Digital Financial Frontier
+
+## Introduction: The Vision of NepaliPay
+In the bustling streets of Kathmandu, where vendors hawk steaming momos and rickshaws weave through traffic, and in the serene hills of Pokhara, where students dream of opportunity amidst Himalayan vistas, a quiet revolution is brewing. NepaliPay emerges as a beacon of financial empowerment, a mobile and web application designed to weave the fabric of Nepal’s vibrant, diverse economy into the digital age. Born from a vision to bridge traditional commerce with modern technology, NepaliPay is more than an app—it’s a lifeline for Nepal’s micro-entrepreneurs, workers, students, and families. With a currency pegged at 1 NepaliPay Token (NPT) to 1 Nepalese Rupee (NPR), it promises affordability, accessibility, and a touch of innovation tailored to the heartbeat of Nepal.
+
+NepaliPay isn’t just a tool for sending money or taking loans—it’s a bustling digital marketplace, a gamified rewards hub, and a platform for community growth. Available through three distinct portals—`nepalipay.com/sections` for users, `admin.nepalipay.com` for staff, and `superadmin.nepalipay.com` for the owner—it’s a triadic ecosystem where every participant plays a vital role. This document delves into every facet of NepaliPay, painting a vivid picture of its features, workflows, interfaces, and the cultural resonance it seeks to achieve. From the vendor frying sel roti in Bhaktapur to the owner strategizing in a high-rise office, NepaliPay is their shared story—a narrative of empowerment, trust, and progress.
+
+---
+
+## Section 1: The User Experience (nepalipay.com/sections)
+
+### Perspective: The Heart of Nepal’s Everyday Hustle
+Imagine Raju, a Kathmandu momo vendor with a weathered smartphone, or Sita, a Pokhara student juggling studies and a side gig. They’re not blockchain experts—they’re Nepalis seeking practical tools to make life easier. NepaliPay meets them where they are, offering a digital wallet that feels as familiar as a worn-out rupee note, yet as exciting as a festival fair. From the moment they land on `nepalipay.com/sections`, they’re greeted with a promise: financial freedom, one tap at a time.
+
+### Flow: A Day in the Life of a NepaliPay User
+#### Step 1: Stepping In
+Raju opens the app on his $50 Android phone—a splash screen flashes with a Himalayan blue backdrop and the NepaliPay logo, a stylized rupee symbol with a digital twist. A "Get Started" button glows in green, inviting him to connect his MetaMask wallet (pre-set to BSC). He taps it, signs a transaction, and enters "RajuKtm" as his username, adding "SitaPkr" as a referrer. A cheerful popup—“Welcome, RajuKtm! You’re ready to roll!”—greets him, and his dashboard loads: a clean, uncluttered space with his balance (0 NPT) and a "Need Help?" chat bubble in Nepali.
+
+#### Step 2: Funding the Dream
+Raju needs NPT to start selling. He taps "Add Funds" in the top bar—a modal pops up with a dropdown: "NPT" or "USDT". He selects USDT (having some from a friend), enters "7.5" (worth ~1,000 NPT at the peg), and hits "Deposit". MetaMask prompts; he signs. Moments later, a green toast: "Added 1,000 NPT!"—his balance updates to "1,000 NPT (~1,000 NPR)". The process is seamless, the fee (~0.05 NPT) barely noticeable.
+
+#### Step 3: Spreading the Word
+Sita orders momos—Raju taps "Send NPT", types "SitaPkr", 500 NPT, and "For momos" in the description. A preview shows "Total: 505 NPT (~5 NPT fee)"—he confirms, signs, and a "Yeti" avatar pops up: "Payment Sent! +1 Avatar". Sita’s wallet pings with 500 NPT. Raju smiles—his first digital sale.
+
+#### Step 4: Borrowing for Growth
+Raju needs dough—he taps "Borrow", selects "Add Collateral", picks BNB (he has 1 BNB ~300 NPR), and signs. "Collateral Added: 1 BNB (~300 NPT)" confirms. He slides to "Take Loan", sets 200 NPT, sees "5% interest, 30 days", and signs. "Borrowed 200 NPT!"—his balance jumps to 1,295 NPT. He buys supplies, ready to scale.
+
+#### Step 5: Repaying Smart
+Ten days later, Raju earns 300 NPT. He taps "Repay Loan", enters 205 NPT (200 + 5 interest), sees "Rebate: ~2.5 NPT (early)", and signs. "Repaid! +2.5 NPT" flashes—balance adjusts to 1,092.5 NPT, collateral freed.
+
+#### Step 6: Earning Extra
+Sita joins via Raju’s referral link—he taps "Rewards", sees "10 NPT claimable", and signs `claimReferralReward`. "Claimed 10 NPT!"—balance hits 1,102.5 NPT. After 10 txs, "Cashback: 1 NPT" unlocks—he claims it. Five avatars ("Yeti", "Everest") later, he claims 5 NPT—balance: 1,108.5 NPT.
+
+#### Step 7: Advertising Locally
+Raju taps "Ad Bazaar", selects "Post Ad", fills: "Fresh Momos", "20 NPT, spicy & hot", "Raju’s Stall", "Thamel, KTM", "+977-9841-123456", picks Base (500 NPT), signs. "Pending Approval"—later, "Live for 1 day!"—customers call.
+
+#### Step 8: Shopping Locally
+Sita taps "Browse Ads", scrolls Base—"Fresh Momos - 20 NPT"—calls Raju, pays 20 NPT in-person. A local loop completes.
+
+---
+
+### **Features**
+1. **Register Username**: Connects wallet, sets unique ID—e.g., "RajuKtm"—starts journey.
+   - **Look**: Modal form, blue "Register" button.
+   - **Where**: Homepage → "Get Started".
+   - **Does**: Activates account, ties to referral.
+
+2. **View Balance**: Shows NPT and collateral—e.g., "1,000 NPT | 1 BNB".
+   - **Look**: Top bar, clickable for details.
+   - **Where**: All pages.
+   - **Does**: Tracks financial status.
+
+3. **Deposit Funds**: Adds NPT/USDT—e.g., 7.5 USDT → 1,000 NPT.
+   - **Look**: Modal, green "Deposit" button.
+   - **Where**: Homepage → "Add Funds".
+   - **Does**: Funds wallet for use.
+
+4. **Withdraw Funds**: Pulls NPT—e.g., 500 NPT to MetaMask.
+   - **Look**: Modal, orange "Withdraw" button.
+   - **Where**: Homepage → "Withdraw".
+   - **Does**: Moves NPT out.
+
+5. **Send NPT**: Transfers NPT—e.g., 500 NPT to "SitaPkr".
+   - **Look**: Form, blue "Send" button, avatar popup.
+   - **Where**: Homepage → "Send NPT".
+   - **Does**: Enables payments.
+
+6. **Add Collateral**: Locks BNB/ETH/BTC—e.g., 1 BNB (~300 NPT).
+   - **Look**: Dropdown, green "Add" button.
+   - **Where**: "Borrow" → "Add Collateral".
+   - **Does**: Secures loans.
+
+7. **Take Loan**: Borrows NPT—e.g., 200 NPT.
+   - **Look**: Slider, blue "Borrow" button.
+   - **Where**: "Borrow" → "Take Loan".
+   - **Does**: Provides liquidity.
+
+8. **Repay Loan**: Pays debt—e.g., 205 NPT, ~2.5 NPT rebate.
+   - **Look**: Input, red "Repay" button.
+   - **Where**: "Borrow" → "Repay Loan".
+   - **Does**: Clears debt, rewards early repayment.
+
+9. **Referral Reward**: Earns 10 NPT per referral.
+   - **Look**: Link, green "Claim" button.
+   - **Where**: "Rewards" → "Referral".
+   - **Does**: Grows user base.
+
+10. **Cashback Reward**: 0.1% balance after 10 txs—e.g., 1 NPT.
+    - **Look**: Counter, green "Claim" button.
+    - **Where**: "Rewards" → "Cashback".
+    - **Does**: Rewards frequent use.
+
+11. **Holographic Avatars**: Collects 5 avatars for 5 NPT.
+    - **Look**: Gallery, green "Claim" button.
+    - **Where**: "Rewards" → "Avatars".
+    - **Does**: Gamifies payments.
+
+12. **Post Ad**: Advertises—e.g., "Fresh Momos" for 500 NPT.
+    - **Look**: Form, blue "Post" button, "Pending" status.
+    - **Where**: "Ad Bazaar" → "Post Ad".
+    - **Does**: Promotes goods/services.
+
+13. **Browse Ads**: Views ads—e.g., "Fresh Momos - 20 NPT".
+    - **Look**: List (Crest top, Wings sides, Base scroll).
+    - **Where**: "Ad Bazaar" → "Browse Ads".
+    - **Does**: Connects to local sellers.
+
+---
+
+### **UI Concept**
+- **Homepage**: Himalayan blue backdrop, logo (rupee + digital swirl), "Balance: 1,000 NPT" top bar, buttons ("Send NPT", "Borrow", "Rewards", "Ad Bazaar") in a grid, Nepali/English toggle.
+- **Send NPT**: Form—recipient dropdown (autocomplete usernames), amount slider, fee preview, avatar animation on success.
+- **Borrow**: Tabs ("Add Collateral", "Take Loan", "Repay"), dropdowns, sliders, status bars (e.g., "Debt: 205 NPT").
+- **Rewards**: Sections ("Referral", "Cashback", "Avatars"), progress bars (e.g., "7/10 txs"), avatar gallery with Nepal icons.
+- **Ad Bazaar**: Split view—"Post Ad" (form), "Browse Ads" (tiered list: Crest banner, Wings banners, Base ticker).
+
+---
+
+### **UX Concept**
+- **Simplicity**: Raju taps "Send" → Sees "505 NPR" total—no blockchain jargon, just NPR-like familiarity.
+- **Engagement**: Avatars ("Yeti") and rewards ("10 NPR for Sita!")—fun keeps users active.
+- **Trust**: Fees shown upfront, "Pending Approval" for ads—clear expectations.
+- **Accessibility**: Big buttons, Nepali text ("ऋण लिनुहोस्" for "Borrow"), mobile-first for $50 phones.
+
+---
+
+### **2. Admin Panel (admin.nepalipay.com)**
+
+#### **Perspective: Guardians of Trust**
+Anil, a Kathmandu staffer, logs into `admin.nepalipay.com`—his role is to keep NepaliPay fair and functional. He’s the gatekeeper of ads, the enforcer of loans, and the enabler of users, wielding tools to maintain order and trust.
+
+#### **Flow: Anil’s Oversight**
+- **Login**: Anil connects MetaMask, signs as ADMIN—dashboard loads with "Active Users: 1,000".
+- **Users**: Spots "RajuKtm" (NONE), assigns USER role—Raju’s active.
+- **Loans**: Sees "SitaPkr" overdue (35 days), liquidates—1 BNB seized.
+- **Ads**: Reviews 10 pending ads, approves 8 ("Fresh Momos"), rejects 2 (spam)—updates live.
+- **Analytics**: Notes 5,000 NPT txs, flags "RajuKtm" for high volume—alerts you.
+
+#### **Features**
+1. **Assign Roles**: Sets NONE/USER/ADMIN—e.g., "AnilKtm" to ADMIN.
+   - **Look**: Table, dropdown, blue "Apply".
+   - **Where**: "Users".
+   - **Does**: Controls access—activates users.
+
+2. **View User Details**: Shows balances, debts—e.g., "RajuKtm: 1,000 NPT".
+   - **Look**: Profile card, searchable.
+   - **Where**: "Users" → Row click.
+   - **Does**: Monitors activity—basis for actions.
+
+3. **Monitor Loans**: Tracks debts, due dates—e.g., "SitaPkr: 205 NPT overdue".
+   - **Look**: Table, red "Overdue" tag.
+   - **Where**: "Loans".
+   - **Does**: Identifies issues—enables liquidation.
+
+4. **Liquidate Loans**: Seizes collateral—e.g., 1 BNB from "SitaPkr".
+   - **Look**: Red "Liquidate" button.
+   - **Where**: "Loans" → Overdue row.
+   - **Does**: Recovers funds—protects system.
+
+5. **Approve/Reject Ads**: Manages ad queue—e.g., approves "Fresh Momos".
+   - **Look**: Cards, green "Approve", red "Reject".
+   - **Where**: "Ad Bazaar" → "Pending Ads".
+   - **Does**: Filters content—ensures quality.
+
+6. **View Active Ads**: Monitors live ads—e.g., "Gold Rings - Crest".
+   - **Look**: Tiered list, filterable.
+   - **Where**: "Ad Bazaar" → "Active Ads".
+   - **Does**: Tracks ad ecosystem—ensures flow.
+
+7. **Analytics**: Views txs, loans, ads—e.g., "5,000 NPT/day".
+   - **Look**: Graphs, filters (date/admin).
+   - **Where**: "Analytics".
+   - **Does**: Guides moderation—spots trends.
+
+#### **UI & UX**
+- **Dashboard**: Blue/white, cards ("Loans: 50"), tabs ("Users", "Loans", "Ad Bazaar", "Analytics").
+- **UX**: Bulk approve 10 ads → One tx, red overdue loans pop out, Nepali text option—efficient, clear.
+
+---
+
+### **3. Owner Dashboard (superadmin.nepalipay.com)**
+
+#### **Perspective: The Architect’s Command**
+You log into `superadmin.nepalipay.com`—you’re the steward of NepaliPay’s vision, ensuring NPT’s peg, revenue flow, and system integrity. It’s your control tower, blending automation with decisive power.
+
+#### **Flow: Your Strategic Day**
+- **Login**: Connect MetaMask, verify ownership—dashboard shows "Peg: $0.0075".
+- **Control**: Update USDT address—system adapts.
+- **Stability**: Peg drops to $0.006—mint 50,000 NPT—restores $0.0075.
+- **Admins**: Add "AnilKtm" as admin—team grows.
+- **Finance**: Swap 15,000 NPT to fiat, vote "Clinic Fund"—profits banked, community aided.
+- **Emergency**: Exploit alert—pause system, fix, unpause—crisis averted.
+- **Analytics**: 10,000 txs/day—plan expansion.
+
+#### **Features**
+1. **Pause/Unpause**: Halts/resumes NPT, `NepaliPay`.
+   - **Look**: Toggle, red "Pause".
+   - **Where**: "Control".
+   - **Does**: Stops system—emergency halt.
+
+2. **Update Addresses**: Sets USDT, feed, `NepaliPay`, NPT addresses.
+   - **Look**: Form, blue "Update".
+   - **Where**: "Control" → "Addresses".
+   - **Does**: Adapts to changes—e.g., new USDT.
+
+3. **Emergency Mint/Burn**: Adds/removes NPT—e.g., 50,000 NPT.
+   - **Look**: Inputs, green "Mint", red "Burn".
+   - **Where**: "Stability".
+   - **Does**: Fixes peg—stabilizes supply.
+
+4. **Set NPR/USD Fallback**: Updates fallback—e.g., $0.008.
+   - **Look**: Input, blue "Set".
+   - **Where**: "Stability" → "Fallback".
+   - **Does**: Backs peg—feed failure safeguard.
+
+5. **Monitor Peg & Reserve**: Tracks NPT/USD, USDT—e.g., "$0.0075, 7,500 USDT".
+   - **Look**: Cards, green/red status.
+   - **Where**: "Stability".
+   - **Does**: Ensures stability—alerts for action.
+
+6. **Assign/Remove Admins**: Sets roles—e.g., "AnilKtm" to ADMIN.
+   - **Look**: Table, dropdown, blue "Apply".
+   - **Where**: "Admins".
+   - **Does**: Manages team—controls access.
+
+7. **Blacklist Users**: Blocks users—e.g., scammer wallet.
+   - **Look**: Toggle, red "Blacklist".
+   - **Where**: "Admins" → Profile.
+   - **Does**: Stops abuse—protects system.
+
+8. **View Fees**: Shows `feeReserve`, `emberPool`—e.g., "50,000 NPT".
+   - **Look**: Cards.
+   - **Where**: "Finance".
+   - **Does**: Tracks profits—basis for swaps.
+
+9. **Swap to Fiat**: Converts NPT to fiat—e.g., 15,000 NPT.
+   - **Look**: Form, blue "Swap".
+   - **Where**: "Finance" → "Swap to Fiat".
+   - **Does**: Withdraws revenue—funds operations.
+
+10. **Vote Ember Pool**: Allocates 5% ad revenue—e.g., "Clinic Fund".
+    - **Look**: List, blue "Vote".
+    - **Where**: "Finance" → "Ember Pool".
+    - **Does**: Supports community—builds trust.
+
+11. **Analytics**: Views txs, loans, ads—e.g., "10,000 NPT/day".
+    - **Look**: Graphs, filters.
+    - **Where**: "Analytics".
+    - **Does**: Guides strategy—tracks growth.
+
+#### **UI & UX**
+- **Dashboard**: Dark blue/grey, cards ("Peg: $0.0075"), tabs ("Control", "Stability", "Admins", "Finance", "Analytics").
+- **UX**: One-click pause, real-time alerts ("Reserve low!"), batch updates—powerful, proactive.
+
+---
+
+### **Conclusion: NepaliPay’s Essence**
+NepaliPay is a digital tapestry weaving Nepal’s economic threads—vendors like Raju selling momos, students like Sita borrowing for books, admins like Anil guarding trust, and you steering the vision. It’s a marketplace where a 20 NPT ad sparks a sale, a 200 NPT loan fuels a dream, and a 10 NPT reward keeps users smiling. From the user’s first tap to the owner’s strategic swap, every feature is a brushstroke painting Nepal’s financial future—simple, local, and alive.
+
+--- 
+
+Below is a comprehensive, deeply detailed document about the **NepaliPay** app, written from an application perspective with a focus on its purpose, specialty, and value proposition—crafted for users and investors as the primary audience. This is not about the technical blockchain or smart contract details (though I’ll lightly reference them for context), but rather about what NepaliPay stands for, how it serves its users, and why it’s a compelling opportunity for investors. As a world-class detail writer, I’ll paint a vivid, expansive picture—leaving no aspect unexplored, emphasizing its uniqueness, cultural resonance, and transformative potential in Nepal’s financial landscape.
+
+---
+
+# NepaliPay: Empowering Nepal’s Future—A Digital Financial Revolution
+
+## Introduction: A Vision Rooted in Nepal’s Soul
+In the heart of Nepal, where the Himalayan peaks kiss the sky and the bustling streets of Kathmandu hum with the rhythm of daily life, a new story is unfolding. NepaliPay isn’t just an app—it’s a movement, a bridge between Nepal’s rich traditions and the boundless possibilities of the digital age. Born from a vision to empower every Nepali—be it a momo vendor in Thamel, a farmer in the Terai, or a student dreaming in Pokhara—NepaliPay redefines financial access with a currency as familiar as the rupee in their pockets: 1 NepaliPay Token (NPT) equals 1 Nepalese Rupee (NPR). This isn’t a distant, tech-heavy concept—it’s a tool designed to fit seamlessly into the hands of Nepal’s people, offering them a way to pay, borrow, earn, and grow like never before.
+
+For users, NepaliPay is a companion that turns a smartphone into a marketplace, a bank, and a treasure chest of rewards. For investors, it’s a gateway to a nation on the cusp of digital transformation—a scalable, innovative platform poised to capture Nepal’s underserved financial market. This document is your window into NepaliPay’s world—a detailed exploration of its purpose, its unique specialties, and the promise it holds for a country ready to leap forward. From the streets of Bhaktapur to the boardrooms of global finance, NepaliPay is Nepal’s digital heartbeat—steady, vibrant, and full of potential.
+
+---
+
+## Section 1: Purpose—Why NepaliPay Exists
+
+### A Financial Lifeline for Nepal’s Everyday Heroes
+Nepal is a land of resilience—farmers coax crops from terraced hills, vendors fry sel roti in open stalls, and families stretch every rupee to make ends meet. Yet, traditional banking often leaves them behind—high fees, long queues, and inaccessible loans stifle their dreams. NepaliPay exists to change that. Its purpose is simple yet profound: to bring affordable, instant, and inclusive financial tools to every Nepali, no matter their location or income. It’s about giving Raju, the momo seller, a way to pay his supplier without cash, or Sita, the student, a chance to borrow for books without a bank’s red tape.
+
+NepaliPay isn’t here to replace the rupee—it’s here to enhance it, digitizing the NPR’s value into NPT, a currency that moves at the speed of a tap. It’s a platform where a 20 NPR momo sale becomes a digital transaction, a 200 NPR loan fuels a small harvest, and a 500 NPR ad reaches customers across Kathmandu. By anchoring 1 NPT to 1 NPR, NepaliPay ensures familiarity—users don’t need to learn crypto jargon; they just use what they know, now on their phones. This purpose—to democratize finance, spark local commerce, and empower Nepal’s unsung heroes—drives every feature, every interaction, and every ambition of the app.
+
+### Bridging Tradition and Tomorrow
+Nepal’s economy thrives on its traditions—bazaars brimming with handmade goods, remittances sustaining families, and trust binding communities. NepaliPay honors this heritage while pulling it into the future. It’s a digital haat bazaar where vendors advertise, a modern remittance channel where workers send money home, and a community fund where profits support schools and clinics. Its purpose isn’t disruption for disruption’s sake—it’s evolution, blending Nepal’s past with a digital tomorrow where every rupee counts, every transaction matters, and every user belongs.
+
+### A Beacon for Investors
+For investors, NepaliPay’s purpose is a clarion call—a chance to back a platform that’s not just profitable but transformative. Nepal’s 30 million people are largely unbanked or underbanked—only 45% have bank accounts (World Bank, 2021), yet mobile penetration nears 90%. NepaliPay taps this gap, offering a low-cost, high-impact solution in a market hungry for innovation. Its purpose aligns with profit: by empowering users, it builds a loyal base; by digitizing commerce, it captures transaction fees; by fostering trust, it scales organically. This isn’t a speculative crypto play—it’s a grounded, Nepal-centric mission with global potential.
+
+---
+
+## Section 2: Specialties—What Sets NepaliPay Apart
+
+### The NPT Peg: A Currency Nepal Knows
+NepaliPay’s crown jewel is its peg: 1 NPT = 1 NPR. Unlike volatile cryptocurrencies that confuse users with wild swings, NPT mirrors the rupee’s value—stable, predictable, and trusted. Raju doesn’t need to calculate exchange rates when he sends 500 NPT—it’s 500 NPR, plain and simple. This peg isn’t just a gimmick; it’s a lifeline, making digital finance as intuitive as handing over a crumpled note. For users, it’s a specialty that removes barriers—Nepal’s first digital rupee, right in their pocket. For investors, it’s a competitive edge—stability breeds adoption, and adoption drives revenue.
+
+### A Digital Haat Bazaar: The Ad Bazaar
+Picture a Kathmandu bazaar—vendors shouting offers, buyers haggling over momos, a swirl of color and commerce. NepaliPay’s Ad Bazaar brings this to life online, a specialty that turns every user into a merchant. Raju posts "Fresh Momos, 20 NPT" for 500 NPT, and within a day, customers call from Patan. Sita browses and finds "Handmade Scarves, 800 NPT" from a Bhaktapur artisan. With tiers—Base (500 NPT, 1 day), Wings (1,000 NPT, 1 day), and Crest (15,000+ NPT, 7 days)—it’s a marketplace for all, from street stalls to jewelers. This isn’t a generic ad platform—it’s Nepal’s digital haat, where local commerce thrives, connecting buyers and sellers in a way banks never could.
+
+### Micro-Loans Without the Middleman
+In Nepal, a 200 NPR loan can buy seeds for a season, but banks demand forms and fees. NepaliPay’s loan system is its specialty—fast, collateral-based, and user-driven. Raju locks 1 BNB (~300 NPR worth), borrows 200 NPT, and repays with a 5% interest nudge in 30 days—early repayment earns him a 50% gas fee rebate. No credit checks, no branch visits—just a smartphone and collateral (BNB, ETH, BTC). For users, it’s empowerment—money when they need it, not when a banker approves. For investors, it’s a revenue stream—interest and fees flow back, fueling growth.
+
+### Rewards That Spark Joy
+NepaliPay doesn’t just pay—it plays. Its rewards system is a specialty that hooks users with delight. Refer a friend like Sita, earn 10 NPT—simple growth. Send 10 payments, claim 0.1% of your balance—loyalty pays off. Every transaction mints a holographic avatar—collect 5 (e.g., "Yeti", "Everest"), get 5 NPT—a game Nepal loves. These aren’t abstract crypto perks; they’re rupees in disguise, turning every tap into a treasure hunt. For users, it’s fun and profit; for investors, it’s retention—sticky features keep Nepal coming back.
+
+### Nepal’s Heartbeat: Community Funding
+Five percent of every ad fee—whether Raju’s 500 NPT or a jeweler’s 15,000 NPT—flows into the ember pool, a community fund voted on by users. Last month, 2,500 NPT built a school desk; this month, it might fund a clinic. This specialty isn’t charity—it’s NepaliPay’s soul, tying profits to purpose. For users, it’s pride—every ad they post helps their neighbors. For investors, it’s a brand builder—trust turns into traction, traction into scale.
+
+### A Familiar Face in a Digital World
+NepaliPay’s interface speaks Nepal—Nepali and English options, icons of momos and prayer flags, a palette of Himalayan blue and flag red. It’s not a cold crypto app—it’s a friend, as warm as a cup of chiya. Raju doesn’t need a degree to send 500 NPT; Sita doesn’t fear jargon when borrowing 200 NPT. This specialty—cultural resonance—makes NepaliPay Nepal’s own, not a foreign import. For users, it’s home; for investors, it’s market fit—Nepal adopts what feels Nepali.
+
+---
+
+## Section 3: The NepaliPay Ecosystem—How It Works
+
+### For Users: nepalipay.com/sections
+#### The Gateway to Digital Nepal
+Users land on `nepalipay.com/sections`—a homepage that’s a digital welcome mat. A splash screen (Everest blue, NepaliPay logo—a rupee with a digital glow) fades to a clean dashboard. "Balance: 0 NPT" sits atop, flanked by "Add Funds" (green) and "Withdraw" (orange). Below, a grid of buttons—"Send NPT", "Borrow", "Rewards", "Ad Bazaar"—beckons with Nepal-inspired icons (a momo for payments, a rupee stack for loans). A "Nepali" toggle shifts text—e.g., "Send" becomes "पठाउनुहोस्"—instantly familiar.
+
+#### Paying with Ease
+Raju taps "Send NPT"—a form pops up. He types "SitaPkr", slides to 500 NPT, adds "For momos", and sees "Total: 505 NPT (~5 NPT fee)". A blue "Send" button triggers a MetaMask popup—he signs, and a "Yeti" avatar dances across the screen: "Sent! +1 Avatar". Sita gets 500 NPT instantly—cashless, seamless, Nepali. The fee’s tiny—about 5 NPR—cheaper than a bank’s cut, and the avatar’s a bonus Raju loves.
+
+#### Borrowing for Dreams
+Sita taps "Borrow"—three tabs appear: "Add Collateral", "Take Loan", "Repay Loan". She picks "Add Collateral", selects 1 BNB (~300 NPR), signs, and sees "Collateral Added: 1 BNB (~300 NPT)". Next, "Take Loan"—a slider caps at 50,000 NPT; she sets 200 NPT, reads "5% interest, 30 days", and signs. "Borrowed 200 NPT!"—her balance jumps. Ten days later, "Repay Loan" shows "205 NPT due, ~2.5 NPT rebate if now"—she pays, gets the rebate, and smiles at the savings.
+
+#### Rewards That Delight
+"RajuKtm" taps "Rewards"—three sections glow: "Referral" (link: "nepalipay.com/ref/RajuKtm", "10 NPT claimable"), "Cashback" ("7/10 txs, 1 NPT at 10"), "Avatars" (gallery: "Yeti", "Everest", 3/5). He shares his link—Sita joins—claims 10 NPT. After 10 txs, he claims 1 NPT. Five avatars later, "Claim 5 NPT" lights up—he signs, balance rises. It’s not just money—it’s a game Nepal plays.
+
+#### The Ad Bazaar: Nepal’s Digital Market
+"Ad Bazaar" splits into "Post Ad" and "Browse Ads". Raju fills "Fresh Momos", "20 NPT, spicy & hot", "Raju’s Stall", "Thamel, KTM", "+977-9841-123456", picks Base (500 NPT), signs—"Pending Approval". Next day, it’s live—Sita scrolls "Browse Ads", sees Crest ("Gold Rings - 10,000 NPT") atop, Wings ("Scarves - 800 NPT") aside, Base ("Fresh Momos") below. She calls Raju—20 NPT changes hands IRL. It’s Nepal’s haat, digitized.
+
+---
+
+### For Admins: admin.nepalipay.com
+#### The Guardians’ Hub
+Anil logs into `admin.nepalipay.com`—a blue/white dashboard greets him: "Active Users: 1,000", "Loans: 50", "Pending Ads: 10". Tabs line up—"Users", "Loans", "Ad Bazaar", "Analytics"—his tools to keep NepaliPay humming.
+
+#### Managing Users
+"Users" shows a table—"RajuKtm", NONE, "Set Role" dropdown. Anil picks USER, signs—Raju’s active. Clicking "RajuKtm" reveals "Balance: 1,000 NPT, Debt: 205 NPT"—Anil tracks his activity.
+
+#### Watching Loans
+"Loans" lists "SitaPkr"—205 NPT debt, 1 BNB collateral, 35 days overdue (red). Anil hits "Liquidate", signs—1 BNB moves to his wallet, debt clears. A clean slate, system safe.
+
+#### Moderating Ads
+"Ad Bazaar" → "Pending Ads" shows "Fresh Momos - 20 NPT - 500 NPT". Anil reviews—legit—clicks "Approve" (green), signs. "Active Ads" updates—Base scrolls with Raju’s ad. Spam gets "Reject" (red)—NPT refunded.
+
+#### Insights That Guide
+"Analytics" graphs txs (5,000 NPT/day), loans (50 active), ads (50% Base). Anil filters "AnilKtm"—100 approvals this week—ensures he’s on track.
+
+---
+
+### For Owners: superadmin.nepalipay.com
+#### The Architect’s Throne
+You log into `superadmin.nepalipay.com`—a dark blue dashboard: "Peg: $0.0075", "Reserve: 7,500 USDT", "Fees: 50,000 NPT". Tabs—"Control", "Stability", "Admins", "Finance", "Analytics"—your command center.
+
+#### Steering the Ship
+"Control" offers "Pause System" (toggle) and "Update Addresses" (USDT, Feed forms)—you sign to adapt. "Stability" graphs peg ($0.0075), shows "Mint 50,000 NPT" or "Burn" options—signed if peg drifts. "Fallback: $0.0075" adjusts if needed.
+
+#### Leading the Team
+"Admins" lists "AnilKtm"—you add "BinaLtp" as ADMIN, sign—team grows. "Blacklist" toggles block scammers—control at your fingertips.
+
+#### Harvesting Rewards
+"Finance" shows "50,000 NPT" fees—you swap 15,000 NPT to fiat, sign, bank it. "Ember Pool: 2,500 NPT" lists "Clinic Fund"—you vote, sign—community thrives.
+
+#### Vision in Numbers
+"Analytics" graphs 10,000 txs/day, 50 loans—filter "AnilKtm" shows 100 ad approvals. Insights fuel your next move—more admins, bigger ads.
+
+---
+
+### **Why Invest in NepaliPay?**
+- **Market**: 30M Nepalis, 90% mobile penetration, 45% banked—huge untapped potential.
+- **Revenue**: Ad fees (95% to you), loan interest, tx fees—e.g., 50,000 NPT/week.
+- **Stability**: 1 NPT = 1 NPR peg—trusted, scalable.
+- **Impact**: Ember pool—5% aids Nepal, builds loyalty.
+- **Growth**: Rewards, ads, loans—sticky features drive adoption.
+
+---
+
+### **Conclusion: Nepal’s Digital Dawn**
+NepaliPay is Nepal’s financial soul digitized—a rupee reborn, a bazaar reimagined, a community uplifted. For users, it’s their daily bread—payments, loans, rewards, ads. For investors, it’s a golden thread—profit woven with purpose. This isn’t just an app—it’s Nepal’s future, one NPT at a time.
+
+--- 
+
+Below is a detailed set of resources for the **NepaliPay** app, tailored for users and designed to educate, guide, and support them as they engage with the platform. These sections—**FAQ for Users**, **Knowledgebase**, **How to Use**, **How to Get NPT**, and **Basic Knowledge and Risks**—are written from an application perspective, avoiding deep blockchain or smart contract jargon, and focusing on practical, user-friendly information. This content is intended for display on `nepalipay.com/sections`, ensuring Nepali users (vendors, students, workers) feel confident and informed.
+
+---
+
+## Frequently Asked Questions (FAQ) for Users
+
+### 1. What is NepaliPay?
+**Answer**: NepaliPay is a mobile and web app that lets you send money, borrow, earn rewards, and advertise—all using NepaliPay Tokens (NPT), where 1 NPT equals 1 Nepalese Rupee (NPR). Think of it as a digital wallet for Nepal, as easy as using cash but with extra perks!
+
+### 2. How do I start using NepaliPay?
+**Answer**: Visit `nepalipay.com/sections`, click "Get Started," and connect your wallet (like MetaMask) set to the Binance Smart Chain (BSC). Choose a unique username (e.g., "RajuKtm"), confirm the transaction, and you’re in! Add some NPT to your wallet to begin.
+
+### 3. Is NepaliPay safe to use?
+**Answer**: Yes! Your funds are stored in your personal wallet, not with us—you control them. We use secure technology to protect transactions, and our team reviews ads and loans to keep things fair. Still, keep your wallet details private to stay extra safe.
+
+### 4. What can I do with NepaliPay?
+**Answer**: You can:
+- Send NPT to friends or vendors (like paying for momos).
+- Borrow NPT by locking collateral (e.g., BNB).
+- Earn rewards—like 10 NPT for inviting friends or avatars for sending money.
+- Post or browse ads to sell or buy locally.
+
+### 5. How much does it cost to use?
+**Answer**: Sending NPT has a small fee—about 0.05% plus a tiny gas fee (usually under 5 NPT, ~5 NPR). Borrowing has 5% interest over 30 days, and ads cost 500 NPT (Base), 1,000 NPT (Wings), or 15,000+ NPT (Crest). Fees are clear before you confirm!
+
+### 6. Can I get my money back if I make a mistake?
+**Answer**: Once you send NPT or post an ad, it’s final—like cash. Double-check details before confirming. If an ad is rejected, you’ll get a refund. For loans, repay early to save on fees and get a rebate!
+
+### 7. What happens if I don’t repay a loan?
+**Answer**: If you don’t repay within 30 days, your collateral (e.g., 1 BNB) may be taken to cover the loan. Pay on time to keep it safe—early repayment even earns you a bonus!
+
+### 8. How do I contact support?
+**Answer**: Click the "Need Help?" chat bubble on `nepalipay.com/sections`—available in Nepali and English. We’ll reply fast to assist with payments, loans, or ads.
+
+### 9. Why do ads need approval?
+**Answer**: Our team checks ads to ensure they’re real—no scams or fakes. If it’s legit (e.g., "Fresh Momos"), it goes live fast—usually within a day!
+
+### 10. Can I use NepaliPay without a smartphone?
+**Answer**: You’ll need a smartphone or computer with internet and a wallet like MetaMask. It’s designed for mobile, so even a basic phone with a browser works—just visit `nepalipay.com/sections`.
+
+---
+
+## Knowledgebase
+
+### What is NepaliPay?
+NepaliPay is your digital financial friend in Nepal. It’s an app where you can send money, borrow, earn extra NPT, and advertise your goods—all with a currency called NPT that’s worth exactly 1 NPR. It’s built to help everyday Nepalis like vendors, students, and workers manage money easily.
+
+### How Does NepaliPay Work?
+Think of NepaliPay like a digital rupee wallet on your phone. You add NPT to it, then use it to:
+- Pay people—like sending 500 NPT (~500 NPR) for groceries.
+- Borrow NPT—lock some crypto (like BNB) and get NPT to spend.
+- Earn rewards—invite friends, send money often, or collect avatars.
+- Post ads—tell Nepal about your momos or scarves.
+
+Every action is fast, costs a tiny fee (like 5 NPR), and happens through a secure app tied to your wallet.
+
+### Why Use NepaliPay?
+- **Fast**: Send money in seconds—no bank lines.
+- **Cheap**: Fees are low—way less than bank charges.
+- **Easy**: No complicated forms—just a few taps.
+- **Extra**: Earn NPT for inviting friends or using it often.
+- **Local**: Sell or buy from Nepalis near you.
+
+### Key Terms to Know
+- **NPT**: NepaliPay Token—1 NPT = 1 NPR, your digital rupee.
+- **Wallet**: A safe app (like MetaMask) where you keep NPT—your digital pocket.
+- **Collateral**: Crypto (like BNB) you lock to borrow NPT—your safety net.
+- **Ad Bazaar**: A place in the app to advertise or shop—Nepal’s digital market.
+- **Ember Pool**: 5% of ad fees go here—users vote to fund community projects like schools.
+
+### Safety Tips
+- Keep your wallet details (like a secret key) private—don’t share!
+- Check usernames before sending NPT—no refunds for mistakes.
+- Repay loans on time—keep your collateral safe.
+- Post honest ads—scams get rejected, wasting your NPT.
+
+---
+
+## How to Use NepaliPay
+
+### Step 1: Get Started
+1. Go to `nepalipay.com/sections` on your phone or computer.
+2. Click "Get Started"—you’ll need a wallet like MetaMask (download it free).
+3. Set MetaMask to Binance Smart Chain (BSC)—guides are online, or ask our support.
+4. Connect your wallet—click "Connect" and approve in MetaMask.
+5. Pick a username (e.g., "RajuKtm")—make it unique, 3-32 letters.
+6. Add a friend’s username if they invited you (e.g., "SitaPkr")—earn 10 NPT later!
+7. Click "Register"—sign the transaction in MetaMask. Done! You’re in.
+
+### Step 2: Add Money
+1. Tap "Add Funds" at the top—two choices pop up: NPT or USDT.
+2. **NPT**: Have NPT? Enter amount (e.g., 1,000), hit "Deposit," sign in MetaMask.
+3. **USDT**: Have USDT (like dollars)? Enter 7.5 USDT (~1,000 NPT), hit "Deposit," sign.
+4. Wait a moment—see "Added 1,000 NPT!"—your balance updates.
+
+### Step 3: Send Money
+1. Tap "Send NPT"—a form appears.
+2. Type the recipient’s username (e.g., "SitaPkr")—it suggests as you type.
+3. Enter amount (e.g., 500 NPT), add a note (e.g., "For momos").
+4. See "Total: 505 NPT (~5 NPT fee)"—tap "Send," sign in MetaMask.
+5. Done! "Sent! +Yeti Avatar" pops up—Sita gets 500 NPT.
+
+### Step 4: Borrow Money
+1. Tap "Borrow"—see "Add Collateral", "Take Loan", "Repay Loan".
+2. **Add Collateral**: Pick BNB (e.g., 1 BNB ~300 NPT), tap "Add," sign—collateral locks.
+3. **Take Loan**: Slide to 200 NPT, see "5% interest, 30 days," tap "Borrow," sign—get 200 NPT.
+4. **Repay Loan**: Later, enter 205 NPT, see "~2.5 NPT rebate if early," tap "Repay," sign—debt clears.
+
+### Step 5: Earn Rewards
+1. **Referral**: Tap "Rewards" → "Referral"—copy your link, share it. Friend joins? Claim 10 NPT.
+2. **Cashback**: Send 10 times—tap "Rewards" → "Cashback," claim 0.1% of your balance (e.g., 1 NPT).
+3. **Avatars**: Send NPT—get avatars (e.g., "Yeti"). Collect 5, tap "Rewards" → "Avatars," claim 5 NPT.
+
+### Step 6: Use the Ad Bazaar
+1. **Post Ad**: Tap "Ad Bazaar" → "Post Ad"—fill Heading ("Fresh Momos"), Description ("20 NPT, spicy"), Business ("Raju’s Stall"), Location ("Thamel, KTM"), Contact ("+977-..."), pick Base (500 NPT), sign—wait for approval.
+2. **Browse Ads**: Tap "Browse Ads"—see Crest (top), Wings (sides), Base (scroll). Call seller for "Fresh Momos".
+
+---
+
+## How to Get NPT
+
+### Option 1: Buy NPT with USDT
+1. **Get USDT**: Use an exchange (e.g., Binance) to buy USDT with NPR—send it to your MetaMask wallet.
+2. **Mint NPT**: On `nepalipay.com/sections`, tap "Add Funds," pick "USDT," enter 7.5 USDT (~1,000 NPT), sign in MetaMask.
+3. **Result**: Your balance shows 1,000 NPT—ready to use!
+
+### Option 2: Receive NPT from Others
+1. **Share Username**: Tell friends your username (e.g., "RajuKtm").
+2. **Get Paid**: They send NPT via "Send NPT"—e.g., 500 NPT for momos.
+3. **Result**: Balance updates—no purchase needed.
+
+### Option 3: Earn NPT through Rewards
+1. **Invite Friends**: Share your referral link—each join earns 10 NPT.
+2. **Send Often**: Make 10 payments—claim cashback (e.g., 1 NPT).
+3. **Collect Avatars**: Send NPT, collect 5 avatars, claim 5 NPT.
+4. **Result**: Free NPT—grow your balance!
+
+### Where to Start?
+- Need USDT? Try Binance or ask a friend with crypto.
+- No crypto? Ask someone to send NPT to your username—start small!
+
+---
+
+## Basic Knowledge and Education About Risks
+
+### What You Need to Know
+- **NPT is Like NPR**: 1 NPT = 1 NPR—it’s your digital rupee, easy to use.
+- **Your Wallet is Your Bank**: NepaliPay uses a wallet (e.g., MetaMask)—it’s yours, not ours. You control your NPT.
+- **Fees are Small**: Sending NPT costs ~5 NPR, borrowing has 5% interest—cheaper than banks!
+- **Collateral is Key**: To borrow, lock crypto (like BNB)—it’s your safety net, returned when you repay.
+- **Ads Need Approval**: Post ads to sell—our team checks them to keep out fakes.
+
+### How to Use NepaliPay Safely
+1. **Protect Your Wallet**: Your wallet has a secret key (like a password)—never share it, or someone could take your NPT.
+2. **Check Before Sending**: Type usernames carefully—no refunds if you send to the wrong person!
+3. **Repay Loans on Time**: Borrow 200 NPT? Pay 205 NPT in 30 days—or lose your collateral (e.g., 1 BNB).
+4. **Post Honest Ads**: Fake ads get rejected—you lose time, not NPT (refunded).
+5. **Start Small**: New? Try 20 NPT first—learn as you go.
+
+### Risks to Understand
+- **Wallet Loss**: If you lose your wallet key (e.g., forget it), your NPT is gone—no recovery like a bank.
+- **Price Risk**: NPT aims for 1 NPR, but if our system fails (rare!), it might wobble—check your balance often.
+- **Collateral Risk**: Borrowing locks crypto—if its value drops (e.g., BNB falls), you still owe the full NPT amount.
+- **Internet Risk**: No internet? No NepaliPay—keep your phone charged and connected.
+- **Scam Risk**: Someone pretends to be "RajuKtm"? Verify usernames—don’t trust strangers.
+
+### Education Tips
+- **Learn Your Wallet**: Practice with MetaMask—send 10 NPT to a friend first.
+- **Ask Us**: Stuck? Use "Need Help?"—we’ll guide you in Nepali or English.
+- **Stay Updated**: Prices (like BNB) change—check your collateral value in "Borrow".
+- **Be Patient**: Ads take a day to approve—plan ahead!
+
+### Why It’s Worth It
+NepaliPay isn’t risky like gambling—it’s a tool like cash, just digital. With small fees, instant payments, and rewards, it’s Nepal’s way to save time and money. Start with 20 NPT, grow to 1,000—your rupees, your rules.
+
+---
+

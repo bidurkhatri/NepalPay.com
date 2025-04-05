@@ -1,5 +1,5 @@
-import React from "react";
-import { ExternalLink } from "lucide-react";
+import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
 export interface ContractInfo {
   name: string;
@@ -11,32 +11,45 @@ interface ContractLinksProps {
   contracts: ContractInfo[];
 }
 
-const ContractLinks: React.FC<ContractLinksProps> = ({ contracts }) => {
+export const ContractLinks: React.FC<ContractLinksProps> = ({ contracts }) => {
+  // Function to shorten address for display
+  const shortenAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Get BSC explorer URL
+  const getBscExplorerUrl = (address: string) => {
+    return `https://bscscan.com/address/${address}`;
+  };
+
   return (
-    <div className="glass-card">
-      <h2 className="text-xl font-semibold mb-4 gradient-text">Smart Contract Information</h2>
-      <div className="space-y-4">
+    <div className="py-6">
+      <h3 className="text-lg font-semibold mb-4 gradient-text">Smart Contract Addresses</h3>
+      <div className="grid gap-4 md:grid-cols-3">
         {contracts.map((contract) => (
-          <div key={contract.address} className="p-3 bg-gray-800/30 rounded-lg">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="font-medium text-white">{contract.name}</h3>
-              <a
-                href={`https://bscscan.com/address/${contract.address}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center text-primary hover:text-primary/80 text-sm transition-colors"
-              >
-                View on BSCScan <ExternalLink className="ml-1 h-3 w-3" />
-              </a>
+          <a
+            key={contract.address}
+            href={getBscExplorerUrl(contract.address)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cyber-card transition-all hover:translate-y-[-2px]"
+          >
+            <div className="card-highlight"></div>
+            <div className="card-content">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="text-base font-medium text-white">{contract.name}</h4>
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              </div>
+              <p className="text-xs text-gray-400 mb-3">{contract.description}</p>
+              <div className="text-sm font-mono bg-black/30 px-3 py-1.5 rounded-md">
+                {shortenAddress(contract.address)}
+              </div>
             </div>
-            <p className="text-sm text-gray-300 mb-2">{contract.description}</p>
-            <div className="flex items-center">
-              <span className="text-xs font-mono bg-gray-800/50 p-1.5 rounded text-gray-300 overflow-hidden overflow-ellipsis w-full">
-                {contract.address}
-              </span>
-            </div>
-          </div>
+          </a>
         ))}
+      </div>
+      <div className="mt-4 text-center text-xs text-gray-400">
+        These contracts are deployed on the Binance Smart Chain (BSC) Mainnet
       </div>
     </div>
   );

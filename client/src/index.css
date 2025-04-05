@@ -14,8 +14,11 @@
   body {
     @apply font-sans antialiased text-foreground;
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(140deg, #0f172a, #1a1f38, #0f172a);
+    background: radial-gradient(ellipse at top, #100c2a, #0c0a1d), radial-gradient(ellipse at bottom, #0f172a, #090b13);
     background-attachment: fixed;
+    background-size: 100% 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -33,7 +36,9 @@
     --glass-background: rgba(15, 23, 42, 0.65);
     --blur-amount: 12px;
     --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    --primary-rgb: 79, 130, 251; /* Modern blue */
+    --primary-rgb: 134, 97, 255; /* Futuristic purple matching our theme */
+    --neon-shadow: 0 0 5px theme('colors.primary.DEFAULT'), 0 0 15px theme('colors.primary.DEFAULT');
+    --primary-glow: 0 0 25px rgba(var(--primary-rgb), 0.5);
   }
 }
 
@@ -82,7 +87,7 @@
   /* Button with glow effect */
   .glass-button {
     @apply px-4 py-2 rounded-full text-white font-medium relative overflow-hidden;
-    background: rgba(65, 95, 255, 0.3);
+    background: rgba(var(--primary-rgb), 0.3);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -90,8 +95,8 @@
   }
   
   .glass-button:hover {
-    background: rgba(65, 95, 255, 0.4);
-    box-shadow: 0 6px 25px rgba(65, 95, 255, 0.25);
+    background: rgba(var(--primary-rgb), 0.4);
+    box-shadow: 0 6px 25px rgba(var(--primary-rgb), 0.25);
   }
   
   .glass-button::before {

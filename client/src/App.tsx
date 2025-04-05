@@ -17,6 +17,7 @@ import SettingsPage from "@/pages/settings";
 import AnalyticsPage from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
 import SectionsPage from "@/pages/sections-page";
+import BuyTokensPage from "@/pages/buy-tokens";
 import { Loader2 } from "lucide-react";
 
 // Protected route component that redirects to login if not authenticated
@@ -89,7 +90,7 @@ function Router() {
       <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
-      <Route path="/buy-tokens" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} />} />
       
       {/* 404 route */}
       <Route component={NotFound} />

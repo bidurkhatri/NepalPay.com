@@ -1,69 +1,26 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import { BrowserProvider, JsonRpcSigner, Contract, formatUnits, parseUnits, keccak256, toUtf8Bytes } from 'ethers';
-import { useAuth } from './auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { BrowserProvider, JsonRpcSigner } from 'ethers';
+import { Contract } from 'ethers';
+import { useToast } from "@/hooks/use-toast";
 
-// Utility function to convert ID to bytes32
-const id_to_bytes32 = (text: string) => {
-  return keccak256(toUtf8Bytes(text));
-};
+// Contract ABIs
+import NepaliPayTokenABI from '@/contracts/NepaliPayTokenABI.json';
+import NepaliPayABI from '@/contracts/NepaliPayABI.json';
+import FeeRelayerABI from '@/contracts/FeeRelayerABI.json';
 
-// Define window.ethereum for TypeScript
+// Extend Window to include ethereum for MetaMask
 declare global {
   interface Window {
     ethereum: any;
   }
 }
 
-// ABIs
-const NepaliPayABI = [
-  "function depositTokens(uint256 _amount) external",
-  "function withdrawTokens(uint256 _amount) external",
-  "function sendTokens(address _recipient, uint256 _amount, string memory _description) external",
-  "function setUsername(string memory _username, string memory _role, string memory _country) external",
-  "function balance(address) public view returns (uint256)",
-  "function usernameOf(address) public view returns (string memory)",
-  "function fullName(address) public view returns (string memory)",
-  "function userRoles(address) public view returns (string memory)",
-  "function token() public view returns (address)",
-  "function takeLoan(uint256 _amount) external",
-  "function repayLoan(uint256 _amount) external",
-  "function makeBusinessPayment(string memory _recipientUsername, uint256 _amount, string memory _description) external",
-  "function startCampaign(bytes32 _campaignId, uint256 _targetAmount, string memory _description) external",
-  "function contribute(bytes32 _campaignId, uint256 _amount) external",
-  "function getStakingInfo(address user) public view returns (bool isStaking, uint256 stakedAmount, uint256 rewards)",
-  "function setScheduledPayment(bytes32 _paymentId, uint256 _amount, uint256 _timestamp) external",
-  "function modifyScheduledPayment(bytes32 _paymentId, uint256 _amount, uint256 _timestamp) external",
-  "function cancelScheduledPayment(bytes32 _paymentId) external",
-  "function scheduledPayments(address, bytes32) public view returns (uint256 amount, uint256 timestamp, bool active)",
-  "function crowdfundingCampaigns(address, bytes32) public view returns (uint256)",
-];
+// Contract addresses from BSC mainnet
+const NEPALIPAY_TOKEN_ADDRESS = "0x69d34B25809b346702C21EB0E22EAD8C1de58D66";
+const NEPALIPAY_ADDRESS = "0xe2d189f6696ee8b247ceae97fe3f1f2879054553";
+const FEE_RELAYER_ADDRESS = "0x7ff2271749409f9137dac1e082962e21cc99aee6";
 
-const NepaliPayTokenABI = [
-  "function balanceOf(address owner) external view returns (uint256)",
-  "function transfer(address to, uint256 amount) external returns (bool)",
-  "function approve(address spender, uint256 amount) external returns (bool)",
-  "function allowance(address owner, address spender) external view returns (uint256)",
-  "function stake(uint256 amount) public",
-  "function unstake(uint256 amount) public",
-  "function getStakingInfo(address user) public view returns (uint256 staked, uint256 since, uint256 reward)",
-  "function decimals() external view returns (uint8)",
-  "function name() external view returns (string memory)",
-  "function symbol() external view returns (string memory)",
-];
-
-const FeeRelayerABI = [
-  "function relayTransaction(address _from, uint256 _value) external",
-  "function withdrawFees(uint256 _amount) external",
-  "function isRelayer(address) public view returns (bool)",
-  "function relayerBalance(address) public view returns (uint256)",
-  "function feeExempt(address) public view returns (bool)",
-  "function customFeePercentage(address) public view returns (uint256)",
-  "function relayFeePercentage() public view returns (uint256)",
-];
-
-// Interface types
 interface BlockchainContextType {
   provider: BrowserProvider | null;
   signer: JsonRpcSigner | null;
@@ -75,85 +32,64 @@ interface BlockchainContextType {
   connecting: boolean;
   tokenBalance: string;
   nptBalance: string;
+  username: string | null;
+  userRole: string;
   isStaking: boolean;
   stakedAmount: string;
   stakingRewards: string;
+  userCollaterals: {
+    bnb: string;
+    eth: string;
+    btc: string;
+    nptValue: string;
+  };
+  userDebt: string;
+  loanStartTimestamp: number;
+  avatars: string[];
+  txCount: number;
+  referralCount: number;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
-  sendTokens: (recipientAddress: string, amount: string, description: string) => Promise<any>;
-  payBusinessAccount: (recipientUsername: string, amount: string, description: string) => Promise<any>;
-  stakeTokens: (amount: string) => Promise<any>;
-  unstakeTokens: (amount: string) => Promise<any>;
+  
+  // Core functions
+  setUsername: (username: string, referrer?: string) => Promise<any>;
+  
+  // Token functions
+  depositTokens: (amount: string) => Promise<any>;
+  withdrawTokens: (amount: string) => Promise<any>;
+  mintTokens: (usdtAmount: string) => Promise<any>;
+  sendTokens: (recipient: string, amount: string, description?: string) => Promise<any>;
+  
+  // Loan functions
+  addCollateral: (type: string, amount: string) => Promise<any>;
   takeLoan: (amount: string) => Promise<any>;
   repayLoan: (amount: string) => Promise<any>;
-  startCrowdfundingCampaign: (id: string, amount: string, description: string) => Promise<any>;
-  contributeToFund: (campaignId: string, amount: string) => Promise<any>;
-  setUserProfile: (username: string, role: string, country: string) => Promise<any>;
-  // New fee-related functions
+  
+  // Reward functions
+  claimReferralReward: () => Promise<any>;
+  claimCashback: () => Promise<any>;
+  claimAvatarBonus: () => Promise<any>;
+  
+  // Ad Bazaar functions
+  bidForFlame: (adData: AdData, tier: string, amount: string) => Promise<any>;
+  getActiveAds: (tier: string) => Promise<any>;
+  
+  // Fee relayer functions
   relayTransaction: (from: string, value: string) => Promise<any>;
+  getDynamicGasFee: () => Promise<string>;
 }
 
-// Create context with default values
-const BlockchainContext = createContext<BlockchainContextType>({
-  provider: null,
-  signer: null,
-  nepaliPayContract: null,
-  tokenContract: null,
-  feeRelayerContract: null,
-  userAddress: null,
-  isConnected: false,
-  connecting: false,
-  tokenBalance: '0',
-  nptBalance: '0',
-  isStaking: false,
-  stakedAmount: '0',
-  stakingRewards: '0',
-  connectWallet: async () => {},
-  disconnectWallet: () => {},
-  sendTokens: async () => ({}),
-  payBusinessAccount: async () => ({}),
-  stakeTokens: async () => ({}),
-  unstakeTokens: async () => ({}),
-  takeLoan: async () => ({}),
-  repayLoan: async () => ({}),
-  startCrowdfundingCampaign: async () => ({}),
-  contributeToFund: async () => ({}),
-  setUserProfile: async () => ({}),
-  relayTransaction: async () => ({}),
-});
+export interface AdData {
+  heading: string;
+  description: string;
+  business: string;
+  location: string;
+  contact: string;
+}
 
-// Contract addresses (actual deployed contracts on BSC)
-const NEPALIPAY_CONTRACT_ADDRESS = '0x3614247fade5557f27ff42a0aff2e0d6fe44cadb'; // NepaliPay contract on BSC Mainnet
-const TOKEN_CONTRACT_ADDRESS = '0x38e6af81e7b344b3c5f9107c263aa1ecf1601adb'; // NepaliPay Token (NPT) on BSC Mainnet
-const FEE_RELAYER_CONTRACT_ADDRESS = '0x261c23b9692fc5755863bff5dd923abaf2b53b4c'; // Fee Relayer on BSC Mainnet
-
-// BSC Network Configuration
-const BSC_MAINNET = {
-  chainId: '0x38', // 56 in hexadecimal
-  chainName: 'Binance Smart Chain',
-  nativeCurrency: {
-    name: 'BNB',
-    symbol: 'BNB',
-    decimals: 18,
-  },
-  rpcUrls: ['https://bsc-dataseed.binance.org/'],
-  blockExplorerUrls: ['https://bscscan.com/'],
-};
-
-const BSC_TESTNET = {
-  chainId: '0x61', // 97 in hexadecimal
-  chainName: 'Binance Smart Chain Testnet',
-  nativeCurrency: {
-    name: 'BNB',
-    symbol: 'BNB',
-    decimals: 18,
-  },
-  rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-  blockExplorerUrls: ['https://testnet.bscscan.com/'],
-};
+const BlockchainContext = createContext<BlockchainContextType | null>(null);
 
 export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
   const [signer, setSigner] = useState<JsonRpcSigner | null>(null);
@@ -163,661 +99,606 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [userAddress, setUserAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(false);
-  const [tokenBalance, setTokenBalance] = useState<string>('0');
-  const [nptBalance, setNptBalance] = useState<string>('0');
+  const [tokenBalance, setTokenBalance] = useState<string>("0");
+  const [nptBalance, setNptBalance] = useState<string>("0");
+  const [username, setUsernameState] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("NONE"); // NONE, USER, ADMIN
   const [isStaking, setIsStaking] = useState<boolean>(false);
-  const [stakedAmount, setStakedAmount] = useState<string>('0');
-  const [stakingRewards, setStakingRewards] = useState<string>('0');
-  
-  // For demo purposes, initialize mock data when not connected to a wallet
+  const [stakedAmount, setStakedAmount] = useState<string>("0");
+  const [stakingRewards, setStakingRewards] = useState<string>("0");
+  const [userCollaterals, setUserCollaterals] = useState({
+    bnb: "0",
+    eth: "0",
+    btc: "0",
+    nptValue: "0"
+  });
+  const [userDebt, setUserDebt] = useState<string>("0");
+  const [loanStartTimestamp, setLoanStartTimestamp] = useState<number>(0);
+  const [avatars, setAvatars] = useState<string[]>([]);
+  const [txCount, setTxCount] = useState<number>(0);
+  const [referralCount, setReferralCount] = useState<number>(0);
+
+  // Initialize provider on component mount
   useEffect(() => {
-    if (!isConnected && process.env.NODE_ENV === 'development') {
-      setTokenBalance('100.00');
-      setNptBalance('50.00');
-      setIsStaking(true);
-      setStakedAmount('25.00');
-      setStakingRewards('2.50');
-    }
-  }, [isConnected]);
-  
-  // Handle account changes
-  const handleAccountsChanged = (accounts: string[]) => {
-    if (accounts.length === 0) {
-      // User has disconnected all accounts
-      disconnectWallet();
-      toast({
-        title: 'Wallet Disconnected',
-        description: 'Your wallet has been disconnected.',
-        variant: 'destructive',
-      });
-    } else {
-      // User has switched accounts
-      setUserAddress(accounts[0]);
-      toast({
-        title: 'Account Changed',
-        description: `Switched to account: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
-      });
-      // Refresh balances and other account-specific data
-      updateBalances(accounts[0]);
+    const init = async () => {
+      // Check if MetaMask is installed
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          // Create ethers provider
+          const web3Provider = new ethers.BrowserProvider(window.ethereum);
+          setProvider(web3Provider);
+
+          // Check if already connected
+          const accounts = await web3Provider.listAccounts();
+          
+          if (accounts.length > 0) {
+            await connectToBlockchain(web3Provider);
+          }
+        } catch (error) {
+          console.error("Error initializing web3:", error);
+        }
+      } else {
+        console.log("Please install MetaMask to use this application");
+      }
+    };
+
+    init();
+  }, []);
+
+  // Connect to blockchain and load contracts
+  const connectToBlockchain = async (provider: BrowserProvider) => {
+    try {
+      const signer = await provider.getSigner();
+      setSigner(signer);
+      
+      const userAddress = await signer.getAddress();
+      setUserAddress(userAddress);
+      setIsConnected(true);
+
+      // Initialize contracts
+      const nepaliPay = new Contract(NEPALIPAY_ADDRESS, NepaliPayABI, signer);
+      const nepaliPayToken = new Contract(NEPALIPAY_TOKEN_ADDRESS, NepaliPayTokenABI, signer);
+      const feeRelayer = new Contract(FEE_RELAYER_ADDRESS, FeeRelayerABI, signer);
+      
+      setNepaliPayContract(nepaliPay);
+      setTokenContract(nepaliPayToken);
+      setFeeRelayerContract(feeRelayer);
+
+      // Load user data
+      await loadUserData(userAddress, nepaliPay, nepaliPayToken);
+      
+      return true;
+    } catch (error) {
+      console.error("Error connecting to blockchain:", error);
+      setIsConnected(false);
+      return false;
     }
   };
-  
-  // Update balances and other account data
-  const updateBalances = async (address: string) => {
-    if (!tokenContract || !nepaliPayContract) return;
-    
+
+  // Load user data from contracts
+  const loadUserData = async (address: string, nepaliPay: Contract, nepaliPayToken: Contract) => {
     try {
       // Get token balance
-      const balance = await tokenContract.balanceOf(address);
-      const formattedBalance = formatUnits(balance, 18);
-      setNptBalance(formattedBalance);
+      const balance = await nepaliPayToken.balanceOf(address);
+      setTokenBalance(ethers.formatEther(balance));
       
-      // Get staking info
+      // Get NPT balance from NepaliPay contract
+      const nptBalance = await nepaliPay.userBalances(address);
+      setNptBalance(ethers.formatEther(nptBalance));
+      
+      // Get username
       try {
-        const stakingData = await nepaliPayContract.getStakingInfo(address);
-        setIsStaking(stakingData.isStaking);
-        setStakedAmount(formatUnits(stakingData.stakedAmount, 18));
-        setStakingRewards(formatUnits(stakingData.rewards, 18));
+        const username = await nepaliPay.userNames(address);
+        if (username && username !== "") {
+          setUsernameState(username);
+        } else {
+          setUsernameState(null);
+        }
       } catch (error) {
-        console.log("Could not fetch staking info:", error);
+        console.error("Error getting username:", error);
+        setUsernameState(null);
       }
+      
+      // Get user role
+      try {
+        const role = await nepaliPay.userRoles(address);
+        // Convert role number to string
+        const roleMap = ["NONE", "USER", "ADMIN"];
+        setUserRole(roleMap[Number(role)] || "NONE");
+      } catch (error) {
+        console.error("Error getting user role:", error);
+        setUserRole("NONE");
+      }
+      
+      // Get collaterals
+      try {
+        const collaterals = await nepaliPay.userCollaterals(address);
+        setUserCollaterals({
+          bnb: ethers.formatEther(collaterals.bnb || 0),
+          eth: ethers.formatEther(collaterals.eth || 0),
+          btc: ethers.formatEther(collaterals.btc || 0),
+          nptValue: ethers.formatEther(collaterals.nptValue || 0)
+        });
+      } catch (error) {
+        console.error("Error getting collaterals:", error);
+      }
+      
+      // Get debt
+      try {
+        const debt = await nepaliPay.userDebts(address);
+        setUserDebt(ethers.formatEther(debt));
+        
+        // Get loan start timestamp
+        const timestamp = await nepaliPay.loanStartTimestamps(address);
+        setLoanStartTimestamp(Number(timestamp));
+      } catch (error) {
+        console.error("Error getting debt:", error);
+      }
+      
+      // Get tx count
+      try {
+        const count = await nepaliPay.txCount(address);
+        setTxCount(Number(count));
+      } catch (error) {
+        console.error("Error getting tx count:", error);
+      }
+      
+      // Get referral count
+      try {
+        const count = await nepaliPay.referralCounts(address);
+        setReferralCount(Number(count));
+      } catch (error) {
+        console.error("Error getting referral count:", error);
+      }
+      
+      // Get avatars - this is a simplified approach
+      try {
+        // In a real implementation, we would iterate through the avatar mapping
+        // For now, we'll mock some avatars based on tx count
+        const avatarTypes = ["Yeti", "Everest", "Buddha", "Tiger", "Lotus"];
+        const userAvatars = [];
+        
+        for (let i = 0; i < Math.min(txCount, 5); i++) {
+          userAvatars.push(avatarTypes[i]);
+        }
+        
+        setAvatars(userAvatars);
+      } catch (error) {
+        console.error("Error getting avatars:", error);
+      }
+      
     } catch (error) {
-      console.error("Error updating balances:", error);
+      console.error("Error loading user data:", error);
     }
   };
 
-  // Connect to wallet
+  // Connect wallet
   const connectWallet = async () => {
+    if (connecting) return;
+    
+    setConnecting(true);
+    
     try {
-      setConnecting(true);
-      
-      // Check if MetaMask is installed
-      if (typeof window.ethereum === 'undefined') {
-        toast({
-          title: 'Wallet Connection Failed',
-          description: 'Please install MetaMask or another Web3 wallet to connect.',
-          variant: 'destructive',
-        });
-        setConnecting(false);
-        return;
-      }
-      
-      // Check if we're in an environment that doesn't support wallets (like iframe or preview)
-      try {
-        // Test the ethereum object
-        await window.ethereum._metamask?.isUnlocked();
-      } catch (err) {
-        console.error("MetaMask may be blocked or not accessible", err);
-        toast({
-          title: 'Wallet Access Restricted',
-          description: 'Your browser environment may be restricting wallet access. Try opening the application in a new window.',
-          variant: 'destructive',
-        });
-        setConnecting(false);
-        return;
-      }
-      
-      // Request account access
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const account = accounts[0];
-      
-      // Initialize provider
-      const provider = new BrowserProvider(window.ethereum);
-      
-      // Switch to BSC network if not already on it
-      try {
-        // Check if we're on BSC already
-        const network = await provider.getNetwork();
+      if (typeof window.ethereum !== 'undefined') {
+        // Request account access
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
         
-        // BSC Mainnet Chain ID is 56, BSC Testnet Chain ID is 97
-        // Convert chainId to string for compatibility
-        const chainIdStr = network.chainId.toString();
-        if (chainIdStr !== '56' && chainIdStr !== '97') {
-          try {
-            // Try to switch to BSC Mainnet
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: BSC_MAINNET.chainId }],
-            });
-          } catch (switchError: any) {
-            // This error code indicates that the chain has not been added to MetaMask
-            if (switchError.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [BSC_MAINNET],
-              });
-            } else {
-              throw switchError;
-            }
-          }
+        // Create ethers provider
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
+        setProvider(web3Provider);
+        
+        // Connect to blockchain
+        const success = await connectToBlockchain(web3Provider);
+        
+        if (!success) {
+          toast({
+            title: "Connection Failed",
+            description: "Failed to connect to the blockchain. Please try again.",
+            variant: "destructive",
+          });
         }
-      } catch (networkError) {
-        console.error('Failed to switch network:', networkError);
+      } else {
         toast({
-          title: 'Network Switch Failed',
-          description: 'Could not switch to Binance Smart Chain. Please try manually switching in your wallet.',
-          variant: 'destructive',
+          title: "MetaMask Missing",
+          description: "Please install MetaMask to use this application.",
+          variant: "destructive",
         });
-        setConnecting(false);
-        return;
       }
-      
-      // Refresh provider after potential network switch
-      const updatedProvider = new BrowserProvider(window.ethereum);
-      const signer = await updatedProvider.getSigner();
-      
-      // Initialize contracts
-      const nepaliPayContract = new Contract(NEPALIPAY_CONTRACT_ADDRESS, NepaliPayABI, signer);
-      const tokenContract = new Contract(TOKEN_CONTRACT_ADDRESS, NepaliPayTokenABI, signer);
-      const feeRelayerContract = new Contract(FEE_RELAYER_CONTRACT_ADDRESS, FeeRelayerABI, signer);
-      
-      // Get token balances
-      let formattedTokenBalance = '0';
-      try {
-        const tokenBalance = await tokenContract.balanceOf(account);
-        formattedTokenBalance = formatUnits(tokenBalance, 18);
-      } catch (error) {
-        console.error("Error fetching token balance:", error);
-      }
-      
-      // Get staking info if available in contract
-      let isStaking = false;
-      let stakedAmount = "0";
-      let stakingRewards = "0";
-      
-      try {
-        const stakingData = await nepaliPayContract.getStakingInfo(account);
-        isStaking = stakingData.isStaking;
-        stakedAmount = formatUnits(stakingData.stakedAmount, 18);
-        stakingRewards = formatUnits(stakingData.rewards, 18);
-      } catch (error) {
-        console.log("Staking features not available or error:", error);
-      }
-
-      // Update state
-      setProvider(updatedProvider);
-      setSigner(signer);
-      setNepaliPayContract(nepaliPayContract);
-      setTokenContract(tokenContract);
-      setFeeRelayerContract(feeRelayerContract);
-      setUserAddress(account);
-      setIsConnected(true);
-      setNptBalance(formattedTokenBalance);
-      setIsStaking(isStaking);
-      setStakedAmount(stakedAmount);
-      setStakingRewards(stakingRewards);
-      
-      // Add event listener for account changes
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      
-      // Success message
+    } catch (error: any) {
+      console.error("Error connecting wallet:", error);
       toast({
-        title: 'Wallet Connected',
-        description: `Connected to BSC wallet: ${account.substring(0, 6)}...${account.substring(38)}`,
-      });
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      toast({
-        title: 'Connection Failed',
-        description: 'Could not connect to your wallet. Please try again.',
-        variant: 'destructive',
+        title: "Connection Failed",
+        description: error.message || "An error occurred while connecting your wallet.",
+        variant: "destructive",
       });
     } finally {
       setConnecting(false);
     }
   };
 
+  // Disconnect wallet
   const disconnectWallet = () => {
-    // Remove event listeners
-    if (window.ethereum) {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-    }
-    
-    // Reset state
-    setIsConnected(false);
-    setUserAddress(null);
     setSigner(null);
-    setProvider(null);
+    setUserAddress(null);
+    setIsConnected(false);
     setNepaliPayContract(null);
     setTokenContract(null);
     setFeeRelayerContract(null);
+    setTokenBalance("0");
+    setNptBalance("0");
+    setUsernameState(null);
+  };
+
+  // Set username
+  const setUsername = async (username: string, referrer?: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
     
-    toast({
-      title: 'Wallet Disconnected',
-      description: 'Your wallet has been disconnected successfully.',
-    });
-  };
-
-  // Send tokens
-  const sendTokens = async (recipientAddress: string, amount: string, description: string) => {
     try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      let tx;
       
-      toast({
-        title: 'Sending Tokens',
-        description: `Sending ${amount} NPT to ${recipientAddress.substring(0, 6)}...${recipientAddress.substring(38)}`,
-      });
-      
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
-      
-      // Call the contract method to send tokens
-      const tx = await nepaliPayContract.sendTokens(recipientAddress, amountInWei, description);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update balances after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Transfer successful!', 
-          hash: receipt.transactionHash 
-        };
+      if (referrer) {
+        tx = await nepaliPayContract.setUsername(username, referrer);
       } else {
-        throw new Error("Transaction failed");
+        tx = await nepaliPayContract.setUsername(username, "");
       }
+      
+      await tx.wait();
+      
+      // Update state
+      setUsernameState(username);
+      
+      return { success: true, message: "Username set successfully" };
     } catch (error: any) {
-      console.error('Error sending tokens:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Transfer failed. Please try again.' 
-      };
+      console.error("Error setting username:", error);
+      throw new Error(error.message || "Failed to set username");
     }
   };
 
-  // Pay business account
-  const payBusinessAccount = async (recipientUsername: string, amount: string, description: string) => {
+  // Deposit tokens
+  const depositTokens = async (amount: string) => {
+    if (!tokenContract || !nepaliPayContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
       
-      toast({
-        title: 'Making Business Payment',
-        description: `Sending ${amount} NPT to business account: ${recipientUsername}`,
-      });
+      // First, approve NepaliPay to spend tokens
+      const approveTx = await tokenContract.approve(NEPALIPAY_ADDRESS, amountWei);
+      await approveTx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
+      // Now deposit tokens
+      const tx = await nepaliPayContract.depositTokens(amountWei);
+      await tx.wait();
       
-      // Call the contract method to make business payment
-      const tx = await nepaliPayContract.makeBusinessPayment(recipientUsername, amountInWei, description);
+      // Update balances
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract);
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update balances after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Payment successful!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Transaction failed");
-      }
+      return { success: true, message: "Tokens deposited successfully" };
     } catch (error: any) {
-      console.error('Error making business payment:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Payment failed. Please try again.' 
-      };
+      console.error("Error depositing tokens:", error);
+      throw new Error(error.message || "Failed to deposit tokens");
     }
   };
 
-  // Stake tokens
-  const stakeTokens = async (amount: string) => {
+  // Withdraw tokens
+  const withdrawTokens = async (amount: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!tokenContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
       
-      toast({
-        title: 'Staking Tokens',
-        description: `Staking ${amount} NPT tokens`,
-      });
+      // Withdraw tokens
+      const tx = await nepaliPayContract.withdrawTokens(amountWei);
+      await tx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
+      // Update balances
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
       
-      // Call the contract method to stake tokens
-      const tx = await tokenContract.stake(amountInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update staking info after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Tokens staked successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Staking transaction failed");
-      }
+      return { success: true, message: "Tokens withdrawn successfully" };
     } catch (error: any) {
-      console.error('Error staking tokens:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Staking failed. Please try again.' 
-      };
+      console.error("Error withdrawing tokens:", error);
+      throw new Error(error.message || "Failed to withdraw tokens");
     }
   };
 
-  // Unstake tokens
-  const unstakeTokens = async (amount: string) => {
+  // Mint tokens with USDT
+  const mintTokens = async (usdtAmount: string) => {
+    if (!tokenContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!tokenContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(usdtAmount);
       
-      toast({
-        title: 'Unstaking Tokens',
-        description: `Unstaking ${amount} NPT tokens`,
-      });
+      // Mint tokens
+      const tx = await tokenContract.mint(amountWei);
+      await tx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
+      // Update balances
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract as Contract, tokenContract);
       
-      // Call the contract method to unstake tokens
-      const tx = await tokenContract.unstake(amountInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update staking info after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Tokens unstaked successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Unstaking transaction failed");
-      }
+      return { success: true, message: "Tokens minted successfully" };
     } catch (error: any) {
-      console.error('Error unstaking tokens:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Unstaking failed. Please try again.' 
-      };
+      console.error("Error minting tokens:", error);
+      throw new Error(error.message || "Failed to mint tokens");
+    }
+  };
+
+  // Send tokens to another user
+  const sendTokens = async (recipient: string, amount: string, description?: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
+      
+      // Send tokens
+      const tx = await nepaliPayContract.sendTokens(recipient, amountWei, description || "");
+      await tx.wait();
+      
+      // Update balances
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
+      
+      return { success: true, message: "Tokens sent successfully" };
+    } catch (error: any) {
+      console.error("Error sending tokens:", error);
+      throw new Error(error.message || "Failed to send tokens");
+    }
+  };
+
+  // Add collateral
+  const addCollateral = async (type: string, amount: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
+      
+      // Add collateral
+      const tx = await nepaliPayContract.addCollateral(type, { value: amountWei });
+      await tx.wait();
+      
+      // Update collaterals
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
+      
+      return { success: true, message: "Collateral added successfully" };
+    } catch (error: any) {
+      console.error("Error adding collateral:", error);
+      throw new Error(error.message || "Failed to add collateral");
     }
   };
 
   // Take loan
   const takeLoan = async (amount: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
       
-      toast({
-        title: 'Taking Loan',
-        description: `Taking a loan of ${amount} NPT tokens`,
-      });
+      // Take loan
+      const tx = await nepaliPayContract.takeLoan(amountWei);
+      await tx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
+      // Update data
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
       
-      // Call the contract method to take a loan
-      const tx = await nepaliPayContract.takeLoan(amountInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update balances after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Loan taken successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Loan transaction failed");
-      }
+      return { success: true, message: "Loan taken successfully" };
     } catch (error: any) {
-      console.error('Error taking loan:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Loan failed. Please try again.' 
-      };
+      console.error("Error taking loan:", error);
+      throw new Error(error.message || "Failed to take loan");
     }
   };
 
   // Repay loan
   const repayLoan = async (amount: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
       
-      toast({
-        title: 'Repaying Loan',
-        description: `Repaying loan of ${amount} NPT tokens`,
-      });
+      // Repay loan
+      const tx = await nepaliPayContract.repayLoan(amountWei);
+      await tx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
+      // Update data
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
       
-      // Call the contract method to repay a loan
-      const tx = await nepaliPayContract.repayLoan(amountInWei);
+      return { success: true, message: "Loan repaid successfully" };
+    } catch (error: any) {
+      console.error("Error repaying loan:", error);
+      throw new Error(error.message || "Failed to repay loan");
+    }
+  };
+
+  // Claim referral reward
+  const claimReferralReward = async () => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Claim reward
+      const tx = await nepaliPayContract.claimReferralReward();
+      await tx.wait();
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
+      // Update data
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
       
-      if (receipt.status === 1) {
-        // Update balances after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
+      return { success: true, message: "Referral reward claimed successfully" };
+    } catch (error: any) {
+      console.error("Error claiming referral reward:", error);
+      throw new Error(error.message || "Failed to claim referral reward");
+    }
+  };
+
+  // Claim cashback
+  const claimCashback = async () => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Claim cashback
+      const tx = await nepaliPayContract.claimCashback();
+      await tx.wait();
+      
+      // Update data
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
+      
+      return { success: true, message: "Cashback claimed successfully" };
+    } catch (error: any) {
+      console.error("Error claiming cashback:", error);
+      throw new Error(error.message || "Failed to claim cashback");
+    }
+  };
+
+  // Claim avatar bonus
+  const claimAvatarBonus = async () => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Claim avatar bonus
+      const tx = await nepaliPayContract.claimAvatarBonus();
+      await tx.wait();
+      
+      // Update data
+      const userAddr = await signer.getAddress();
+      await loadUserData(userAddr, nepaliPayContract, tokenContract as Contract);
+      
+      return { success: true, message: "Avatar bonus claimed successfully" };
+    } catch (error: any) {
+      console.error("Error claiming avatar bonus:", error);
+      throw new Error(error.message || "Failed to claim avatar bonus");
+    }
+  };
+
+  // Bid for flame (post ad)
+  const bidForFlame = async (adData: AdData, tier: string, amount: string) => {
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // Convert amount to wei
+      const amountWei = ethers.parseEther(amount);
+      
+      // Create ad fields array
+      const adFields = [
+        adData.heading,
+        adData.description,
+        adData.business,
+        adData.location,
+        adData.contact
+      ];
+      
+      // Bid for flame
+      const tx = await nepaliPayContract.bidForFlame(tier, adFields, amountWei);
+      await tx.wait();
+      
+      return { success: true, message: "Ad posted successfully, awaiting approval" };
+    } catch (error: any) {
+      console.error("Error posting ad:", error);
+      throw new Error(error.message || "Failed to post ad");
+    }
+  };
+
+  // Get active ads
+  const getActiveAds = async (tier: string) => {
+    if (!nepaliPayContract) throw new Error("Not connected");
+    
+    try {
+      // This is a simplified approach - in reality we would need to filter the events
+      // For now, we'll mock some ads
+      return [
+        {
+          id: 1,
+          heading: "Fresh Momos",
+          description: "Spicy and hot momos",
+          business: "Raju's Stall",
+          location: "Thamel, Kathmandu",
+          contact: "+977-9841-123456",
+          amount: tier === "Base" ? "500" : tier === "Wings" ? "1000" : "15000",
+          tier: tier,
+          timestamp: Date.now() - 86400000, // 1 day ago
+          duration: tier === "Crest" ? 7 : 1 // days
         }
-        
-        return { 
-          success: true, 
-          message: 'Loan repaid successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Loan repayment transaction failed");
-      }
+      ];
     } catch (error: any) {
-      console.error('Error repaying loan:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Loan repayment failed. Please try again.' 
-      };
+      console.error("Error getting ads:", error);
+      throw new Error(error.message || "Failed to get ads");
     }
   };
 
-  // Start crowdfunding campaign
-  const startCrowdfundingCampaign = async (id: string, amount: string, description: string) => {
-    try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
-      
-      toast({
-        title: 'Starting Campaign',
-        description: `Creating campaign for ${amount} NPT tokens`,
-      });
-      
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
-      
-      // Convert id to bytes32
-      const campaignId = id_to_bytes32(id);
-      
-      // Call the contract method to start a campaign
-      const tx = await nepaliPayContract.startCampaign(campaignId, amountInWei, description);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        return { 
-          success: true, 
-          message: 'Campaign created successfully!', 
-          hash: receipt.transactionHash,
-          campaignId: campaignId
-        };
-      } else {
-        throw new Error("Campaign creation transaction failed");
-      }
-    } catch (error: any) {
-      console.error('Error starting campaign:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Campaign creation failed. Please try again.' 
-      };
-    }
-  };
-
-  // Contribute to fund
-  const contributeToFund = async (campaignId: string, amount: string) => {
-    try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
-      
-      toast({
-        title: 'Contributing to Campaign',
-        description: `Contributing ${amount} NPT tokens to campaign`,
-      });
-      
-      // Convert amount to wei (considering 18 decimals for the token)
-      const amountInWei = parseUnits(amount, 18);
-      
-      // Convert id to bytes32 if it's not already in bytes32 format
-      const campaignIdBytes = campaignId.startsWith('0x') && campaignId.length === 66 
-        ? campaignId 
-        : id_to_bytes32(campaignId);
-      
-      // Call the contract method to contribute to a campaign
-      const tx = await nepaliPayContract.contribute(campaignIdBytes, amountInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        // Update balances after successful transaction
-        if (userAddress) {
-          updateBalances(userAddress);
-        }
-        
-        return { 
-          success: true, 
-          message: 'Contribution successful!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Contribution transaction failed");
-      }
-    } catch (error: any) {
-      console.error('Error contributing to fund:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Contribution failed. Please try again.' 
-      };
-    }
-  };
-
-  // Set user profile
-  const setUserProfile = async (username: string, role: string, country: string) => {
-    try {
-      if (!nepaliPayContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
-      
-      toast({
-        title: 'Updating Profile',
-        description: `Setting profile information on blockchain`,
-      });
-      
-      // Call the contract method to set user profile
-      const tx = await nepaliPayContract.setUsername(username, role, country);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        return { 
-          success: true, 
-          message: 'Profile updated successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Profile update transaction failed");
-      }
-    } catch (error: any) {
-      console.error('Error setting user profile:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Profile update failed. Please try again.' 
-      };
-    }
-  };
-  
-  // Relay transaction using FeeRelayer
+  // Relay transaction
   const relayTransaction = async (from: string, value: string) => {
+    if (!feeRelayerContract || !signer) throw new Error("Not connected");
+    
     try {
-      if (!feeRelayerContract || !signer) {
-        throw new Error("Wallet not connected");
-      }
+      // Convert amount to wei
+      const valueWei = ethers.parseEther(value);
       
-      toast({
-        title: 'Relaying Transaction',
-        description: `Relaying transaction of ${value} NPT tokens`,
-      });
+      // Relay transaction
+      const tx = await feeRelayerContract.relayTransaction(from, valueWei);
+      await tx.wait();
       
-      // Convert amount to wei (considering 18 decimals for the token)
-      const valueInWei = parseUnits(value, 18);
-      
-      // Call the contract method to relay transaction
-      const tx = await feeRelayerContract.relayTransaction(from, valueInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      if (receipt.status === 1) {
-        return { 
-          success: true, 
-          message: 'Transaction relayed successfully!', 
-          hash: receipt.transactionHash 
-        };
-      } else {
-        throw new Error("Transaction relay failed");
-      }
+      return { success: true, message: "Transaction relayed successfully" };
     } catch (error: any) {
-      console.error('Error relaying transaction:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Transaction relay failed. Please try again.' 
-      };
+      console.error("Error relaying transaction:", error);
+      throw new Error(error.message || "Failed to relay transaction");
     }
   };
+
+  // Get dynamic gas fee
+  const getDynamicGasFee = async (): Promise<string> => {
+    if (!feeRelayerContract) throw new Error("Not connected");
+    
+    try {
+      const fee = await feeRelayerContract.getDynamicGasFee();
+      return ethers.formatEther(fee);
+    } catch (error: any) {
+      console.error("Error getting gas fee:", error);
+      throw new Error(error.message || "Failed to get gas fee");
+    }
+  };
+
+  // Effects for wallet changes
+  useEffect(() => {
+    if (typeof window.ethereum !== 'undefined') {
+      // Handle account changes
+      const handleAccountsChanged = async (accounts: string[]) => {
+        if (accounts.length === 0) {
+          // User disconnected their wallet
+          disconnectWallet();
+        } else if (accounts[0] !== userAddress) {
+          // User switched account
+          if (provider) {
+            await connectToBlockchain(provider);
+          }
+        }
+      };
+
+      // Handle chain changes
+      const handleChainChanged = () => {
+        // Reload the page
+        window.location.reload();
+      };
+
+      // Subscribe to events
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      // Cleanup
+      return () => {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      };
+    }
+  }, [provider, userAddress]);
 
   return (
     <BlockchainContext.Provider
@@ -832,21 +713,34 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         connecting,
         tokenBalance,
         nptBalance,
+        username,
+        userRole,
         isStaking,
         stakedAmount,
         stakingRewards,
+        userCollaterals,
+        userDebt,
+        loanStartTimestamp,
+        avatars,
+        txCount,
+        referralCount,
         connectWallet,
         disconnectWallet,
+        setUsername,
+        depositTokens,
+        withdrawTokens,
+        mintTokens,
         sendTokens,
-        payBusinessAccount,
-        stakeTokens,
-        unstakeTokens,
+        addCollateral,
         takeLoan,
         repayLoan,
-        startCrowdfundingCampaign,
-        contributeToFund,
-        setUserProfile,
+        claimReferralReward,
+        claimCashback,
+        claimAvatarBonus,
+        bidForFlame,
+        getActiveAds,
         relayTransaction,
+        getDynamicGasFee
       }}
     >
       {children}
@@ -854,4 +748,10 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   );
 };
 
-export const useBlockchain = () => useContext(BlockchainContext);
+export const useBlockchain = () => {
+  const context = useContext(BlockchainContext);
+  if (!context) {
+    throw new Error('useBlockchain must be used within a BlockchainProvider');
+  }
+  return context;
+};
