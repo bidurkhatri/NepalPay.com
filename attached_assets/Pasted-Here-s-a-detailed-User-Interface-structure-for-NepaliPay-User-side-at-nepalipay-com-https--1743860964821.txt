@@ -1,0 +1,71 @@
+Here's a detailed User Interface structure for **NepaliPay (User side)** at [nepalipay.com](https://nepalipay.com), specifically designed around your deployed smart contracts and integrating blockchain methods clearly. Each section includes precise buttons, fields, and interactions linked directly with the provided contracts.
+
+---
+
+# 🔵 NepaliPay User Interface (Detailed)
+
+---
+
+## 1️⃣ **Splash Screen**
+- **Elements:**
+  - Animated Logo (Nepali rupee swirling into digital wallet icon)
+  - Text: "स्वागत छ NepaliPay मा" | "Welcome to NepaliPay"
+- **Actions:**
+  - Automatic redirect to Homepage (after 3 seconds)
+
+---
+
+## 2️⃣ **Homepage/Dashboard**
+- **Header:**
+  - User NPT Balance (`balanceOf()` from NepaliPay Token Contract)
+  - Balance equivalency: e.g., "1,000 NPT ≈ 1,000 NPR"
+  - Language Toggle: 🇳🇵 Nepali | 🇺🇸 English
+- **Main Grid (Interactive Cards):**
+  - [🥟 **Send NPT**] (NepaliPay Token Contract)
+  - [💰 **Borrow NPT**] (NepaliPay Main Contract)
+  - [🔄 **Repay Loan**] (NepaliPay Main Contract)
+  - [🎁 **Rewards**] (FeeRelayer Contract)
+  - [🏪 **Ad Bazaar**] (NepaliPay Main Contract)
+- **Footer:**
+  - 🗨️ [Help & Support Chat Button]
+
+---
+
+## 3️⃣ **Send NPT Page**
+- **Fields:**
+  - Recipient Wallet Address (input or QR scan)
+  - Amount Slider/Input (Min: 1 NPT, Max: 50,000 NPT)
+  - Description (optional text: e.g., "For momo payment")
+- **Preview:**
+  - Transfer Fee: dynamically calculated via FeeRelayer
+  - Total Transfer: Amount + Fee (real-time blockchain estimation)
+- **Action Button:**
+  - [📤 Send NPT]  
+    _(Calls `transfer(address recipient, uint256 amount)` on NepaliPay Token contract)_
+- **Result Display:**
+  - Transaction Status (Blockchain confirmation)
+  - Animated Success popup: "✅ Sent Successfully! New Avatar Unlocked: Yeti 🗻"
+
+---
+
+## 4️⃣ **Borrow NPT Page**
+- **Tabs:**
+  - 🔷 **Collateral**
+    - Select Token (dropdown: BNB/ETH/BTC tokens)
+    - Enter Amount (e.g., 1 BNB)
+    - Real-time NPT Loan Value Preview (based on market price)
+    - Button: [➕ Add Collateral]  
+      _(Calls collateral methods from NepaliPay contract)_
+    
+  - 💵 **Borrow**
+    - Loan Amount Slider (1-50,000 NPT, based on collateral)
+    - Interest Rate Display (5% monthly)
+    - Loan Duration Display (e.g., "30 days")
+    - Button: [💵 Borrow Now]  
+      _(Calls `borrow(uint256 amount)` method on NepaliPay contract)_
+
+  - 🔄 **Repay Loan**
+    - Current Debt Display ("You owe 205 NPT")
+    - Early Repayment Incentive Info ("Pay early, get 2.5 NPT rebate!")
+    - Button: [🔄 Repay Now]  
+      _(Calls `repayLoan()` method on NepaliPay contract)_

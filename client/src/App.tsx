@@ -26,6 +26,16 @@ import SuperAdminStabilityPage from "@/pages/superadmin/stability";
 import SuperAdminAdminsPage from "@/pages/superadmin/admins";
 import SuperAdminFinancePage from "@/pages/superadmin/finance";
 import SuperAdminAnalyticsPage from "@/pages/superadmin/analytics";
+
+// Admin Pages
+import AdminLoginPage from "@/pages/admin/login-page";
+import AdminDashboard from "@/pages/admin/dashboard";
+import UserManagementPage from "@/pages/admin/users";
+import LoanManagementPage from "@/pages/admin/loans";
+import AdManagementPage from "@/pages/admin/ads";
+import AdminAnalyticsPage from "@/pages/admin/analytics";
+import AdminSettingsPage from "@/pages/admin/settings";
+
 import { Loader2 } from "lucide-react";
 import { useBlockchain } from "@/contexts/blockchain-context";
 
@@ -66,8 +76,17 @@ const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRoutePr
     );
   }
   
-  // If not authenticated, redirect to login
-  if (!user) return <Redirect to="/login" />;
+  // If not authenticated, redirect to appropriate login page based on portal type
+  if (!user) {
+    const portalType = getPortalType();
+    if (portalType === 'admin') {
+      return <Redirect to="/admin" />;
+    } else if (portalType === 'superadmin') {
+      return <Redirect to="/superadmin" />;
+    } else {
+      return <Redirect to="/login" />;
+    }
+  }
   
   // For the demo user, we'll allow access to all routes regardless of role
   // This makes it easier to test the application
@@ -123,12 +142,20 @@ function Router() {
   const { user, loading } = useAuth();
   const portalType = getPortalType();
 
-  // Redirect from root based on portal type
+  // Redirect from root based on portal type and authentication status
   if (location === "/") {
     if (portalType === 'admin') {
-      return <Redirect to="/admin-dashboard" />;
+      if (user) {
+        return <Redirect to="/admin-dashboard" />; 
+      } else {
+        return <Redirect to="/admin" />;
+      }
     } else if (portalType === 'superadmin') {
-      return <Redirect to="/superadmin" />;
+      if (user) {
+        return <Redirect to="/superadmin/dashboard" />;
+      } else {
+        return <Redirect to="/superadmin" />;
+      }
     } else {
       return <Redirect to="/welcome" />;
     }
@@ -152,11 +179,13 @@ function Router() {
       <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} requiredRole="USER" />} />
       
       {/* Admin portal routes (admin.nepalipay.com) */}
-      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={SectionsPage} requiredRole="ADMIN" />} />
-      <Route path="/user-management" component={() => <ProtectedRoute component={Dashboard} requiredRole="ADMIN" />} />
-      <Route path="/loan-oversight" component={() => <ProtectedRoute component={WalletPage} requiredRole="ADMIN" />} />
-      <Route path="/ad-bazaar-moderation" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="ADMIN" />} />
-      <Route path="/admin-analytics" component={() => <ProtectedRoute component={AnalyticsPage} requiredRole="ADMIN" />} />
+      <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />
+      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} requiredRole="ADMIN" />} />
+      <Route path="/admin/users" component={() => <ProtectedRoute component={UserManagementPage} requiredRole="ADMIN" />} />
+      <Route path="/admin/loans" component={() => <ProtectedRoute component={LoanManagementPage} requiredRole="ADMIN" />} />
+      <Route path="/admin/ads" component={() => <ProtectedRoute component={AdManagementPage} requiredRole="ADMIN" />} />
+      <Route path="/admin/analytics" component={() => <ProtectedRoute component={AdminAnalyticsPage} requiredRole="ADMIN" />} />
+      <Route path="/admin/settings" component={() => <ProtectedRoute component={AdminSettingsPage} requiredRole="ADMIN" />} />
       
       {/* Owner/Superadmin portal routes (superadmin.nepalipay.com) */}
       <Route path="/superadmin" component={() => <PublicRoute component={SuperAdminIndex} />} />

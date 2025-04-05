@@ -1,0 +1,97 @@
+---
+
+## 5️⃣ **Rewards Page**
+- **Sections:**
+  - 🎟️ **Referral Program**
+    - Referral Link Display (unique link)
+    - Referral Status: e.g., "Claimable rewards: 10 NPT"
+    - Button: [🎉 Claim Referral Rewards]  
+      _(Calls reward claim method via FeeRelayer contract)_
+
+  - 💸 **Cashback Offers**
+    - Progress Bar: e.g., "7 of 10 transactions completed"
+    - Next Reward: "1 NPT at 10 transactions"
+    - Button: [💰 Claim Cashback] (unlocks at completion)
+
+  - 🗻 **Avatar Collection**
+    - Avatars Collected: e.g., "Yeti, Everest (3/5 avatars)"
+    - Next Reward: e.g., "Claim 5 NPT upon collecting 5 avatars"
+    - Button: [🗻 Claim Avatar Reward] (unlocks at completion)
+
+---
+
+## 6️⃣ **Ad Bazaar Page**
+- **Tabs:**
+  - 📝 **Post an Ad**
+    - Ad Heading: input (e.g., "Fresh Momos")
+    - Description: input (e.g., "Delicious momos for 20 NPT")
+    - Business Name: input (e.g., "Raju's Stall")
+    - Location: input (e.g., "Thamel, Kathmandu")
+    - Contact Information: input (e.g., "+977-98xxxxxxx")
+    - Tier Selection (radio button): 
+      - 🔖 Base (500 NPT)
+      - 🎯 Wings (750 NPT)
+      - 🌟 Crest (1000 NPT)
+    - Total Cost Preview (based on tier selection)
+    - Button: [📢 Submit Ad]  
+      _(Calls `postAd()` method on NepaliPay contract)_
+    - Status: "Pending Approval" | "Active"
+
+  - 📖 **Browse Ads**
+    - Layout organized by tiers (Crest/Wings/Base)
+    - Interactive Ads: Display ad content (fetched on-chain)
+    - Button: [📞 Call Business] (activates phone call)
+
+---
+
+## 7️⃣ **Transaction History Page**
+- **Sections:**
+  - 🔍 **Transaction Logs**
+    - Display sent/received NPT, loan, repayments, rewards, and ad payments.
+    - Blockchain transaction links to BSCscan (transparent ledger access)
+    - Filters by transaction type and date range
+
+---
+
+## 🔒 **Security & User Settings**
+- 🛡️ **Wallet Security**
+  - Private Key Management (Secure backup)
+  - MetaMask Wallet integration for transaction confirmations
+
+- ⚙️ **Account Settings**
+  - Language Preference (🇳🇵 Nepali | 🇺🇸 English)
+  - Notification Preferences (Transaction alerts, rewards)
+  - Profile Info (Business name, avatar preferences)
+
+---
+
+## 🗨️ **Help & Support**
+- Live chat support integrated into app UI
+- FAQ Section linked directly to common blockchain transaction questions and NepaliPay features.
+
+---
+
+## 🔗 **Blockchain Integrations**
+- **NepaliPay Token Contract:**  
+  [0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+
+- **NepaliPay Main Contract:**  
+  [0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+
+- **FeeRelayer Contract:**  
+  [0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+
+_All user actions directly trigger blockchain transactions via the above smart contracts, providing a transparent, secure, and decentralized experience._
+
+---
+
+## 🎨 **UI/UX Design Principles**
+- Color Scheme: Nepali Flag colors (Red & Himalayan Blue)
+- Fonts: Clear Nepali and English fonts, suitable for mobile usage
+- Navigation: Easy, minimal clicks, intuitive user journey
+- Blockchain Transactions: Transparent confirmations, clear status indicators
+- Security: Metamask integrated wallet and secure blockchain interactions
+
+---
+
+This detailed UI integrates clearly and directly with your deployed blockchain smart contracts, providing NepaliPay users with a fully functional, transparent, and engaging blockchain experience. 
