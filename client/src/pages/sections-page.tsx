@@ -22,7 +22,11 @@ import {
   PiggyBank,
   CreditCard,
   Newspaper,
-  Building
+  Building,
+  Gift,
+  DollarSign,
+  ShoppingCart,
+  MessageSquare
 } from 'lucide-react';
 import ContractLinks from '@/components/contract-links';
 
@@ -61,52 +65,47 @@ const SectionsPage: React.FC = () => {
     },
   ];
 
+  // Main grid sections based on the UI map structure
   const sections = [
     {
-      title: "Wallet",
-      description: "Manage your NPT tokens, deposit, and withdraw funds",
-      icon: <Wallet className="h-8 w-8" />,
-      path: "/wallet",
-      color: "from-blue-500 to-cyan-400"
-    },
-    {
-      title: "Send",
-      description: "Send NPT tokens to friends or businesses",
+      title: "Send NPT",
+      description: "Send NPT tokens to friends, family or businesses",
       icon: <Send className="h-8 w-8" />,
       path: "/send",
-      color: "from-indigo-500 to-blue-400"
+      color: "from-indigo-500 to-blue-400",
+      featured: true
     },
     {
-      title: "Receive",
-      description: "Generate your receive address or QR code",
-      icon: <ArrowDownCircle className="h-8 w-8" />,
-      path: "/receive",
-      color: "from-green-500 to-emerald-400"
-    },
-    {
-      title: "Schedule Payments",
-      description: "Set up recurring or future payments",
-      icon: <Clock className="h-8 w-8" />,
-      path: "/schedule",
-      color: "from-cyan-500 to-teal-400"
-    },
-    {
-      title: "NPT Savings",
-      description: "Stake NPT tokens and earn rewards",
-      icon: <PiggyBank className="h-8 w-8" />,
-      path: "/savings",
-      color: "from-yellow-500 to-amber-400"
-    },
-    {
-      title: "Loans",
-      description: "Borrow NPT using your crypto as collateral",
+      title: "Borrow",
+      description: "Take loans using your crypto as collateral",
       icon: <Shield className="h-8 w-8" />,
-      path: "/loans",
+      path: "/borrow",
       color: "from-purple-500 to-indigo-400"
     },
     {
+      title: "Rewards",
+      description: "Earn through referrals, cashback, and avatar collection",
+      icon: <Gift className="h-8 w-8" />,
+      path: "/rewards",
+      color: "from-amber-500 to-yellow-400"
+    },
+    {
+      title: "Ad Bazaar",
+      description: "Post or browse local marketplace advertisements",
+      icon: <Store className="h-8 w-8" />,
+      path: "/ad-bazaar",
+      color: "from-pink-500 to-rose-400"
+    },
+    {
+      title: "Buy Tokens",
+      description: "Purchase NPT tokens with credit card or crypto",
+      icon: <DollarSign className="h-8 w-8" />,
+      path: "/buy-tokens",
+      color: "from-green-600 to-emerald-500"
+    },
+    {
       title: "Utilities",
-      description: "Pay for services like mobile, electricity, and more",
+      description: "Pay for mobile, electricity, and other services",
       icon: <CreditCard className="h-8 w-8" />,
       path: "/utilities",
       color: "from-teal-500 to-green-400"
@@ -119,26 +118,18 @@ const SectionsPage: React.FC = () => {
       color: "from-orange-500 to-red-400"
     },
     {
-      title: "Ad Bazaar",
-      description: "Post or browse local advertisements",
-      icon: <Newspaper className="h-8 w-8" />,
-      path: "/ad-bazaar",
-      color: "from-pink-500 to-rose-400"
+      title: "Wallet",
+      description: "Manage your NPT tokens, deposit, and withdraw funds",
+      icon: <Wallet className="h-8 w-8" />,
+      path: "/wallet",
+      color: "from-blue-500 to-cyan-400"
     },
     {
-      title: "Rewards",
-      description: "Earn rewards through referrals, cashback, and avatars",
-      icon: <Award className="h-8 w-8" />,
-      path: "/rewards",
-      color: "from-amber-500 to-yellow-400"
-    },
-    {
-      title: "Buy Tokens",
-      description: "Purchase NPT tokens with your credit card",
-      icon: <Plus className="h-8 w-8" />,
-      path: "/buy-tokens",
-      color: "from-blue-600 to-indigo-500",
-      featured: true
+      title: "Help & Support",
+      description: "Get assistance with using NepaliPay",
+      icon: <MessageSquare className="h-8 w-8" />,
+      path: "/support",
+      color: "from-cyan-500 to-blue-400"
     }
   ];
 
