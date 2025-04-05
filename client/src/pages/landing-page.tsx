@@ -57,11 +57,12 @@ const LandingPage: React.FC = () => {
               <div className="card-highlight"></div>
               <div className="card-content relative">
                 <div className="absolute -top-8 -right-8 w-32 h-32 blur-[80px] bg-primary/30 rounded-full"></div>
-                <img 
-                  src="https://storage.googleapis.com/replit/images/1637926042321_89fdd3a9cf8ce6405fc38b5b071e5dd1.png" 
-                  alt="NepaliPay Dashboard Preview" 
-                  className="w-full h-auto rounded-lg border border-gray-800/60 shadow-xl transform transition-all"
-                />
+                <div 
+                  className="w-full aspect-video rounded-lg border border-gray-800/60 shadow-xl transform transition-all bg-gray-800/20 flex flex-col items-center justify-center p-4 text-center"
+                >
+                  <div className="text-primary text-3xl font-bold mb-2">NepaliPay</div>
+                  <div className="text-gray-400">Secure Blockchain Wallet for Nepal</div>
+                </div>
                 <div className="mt-4 flex gap-3">
                   <div className="bg-gray-800/60 rounded-lg p-3 text-center flex-1">
                     <div className="text-2xl font-bold text-primary">13.3K+</div>

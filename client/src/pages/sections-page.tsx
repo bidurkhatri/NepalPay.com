@@ -116,10 +116,8 @@ const SectionsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <Link href="/">
-                <a className="flex items-center">
-                  <span className="text-xl font-bold gradient-text">NepaliPay</span>
-                </a>
+              <Link href="/" className="flex items-center">
+                <span className="text-xl font-bold gradient-text">NepaliPay</span>
               </Link>
             </div>
             
@@ -266,11 +264,9 @@ const SectionsPage: React.FC = () => {
                       <span className="ml-2 text-sm text-gray-400">NPT</span>
                     </div>
                     <div className="mt-4">
-                      <Link href="/buy-tokens">
-                        <a className="text-sm text-primary flex items-center">
-                          Buy more tokens
-                          <ArrowUpRight className="ml-1 h-4 w-4" />
-                        </a>
+                      <Link href="/buy-tokens" className="text-sm text-primary flex items-center">
+                        Buy more tokens
+                        <ArrowUpRight className="ml-1 h-4 w-4" />
                       </Link>
                     </div>
                   </div>
@@ -299,11 +295,9 @@ const SectionsPage: React.FC = () => {
                       </div>
                     )}
                     <div className="mt-4">
-                      <Link href="/loans">
-                        <a className="text-sm text-primary flex items-center">
-                          Manage loans
-                          <ArrowUpRight className="ml-1 h-4 w-4" />
-                        </a>
+                      <Link href="/loans" className="text-sm text-primary flex items-center">
+                        Manage loans
+                        <ArrowUpRight className="ml-1 h-4 w-4" />
                       </Link>
                     </div>
                   </div>
@@ -334,11 +328,9 @@ const SectionsPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Link href="/rewards">
-                        <a className="text-sm text-primary flex items-center">
-                          View all rewards
-                          <ArrowUpRight className="ml-1 h-4 w-4" />
-                        </a>
+                      <Link href="/rewards" className="text-sm text-primary flex items-center">
+                        View all rewards
+                        <ArrowUpRight className="ml-1 h-4 w-4" />
                       </Link>
                     </div>
                   </div>
@@ -349,17 +341,15 @@ const SectionsPage: React.FC = () => {
             {/* Features grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sections.map((section, index) => (
-                <Link key={index} href={section.path}>
-                  <a className={`cyber-card hover:translate-y-[-4px] transition-all ${section.featured ? 'bg-primary/10 border-primary/20' : ''}`}>
-                    <div className="card-highlight"></div>
-                    <div className="card-content">
-                      <div className={`w-16 h-16 rounded-lg mb-4 flex items-center justify-center bg-gradient-to-br ${section.color} text-white`}>
-                        {section.icon}
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
-                      <p className="text-gray-400">{section.description}</p>
+                <Link key={index} href={section.path} className={`cyber-card hover:translate-y-[-4px] transition-all ${section.featured ? 'bg-primary/10 border-primary/20' : ''}`}>
+                  <div className="card-highlight"></div>
+                  <div className="card-content">
+                    <div className={`w-16 h-16 rounded-lg mb-4 flex items-center justify-center bg-gradient-to-br ${section.color} text-white`}>
+                      {section.icon}
                     </div>
-                  </a>
+                    <h3 className="text-xl font-semibold mb-2">{section.title}</h3>
+                    <p className="text-gray-400">{section.description}</p>
+                  </div>
                 </Link>
               ))}
             </div>

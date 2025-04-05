@@ -57,19 +57,19 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="font-bold text-3xl text-primary-500">
-            <span className="text-orange-500">Nepali</span>Pay
+          <h1 className="font-bold text-3xl">
+            <span className="gradient-text">Nepali</span><span className="text-primary">Pay</span>
           </h1>
-          <p className="text-gray-500 mt-2">Digital Wallet for Nepal</p>
+          <p className="text-gray-400 mt-2">Digital Wallet for Nepal</p>
         </div>
         
-        <Card>
+        <Card className="glass bg-gray-900/50 border-gray-800 backdrop-blur-sm shadow-lg">
           <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-white">Login</CardTitle>
+            <CardDescription className="text-gray-400">
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
@@ -81,9 +81,13 @@ const Login: React.FC = () => {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel className="text-gray-300">Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your username" {...field} />
+                        <Input 
+                          placeholder="Enter your username" 
+                          className="bg-gray-800/50 border-gray-700 text-white" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -95,11 +99,12 @@ const Login: React.FC = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-gray-300">Password</FormLabel>
                       <FormControl>
                         <Input 
                           type="password" 
                           placeholder="Enter your password" 
+                          className="bg-gray-800/50 border-gray-700 text-white"
                           {...field} 
                         />
                       </FormControl>
@@ -110,7 +115,7 @@ const Login: React.FC = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-primary-500 hover:bg-primary-600"
+                  className="w-full modern-button"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -126,20 +131,18 @@ const Login: React.FC = () => {
             </Form>
           </CardContent>
           <CardFooter className="justify-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               Don't have an account?{' '}
-              <Link href="/register">
-                <a className="text-primary-500 font-medium hover:underline">
-                  Register
-                </a>
+              <Link href="/register" className="text-primary font-medium hover:underline">
+                Register
               </Link>
             </p>
           </CardFooter>
         </Card>
         
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Demo Account: username: "demo", password: "password"
+          <p className="text-sm text-gray-400">
+            <span className="text-primary font-semibold">Demo Account:</span> username: "demo", password: "password"
           </p>
         </div>
       </div>
