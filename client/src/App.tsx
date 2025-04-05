@@ -19,10 +19,30 @@ import LandingPage from "@/pages/landing-page";
 import SectionsPage from "@/pages/sections-page";
 import BuyTokensPage from "@/pages/buy-tokens";
 import { Loader2 } from "lucide-react";
+import { useBlockchain } from "@/contexts/blockchain-context";
 
-// Protected route component that redirects to login if not authenticated
-const ProtectedRoute = ({ component: Component }: { component: React.ComponentType }) => {
+// Detect which portal we're on based on hostname
+const getPortalType = (): 'user' | 'admin' | 'superadmin' | 'public' => {
+  const hostname = window.location.hostname;
+  
+  if (hostname.startsWith('admin.')) {
+    return 'admin';
+  } else if (hostname.startsWith('superadmin.')) {
+    return 'superadmin';
+  } else {
+    return 'user';
+  }
+};
+
+// Protected route component that redirects to login if not authenticated or if role doesn't match
+interface ProtectedRouteProps {
+  component: React.ComponentType;
+  requiredRole?: 'USER' | 'ADMIN' | 'OWNER';
+}
+
+const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const { userRole } = useBlockchain();
   
   // Show loading spinner while checking authentication
   if (loading) {
@@ -36,13 +56,20 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
   // If not authenticated, redirect to login
   if (!user) return <Redirect to="/login" />;
   
-  // If authenticated, render the component
+  // If role is required and user doesn't have it, redirect to sections
+  if (requiredRole && userRole !== requiredRole) {
+    return <Redirect to="/sections" />;
+  }
+  
+  // If authenticated and role matches or no role required, render the component
   return <Component />;
 };
 
-// Public route component that redirects to dashboard if already authenticated
+// Public route component that redirects to appropriate dashboard if already authenticated
 const PublicRoute = ({ component: Component }: { component: React.ComponentType }) => {
   const { user, loading } = useAuth();
+  const { userRole } = useBlockchain();
+  const portalType = getPortalType();
   
   // Show loading spinner while checking authentication
   if (loading) {
@@ -53,8 +80,16 @@ const PublicRoute = ({ component: Component }: { component: React.ComponentType 
     );
   }
   
-  // If authenticated, redirect to dashboard
-  if (user) return <Redirect to="/sections" />;
+  // If authenticated, redirect to appropriate dashboard based on portal and role
+  if (user) {
+    if (portalType === 'admin' && userRole === 'ADMIN') {
+      return <Redirect to="/admin-dashboard" />;
+    } else if (portalType === 'superadmin' && userRole === 'OWNER') {
+      return <Redirect to="/owner-dashboard" />;
+    } else {
+      return <Redirect to="/sections" />;
+    }
+  }
   
   // If not authenticated, render the component
   return <Component />;
@@ -68,10 +103,17 @@ const LandingRoute = ({ component: Component }: { component: React.ComponentType
 function Router() {
   const [location] = useLocation();
   const { user, loading } = useAuth();
+  const portalType = getPortalType();
 
-  // Redirect from root to landing page
+  // Redirect from root based on portal type
   if (location === "/") {
-    return <Redirect to="/welcome" />;
+    if (portalType === 'admin') {
+      return <Redirect to="/admin-dashboard" />;
+    } else if (portalType === 'superadmin') {
+      return <Redirect to="/owner-dashboard" />;
+    } else {
+      return <Redirect to="/welcome" />;
+    }
   }
 
   return (
@@ -81,16 +123,29 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       
-      {/* Protected routes */}
-      <Route path="/sections" component={() => <ProtectedRoute component={SectionsPage} />} />
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/crypto" component={() => <ProtectedRoute component={CryptoFixedPage} />} />
-      <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
-      <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} />} />
-      <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
-      <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
-      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
-      <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} />} />
+      {/* User portal routes (nepalipay.com/sections) */}
+      <Route path="/sections" component={() => <ProtectedRoute component={SectionsPage} requiredRole="USER" />} />
+      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} requiredRole="USER" />} />
+      <Route path="/crypto" component={() => <ProtectedRoute component={CryptoFixedPage} requiredRole="USER" />} />
+      <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} requiredRole="USER" />} />
+      <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="USER" />} />
+      <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} requiredRole="USER" />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} requiredRole="USER" />} />
+      <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} requiredRole="USER" />} />
+      
+      {/* Admin portal routes (admin.nepalipay.com) */}
+      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={SectionsPage} requiredRole="ADMIN" />} />
+      <Route path="/user-management" component={() => <ProtectedRoute component={Dashboard} requiredRole="ADMIN" />} />
+      <Route path="/loan-oversight" component={() => <ProtectedRoute component={WalletPage} requiredRole="ADMIN" />} />
+      <Route path="/ad-bazaar-moderation" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="ADMIN" />} />
+      <Route path="/admin-analytics" component={() => <ProtectedRoute component={AnalyticsPage} requiredRole="ADMIN" />} />
+      
+      {/* Owner/Superadmin portal routes (superadmin.nepalipay.com) */}
+      <Route path="/owner-dashboard" component={() => <ProtectedRoute component={SectionsPage} requiredRole="OWNER" />} />
+      <Route path="/system-control" component={() => <ProtectedRoute component={Dashboard} requiredRole="OWNER" />} />
+      <Route path="/npt-stability" component={() => <ProtectedRoute component={WalletPage} requiredRole="OWNER" />} />
+      <Route path="/admin-management" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="OWNER" />} />
+      <Route path="/financial-oversight" component={() => <ProtectedRoute component={AnalyticsPage} requiredRole="OWNER" />} />
       
       {/* 404 route */}
       <Route component={NotFound} />

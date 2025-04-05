@@ -42,17 +42,13 @@ const LandingPage: React.FC = () => {
                 Secure. Transparent. Innovative.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/login">
-                  <a className="modern-button flex items-center">
-                    Get Started
-                    <MoveRight className="ml-2 h-5 w-5" />
-                  </a>
+                <Link href="/login" className="modern-button flex items-center">
+                  Get Started
+                  <MoveRight className="ml-2 h-5 w-5" />
                 </Link>
-                <Link href="/register">
-                  <a className="modern-button-outline flex items-center">
-                    Create Account
-                    <ArrowUpRight className="ml-2 h-5 w-5" />
-                  </a>
+                <Link href="/register" className="modern-button-outline flex items-center">
+                  Create Account
+                  <ArrowUpRight className="ml-2 h-5 w-5" />
                 </Link>
               </div>
             </div>
@@ -161,10 +157,8 @@ const LandingPage: React.FC = () => {
                 <p className="text-gray-400 mb-4">
                   Join thousands of users already benefiting from the future of finance.
                 </p>
-                <Link href="/register">
-                  <a className="modern-button w-full text-center">
-                    Register Now
-                  </a>
+                <Link href="/register" className="modern-button w-full text-center block">
+                  Register Now
                 </Link>
               </div>
             </div>
@@ -256,10 +250,8 @@ const LandingPage: React.FC = () => {
             <p className="text-gray-400 mb-6">
               Connect your wallet to interact directly with our smart contracts
             </p>
-            <Link href="/login">
-              <a className="modern-button">
-                Connect Wallet
-              </a>
+            <Link href="/login" className="modern-button inline-block">
+              Connect Wallet
             </Link>
           </div>
         </div>
@@ -280,15 +272,11 @@ const LandingPage: React.FC = () => {
               It only takes a few minutes to get started.
             </p>
             <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <Link href="/register">
-                <a className="modern-button px-8 py-3">
-                  Create Free Account
-                </a>
+              <Link href="/register" className="modern-button px-8 py-3 inline-block">
+                Create Free Account
               </Link>
-              <Link href="/login">
-                <a className="modern-button-outline px-8 py-3">
-                  Sign In
-                </a>
+              <Link href="/login" className="modern-button-outline px-8 py-3 inline-block">
+                Sign In
               </Link>
             </div>
           </div>
