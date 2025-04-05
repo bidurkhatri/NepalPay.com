@@ -187,10 +187,10 @@ const NepaliPayTokenPage: React.FC = () => {
       <Header />
       <Sidebar />
       
-      <main className="pt-16 pb-24 px-4 md:ml-64">
-        <div className="max-w-5xl mx-auto py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">NepaliPay Token (NPT)</h1>
+      <main className="pt-6 pb-24 px-4 md:ml-64">
+        <div className="max-w-5xl mx-auto py-2">
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold mb-1">NepaliPay Token (NPT)</h1>
             <p className="text-gray-400">Manage your tokens and blockchain assets</p>
           </div>
           
@@ -211,30 +211,28 @@ const NepaliPayTokenPage: React.FC = () => {
           </div>
           
           {/* Wallet Address */}
-          <Card className="mb-8 bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Your Wallet Address</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
+          <Card className="mb-4 bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
+            <div className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-xs font-medium text-gray-400 mb-1">Your Wallet Address</p>
                 <div className="font-mono text-sm text-gray-300 truncate mr-2">
                   {displayAddress}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 text-xs text-blue-400 hover:text-blue-300"
-                  onClick={handleCopyAddress}
-                >
-                  {copySuccess ? (
-                    <Check className="h-4 w-4 mr-1 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4 mr-1" />
-                  )}
-                  {copySuccess ? 'Copied' : 'Copy Address'}
-                </Button>
               </div>
-            </CardContent>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-xs text-blue-400 hover:text-blue-300"
+                onClick={handleCopyAddress}
+              >
+                {copySuccess ? (
+                  <Check className="h-4 w-4 mr-1 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4 mr-1" />
+                )}
+                {copySuccess ? 'Copied' : 'Copy Address'}
+              </Button>
+            </div>
           </Card>
           
           {/* Token Management Tabs */}
