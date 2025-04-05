@@ -26,7 +26,15 @@ import {
   Gift,
   DollarSign,
   ShoppingCart,
-  MessageSquare
+  MessageSquare,
+  Settings,
+  Bell,
+  Home,
+  ChevronDown,
+  Globe,
+  Users,
+  Lock,
+  Copy
 } from 'lucide-react';
 import ContractLinks from '@/components/contract-links';
 
@@ -182,6 +190,87 @@ const SectionsPage: React.FC = () => {
                     </button>
                   </Link>
                   
+                  {/* Settings Dropdown */}
+                  <div className="relative group">
+                    <button className="modern-button-outline flex items-center">
+                      <Settings className="mr-1 h-4 w-4" />
+                      Settings
+                      <ChevronDown className="ml-1 h-3 w-3" />
+                    </button>
+                    
+                    <div className="absolute right-0 mt-2 w-64 cyber-card bg-gray-900/95 border-gray-800/70 shadow-lg rounded-lg p-3 hidden group-hover:block z-50">
+                      <div className="py-1 border-b border-gray-800/70">
+                        <h4 className="flex items-center text-sm font-medium text-gray-300 mb-2">
+                          <UserCircle className="mr-2 h-4 w-4 text-primary" /> 
+                          Profile
+                        </h4>
+                        <div className="text-xs text-gray-400 mb-1">Username: {username || "Not set"}</div>
+                        <div className="text-xs text-gray-400 mb-3 flex items-center">
+                          Wallet: {username ? "0x..." + username.toLowerCase() + "..." : "Not connected"}
+                          <button className="ml-1 text-primary hover:text-primary/80">
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <button className="modern-button-outline py-1 text-xs w-full mb-1">
+                          Edit Contact Details
+                        </button>
+                      </div>
+                      
+                      <div className="py-2 border-b border-gray-800/70">
+                        <h4 className="flex items-center text-sm font-medium text-gray-300 mb-2">
+                          <Bell className="mr-2 h-4 w-4 text-primary" /> 
+                          Notifications
+                        </h4>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-400">Email Alerts</span>
+                          <div className="relative inline-block w-10 h-5 rounded-full bg-gray-700">
+                            <input type="checkbox" className="opacity-0 w-0 h-0" />
+                            <span className="absolute left-1 top-1 bg-gray-400 w-3 h-3 rounded-full"></span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">In-App Alerts</span>
+                          <div className="relative inline-block w-10 h-5 rounded-full bg-gray-700">
+                            <input type="checkbox" className="opacity-0 w-0 h-0" checked />
+                            <span className="absolute right-1 top-1 bg-primary w-3 h-3 rounded-full"></span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="py-2 border-b border-gray-800/70">
+                        <h4 className="flex items-center text-sm font-medium text-gray-300 mb-2">
+                          <Lock className="mr-2 h-4 w-4 text-primary" /> 
+                          Security
+                        </h4>
+                        <div className="text-xs text-gray-400 mb-2">
+                          Manage your wallet security in MetaMask
+                        </div>
+                        <Link href="#" className="text-xs text-primary block mb-2">
+                          View MetaMask Guide
+                        </Link>
+                        <button className="modern-button-outline bg-red-500/10 border-red-500/20 text-red-400 py-1 text-xs w-full">
+                          <LogOut className="mr-1 h-3 w-3" />
+                          Disconnect Wallet
+                        </button>
+                      </div>
+                      
+                      <div className="py-2">
+                        <h4 className="flex items-center text-sm font-medium text-gray-300 mb-2">
+                          <Globe className="mr-2 h-4 w-4 text-primary" /> 
+                          Language
+                        </h4>
+                        <div className="glass-card bg-gray-800/50 p-1 rounded-full flex justify-between text-xs">
+                          <button className="px-3 py-1.5 rounded-full bg-primary/20 text-primary font-medium w-full">
+                            English
+                          </button>
+                          <button className="px-3 py-1.5 rounded-full text-gray-400 font-medium w-full">
+                            नेपाली
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Language Toggle */}
                   <div className="glass-card bg-gray-900/70 p-1.5 rounded-full flex">
                     <button className="px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
@@ -190,6 +279,34 @@ const SectionsPage: React.FC = () => {
                     <button className="px-2 py-1 rounded-full text-gray-400 text-xs font-medium">
                       नेपाली
                     </button>
+                  </div>
+                  
+                  {/* User Profile Dropdown */}
+                  <div className="relative group">
+                    <button className="glass-card bg-gray-900/70 p-1.5 rounded-full flex items-center justify-center">
+                      <UserCircle className="h-5 w-5 text-primary" />
+                    </button>
+                    
+                    <div className="absolute right-0 mt-2 w-48 cyber-card bg-gray-900/95 shadow-lg rounded-lg p-2 hidden group-hover:block z-50">
+                      <div className="py-1 px-2 border-b border-gray-800/70">
+                        <div className="text-sm font-medium text-white mb-1">Username: {username || "User"}</div>
+                        <div className="text-xs text-gray-400 mb-1">Balance: {parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</div>
+                      </div>
+                      
+                      <div className="py-1">
+                        <Link href="/profile" className="flex items-center px-2 py-1.5 text-sm text-gray-300 hover:bg-gray-800/50 rounded">
+                          <UserCircle className="mr-2 h-4 w-4" />
+                          My Profile
+                        </Link>
+                        <button 
+                          onClick={logout}
+                          className="flex items-center px-2 py-1.5 text-sm text-red-400 hover:bg-red-900/20 rounded w-full text-left"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

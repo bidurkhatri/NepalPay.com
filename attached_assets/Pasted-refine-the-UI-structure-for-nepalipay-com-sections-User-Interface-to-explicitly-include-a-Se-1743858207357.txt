@@ -1,0 +1,116 @@
+refine the UI structure for **nepalipay.com/sections** (User Interface) to explicitly include a **Settings** section, and detail the **Landing Page**, **Login Page**, and **Dashboard** with a clear flow: *Landing Page → Get Started/Login → Enter Details → Dashboard (/home)*. This will align with your request, ensuring a user-friendly onboarding process while maintaining NepaliPay’s purpose of financial empowerment and commerce. Below, I’ll define where **Settings** fits, what’s on each page, and what’s in the **Dashboard**, using a text-based outline for clarity.
+
+---
+
+### NepaliPay User Interface: nepalipay.com/sections
+**Flow**: Landing Page → Get Started/Login → Enter Details → Dashboard (/home)  
+**Purpose**: Onboard users seamlessly, then provide a functional hub for payments, loans, rewards, and commerce.
+
+#### Landing Page (nepalipay.com/sections)
+**Purpose**: Introduce NepaliPay, entice users, and guide them to start or log in.  
+**Design**: Himalayan blue backdrop, red accents, Nepali-inspired visuals (e.g., prayer flags, momos).
+
+- **Header**:
+  - Logo: NepaliPay (rupee with digital swirl).
+  - Buttons: "Get Started" (green), "Login" (blue), Language Toggle ("Nepali" / "English").
+- **Main Content**:
+  - **Headline**: "Welcome to Nepal’s Digital Wallet – Your Money, Your Way!"
+  - **Subhead**: "Send money, borrow, earn rewards, and sell locally with 1 NPT = 1 NPR."
+  - **Features Section**:
+    - "Instant Payments": Icon (momo) – "Pay friends or vendors in seconds."
+    - "Easy Loans": Icon (rupee stack) – "Borrow NPT with no bank hassle."
+    - "Fun Rewards": Icon (gift) – "Earn NPT and avatars with every tap."
+    - "Ad Bazaar": Icon (market stall) – "Sell or shop Nepal’s digital market."
+  - **Call-to-Action**: "Join 10,000+ Nepalis Today!" – "Get Started" button (green).
+  - **Details & Info**:
+    - "Why NepaliPay?": "Low fees (~5 NPR), fast, and Nepal-friendly."
+    - "Community Impact": "5% of ad fees help schools and clinics."
+    - "Safe & Simple": "Your wallet, your control – no tech skills needed."
+- **Footer**:
+  - Links: "About Us", "FAQ", "Contact" (support@nepalipay.com).
+  - "Need Help?" Chat Bubble (Nepali/English).
+
+#### Login Page (Accessed via "Login" on Landing Page)
+**Purpose**: Allow returning users to access their account.  
+**Design**: Minimal, blue/white, wallet-focused.
+
+- **Header**:
+  - Logo: NepaliPay.
+  - Link: "Back to Landing" (top-left).
+- **Main Content**:
+  - **Prompt**: "Connect Your Wallet to Login"
+  - **Button**: "Connect Wallet" (blue) – Triggers MetaMask (set to BSC).
+  - **Status**: "Connecting..." → "Logged in as RajuKtm" (after signing).
+  - **Alternative**: "New here? Get Started" (links to Enter Details).
+- **Footer**:
+  - "Need Help?" Chat Bubble.
+
+#### Enter Details Page (Accessed via "Get Started" on Landing Page)
+**Purpose**: Onboard new users by setting up their profile.  
+**Design**: Form-centric, blue with red highlights, welcoming tone.
+
+- **Header**:
+  - Logo: NepaliPay.
+  - Link: "Back to Landing" (top-left).
+- **Main Content**:
+  - **Prompt**: "Let’s Get You Started!"
+  - **Form**:
+    - Wallet Connect: "Connect Wallet" (blue) – Links MetaMask (BSC).
+    - Username Field: "Pick a unique username" (e.g., "RajuKtm", 3-32 characters).
+    - Referral Field (Optional): "Enter a friend’s username" (e.g., "SitaPkr").
+    - Button: "Register" (green) – Signs transaction in MetaMask.
+  - **Success Message**: "Welcome, RajuKtm! You’re ready!" – Redirects to Dashboard.
+- **Footer**:
+  - "Already have an account? Login" (links to Login Page).
+  - "Need Help?" Chat Bubble.
+
+#### Dashboard (/home)
+**Purpose**: Central hub for managing NPT and accessing features post-login.  
+**Design**: Himalayan blue, grid layout, Nepali/English toggle.
+
+- **Menu (Top Navigation Bar)**:
+  - **Add Funds**: Modal – "NPT" or "USDT" (e.g., "7.5 USDT → 1,000 NPT"), "Deposit" (green).
+  - **Withdraw**: Modal – Amount input (e.g., "500 NPT"), "Withdraw" (orange).
+  - **Settings**: Dropdown (see below).
+  - **Language Toggle**: "Nepali" / "English".
+  - **Profile Icon**: Dropdown – "Username: RajuKtm", "Balance: 1,000 NPT", "Sign Out".
+- **Main Content (Grid Layout)**:
+  - **Balance Display**: "Balance: 1,000 NPT (~1,000 NPR)" – Prominent at top.
+  - **Send NPT**: Button (momo icon) – Links to Send NPT page.
+  - **Borrow**: Button (rupee stack icon) – Links to Borrow page.
+  - **Rewards**: Button (gift icon) – Links to Rewards page.
+  - **Ad Bazaar**: Button (market stall icon) – Links to Ad Bazaar page.
+- **Footer**:
+  - "Need Help?" Chat Bubble.
+
+- **Settings (In Menu Dropdown)**:
+  - **Profile**:
+    - Display: "Username: RajuKtm", "Wallet Address" (shortened).
+    - Action: "Edit Contact" (e.g., "+977-9841-123456") – Optional field.
+  - **Notifications**:
+    - Toggle: "Email Alerts" (e.g., for loan due dates) – Requires contact.
+    - Toggle: "In-App Alerts" (e.g., "New Reward Available").
+  - **Security**:
+    - Info: "Manage your wallet in MetaMask" (link to MetaMask guide).
+    - Button: "Disconnect Wallet" (redirects to Login).
+  - **Language**: Duplicate toggle for convenience ("Nepali" / "English").
+
+#### Tabs and Sections (Accessible from Dashboard Grid)
+- **Send NPT**:
+  - Form: Recipient ("SitaPkr"), Amount (1-50,000 NPT), Description ("For momos"), Fee ("505 NPT"), "Send" (blue).
+- **Borrow**:
+  - Tabs: Add Collateral (Dropdown: BNB/ETH/BTC, "Add"), Take Loan (Slider, "Borrow"), Repay Loan (Debt, "Repay").
+- **Rewards**:
+  - Sections: Referral (Link, "Claim"), Cashback (Progress, "Claim"), Avatars (Gallery, "Claim").
+- **Ad Bazaar**:
+  - Tabs: Post Ad (Form, "Post"), Browse Ads (Crest/Wings/Base list, Call button).
+
+---
+
+### Summary of Placement
+- **Settings**: Located in the **Menu** (top navigation bar) on the **Dashboard** as a dropdown, accessible after login. It includes profile management, notifications, security info, and language options—keeping it compact yet functional for users like Raju.
+- **Landing Page**: The entry point with detailed info about NepaliPay’s value (payments, loans, rewards, ads), guiding users to "Get Started" or "Login".
+- **Login Page**: A simple wallet-connect step for returning users, linking back to "Get Started" for newbies.
+- **Dashboard (/home)**: The post-login hub with a menu (including Settings) and grid access to core features, balancing usability and depth.
+
+This flow ensures users land on an informative page, onboard easily (or log in), and arrive at a Dashboard with all tools
