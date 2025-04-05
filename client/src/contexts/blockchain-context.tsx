@@ -63,8 +63,8 @@ interface BlockchainContextType {
   
   // Loan functions
   addCollateral: (type: string, amount: string) => Promise<any>;
-  takeLoan: (amount: string) => Promise<any>;
-  repayLoan: (amount: string) => Promise<any>;
+  takeLoan: (amount: string) => Promise<any>; // uses borrow() contract method
+  repayLoan: (amount: string) => Promise<any>; // uses repayLoan() contract method with no params
   
   // Reward functions
   claimReferralReward: () => Promise<any>;
@@ -530,8 +530,8 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       // Convert amount to wei
       const amountWei = ethers.parseEther(amount);
       
-      // Take loan
-      const tx = await nepaliPayContract.takeLoan(amountWei);
+      // Take loan (using borrow method as per contract)
+      const tx = await nepaliPayContract.borrow(amountWei);
       await tx.wait();
       
       // Update data
@@ -553,8 +553,8 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
       // Convert amount to wei
       const amountWei = ethers.parseEther(amount);
       
-      // Repay loan
-      const tx = await nepaliPayContract.repayLoan(amountWei);
+      // Repay loan (using repayLoan method as per contract)
+      const tx = await nepaliPayContract.repayLoan();
       await tx.wait();
       
       // Update data

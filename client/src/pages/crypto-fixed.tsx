@@ -99,7 +99,7 @@ interface ScheduledPayment {
   frequency?: 'daily' | 'weekly' | 'monthly';
 }
 
-const CryptoFixedPage: React.FC = () => {
+const NepaliPayTokenPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const {
@@ -1960,4 +1960,4 @@ const CryptoFixedPage: React.FC = () => {
   );
 };
 
-export default CryptoFixedPage;
+export default NepaliPayTokenPage;

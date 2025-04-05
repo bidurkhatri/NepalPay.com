@@ -90,7 +90,7 @@ const WalletPage: React.FC = () => {
                     Trade
                   </Button>
                   <Button variant="outline" className="border-blue-500/50 text-white hover:bg-blue-500/20" asChild>
-                    <Link href="/crypto">
+                    <Link href="/nepalpaytoken">
                       <span className="flex items-center">View Details <ArrowRight className="ml-1 h-4 w-4" /></span>
                     </Link>
                   </Button>
