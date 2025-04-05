@@ -190,11 +190,13 @@ const Dashboard: React.FC = () => {
                   }}
                 />
                 
-                <ActionButton
-                  icon={<CardIcon className="text-blue-500 text-xl" />}
-                  label="Buy NPT"
-                  onClick={() => setCryptoDialogOpen(true)}
-                />
+                <Link href="/nepalipaytoken">
+                  <ActionButton
+                    icon={<CardIcon className="text-blue-500 text-xl" />}
+                    label="Buy NPT"
+                    onClick={() => {}}
+                  />
+                </Link>
                 
                 <Dialog open={mobileTopupOpen} onOpenChange={setMobileTopupOpen}>
                   <DialogTrigger asChild>
@@ -384,26 +386,36 @@ const Dashboard: React.FC = () => {
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <Button className="w-full">
-                  <ArrowRight className="mr-2 h-4 w-4" /> Send NPT
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Receive NPT
-                </Button>
+                <Link href="/nepalipaytoken">
+                  <Button className="w-full">
+                    <ArrowRight className="mr-2 h-4 w-4" /> Send NPT
+                  </Button>
+                </Link>
+                <Link href="/nepalipaytoken">
+                  <Button variant="outline" className="w-full">
+                    Receive NPT
+                  </Button>
+                </Link>
               </div>
               
               <div className="pt-4 border-t">
                 <h4 className="font-medium mb-3">Other Actions</h4>
                 <div className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start">
-                    Add Collateral
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    Take Loan
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    Crowdfunding
-                  </Button>
+                  <Link href="/nepalipaytoken">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Add Collateral
+                    </Button>
+                  </Link>
+                  <Link href="/nepalipaytoken">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Take Loan
+                    </Button>
+                  </Link>
+                  <Link href="/nepalipaytoken">
+                    <Button variant="ghost" className="w-full justify-start">
+                      Crowdfunding
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>

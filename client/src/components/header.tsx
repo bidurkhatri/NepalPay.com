@@ -98,7 +98,7 @@ const Header: React.FC = () => {
                         My Wallet
                       </div>
                     </Link>
-                    <Link href="/crypto">
+                    <Link href="/nepalipaytoken">
                       <div className="flex items-center px-3 py-2 rounded-md text-white hover:bg-primary/20 transition-colors">
                         NPT Tokens
                       </div>

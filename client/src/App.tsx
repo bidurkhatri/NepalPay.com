@@ -8,7 +8,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import NepaliPayTokenPage from "@/pages/nepaliplaytoken-page";
+import NepaliPayTokenPage from "@/pages/nepalipaytoken-page";
 import WalletPage from "@/pages/wallet";
 import TransactionsPage from "@/pages/transactions";
 import ProfilePage from "@/pages/profile";
@@ -172,7 +172,7 @@ function Router() {
       {/* User portal routes */}
       <Route path="/sections" component={() => <ProtectedRoute component={SectionsPage} requiredRole="USER" />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} requiredRole="USER" />} />
-      <Route path="/nepalpaytoken" component={() => <ProtectedRoute component={NepaliPayTokenPage} requiredRole="USER" />} />
+      <Route path="/nepalipaytoken" component={() => <ProtectedRoute component={NepaliPayTokenPage} requiredRole="USER" />} />
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} requiredRole="USER" />} />
       <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="USER" />} />
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} requiredRole="USER" />} />
@@ -205,8 +205,7 @@ function Router() {
       <Route path="/admin-management" component={() => <Redirect to="/superadmin/admins" />} />
       <Route path="/financial-oversight" component={() => <Redirect to="/superadmin/finance" />} />
       
-      {/* Legacy route for NPT token page */}
-      <Route path="/crypto" component={() => <Redirect to="/nepaliplaytoken" />} />
+      {/* No legacy routes needed */}
       
       {/* 404 route */}
       <Route component={NotFound} />
