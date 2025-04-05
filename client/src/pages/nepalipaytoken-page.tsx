@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Copy, Check, RefreshCw, 
   PiggyBank, SendHorizonal, ArrowDown, 
-  Landmark, CreditCard
+  Landmark, CreditCard, Target, Calendar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -197,8 +197,8 @@ const NepaliPayTokenPage: React.FC = () => {
           {/* Balance Card */}
           <div className="flex items-center space-x-4 mb-6">
             <div className="glass-card py-3 px-6 rounded-full flex items-center">
-              <span className="text-blue-400 mr-2">Balance:</span>
-              <span className="font-medium">{nptBalance || '0.0'} NPT</span>
+              <span className="text-amber-300 mr-2 font-medium">Balance:</span>
+              <span className="font-medium text-white">{nptBalance || '0.0'} NPT</span>
             </div>
             
             <Button 
@@ -240,21 +240,21 @@ const NepaliPayTokenPage: React.FC = () => {
             <TabsList className="flex w-full md:w-auto overflow-x-auto bg-[#0A1022] p-1 h-12 rounded-full">
               <TabsTrigger 
                 value="wallet" 
-                className="h-10 px-5 rounded-full data-[state=active]:bg-blue-500/90 data-[state=active]:text-white"
+                className="h-10 px-5 rounded-full data-[state=active]:bg-amber-500 data-[state=active]:text-white"
               >
                 Wallet
               </TabsTrigger>
               <TabsTrigger 
-                value="loans" 
-                className="h-10 px-5 rounded-full data-[state=active]:bg-blue-500/90 data-[state=active]:text-white"
+                value="payments" 
+                className="h-10 px-5 rounded-full data-[state=active]:bg-amber-500 data-[state=active]:text-white"
               >
-                Loans
+                Payments
               </TabsTrigger>
               <TabsTrigger 
-                value="funding" 
-                className="h-10 px-5 rounded-full data-[state=active]:bg-blue-500/90 data-[state=active]:text-white"
+                value="collateral" 
+                className="h-10 px-5 rounded-full data-[state=active]:bg-amber-500 data-[state=active]:text-white"
               >
-                Funding
+                Collateral
               </TabsTrigger>
             </TabsList>
             
@@ -265,7 +265,7 @@ const NepaliPayTokenPage: React.FC = () => {
                 <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <PiggyBank className="mr-2 h-5 w-5 text-blue-400" />
+                      <PiggyBank className="mr-2 h-5 w-5 text-amber-400" />
                       Your NPT Balance
                     </CardTitle>
                   </CardHeader>
@@ -366,7 +366,7 @@ const NepaliPayTokenPage: React.FC = () => {
                 <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <ArrowDown className="mr-2 h-5 w-5 text-blue-400" />
+                      <ArrowDown className="mr-2 h-5 w-5 text-amber-400" />
                       Recent Transactions
                     </CardTitle>
                   </CardHeader>
