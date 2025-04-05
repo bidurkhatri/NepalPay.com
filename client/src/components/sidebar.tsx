@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
   const menuItems = [
     { href: '/dashboard', icon: <DashboardIcon className="mr-2 h-5 w-5" />, label: 'Dashboard' },
     { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
-    { href: '/crypto', icon: <Coins className="mr-2 h-5 w-5 text-orange-500" />, label: 'NPT Tokens' },
+    { href: '/nepaliplaytoken', icon: <Coins className="mr-2 h-5 w-5 text-orange-500" />, label: 'NPT Tokens' },
     { href: '/transactions', icon: <TransactionIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
     { href: '/analytics', icon: <ChartIcon className="mr-2 h-5 w-5" />, label: 'Analytics' },
     { href: '/profile', icon: <UserIcon className="mr-2 h-5 w-5" />, label: 'Profile' },
