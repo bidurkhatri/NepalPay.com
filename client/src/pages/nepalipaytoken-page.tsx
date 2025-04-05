@@ -187,8 +187,8 @@ const NepaliPayTokenPage: React.FC = () => {
       <Header />
       <Sidebar />
       
-      <main className="pt-6 pb-24 px-4 md:ml-64">
-        <div className="max-w-5xl mx-auto py-2">
+      <main className="pt-0 pb-24 px-4 md:ml-64">
+        <div className="max-w-5xl mx-auto py-0 mt-2">
           <div className="mb-4">
             <h1 className="text-3xl font-bold mb-1">NepaliPay Token (NPT)</h1>
             <p className="text-gray-400">Manage your tokens and blockchain assets</p>
