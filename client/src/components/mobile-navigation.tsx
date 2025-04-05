@@ -46,9 +46,9 @@ const MobileNavigation: React.FC = () => {
             <span className="text-xs mt-1">History</span>
           </div>
         </Link>
-        <Link href="/nepalpaytoken">
+        <Link href="/nepaliplaytoken">
           <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
-            location === '/nepalpaytoken' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
+            location === '/nepaliplaytoken' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
           }`}>
             <Coins className="h-5 w-5" />
             <span className="text-xs mt-1">NPT</span>

@@ -8,8 +8,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import CryptoPage from "@/pages/crypto";
-import NepaliPayTokenPage from "@/pages/crypto-fixed";
+import NepaliPayTokenPage from "@/pages/nepaliplaytoken-page";
 import WalletPage from "@/pages/wallet";
 import TransactionsPage from "@/pages/transactions";
 import ProfilePage from "@/pages/profile";
@@ -205,6 +204,9 @@ function Router() {
       <Route path="/npt-stability" component={() => <Redirect to="/superadmin/stability" />} />
       <Route path="/admin-management" component={() => <Redirect to="/superadmin/admins" />} />
       <Route path="/financial-oversight" component={() => <Redirect to="/superadmin/finance" />} />
+      
+      {/* Legacy route for NPT token page */}
+      <Route path="/crypto" component={() => <Redirect to="/nepaliplaytoken" />} />
       
       {/* 404 route */}
       <Route component={NotFound} />
