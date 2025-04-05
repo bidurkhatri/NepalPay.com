@@ -266,7 +266,7 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <PiggyBank className="mr-2 h-5 w-5 text-amber-400" />
-                      Your NPT Balance
+                      <span className="text-white">Your NPT Balance</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-4">
@@ -367,7 +367,7 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <ArrowDown className="mr-2 h-5 w-5 text-amber-400" />
-                      Recent Transactions
+                      <span className="text-white">Recent Transactions</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pb-4">
@@ -423,12 +423,12 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <SendHorizonal className="mr-2 h-5 w-5 text-amber-400" />
-                      Business Payment
+                      <span className="text-white">Business Payment</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="username">Recipient Username</Label>
+                      <Label htmlFor="username" className="text-white">Recipient Username</Label>
                       <Input
                         id="username"
                         placeholder="Enter username"
@@ -436,7 +436,7 @@ const NepaliPayTokenPage: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="payment-amount">Amount</Label>
+                      <Label htmlFor="payment-amount" className="text-white">Amount</Label>
                       <div className="relative">
                         <Input
                           id="payment-amount"
@@ -450,7 +450,7 @@ const NepaliPayTokenPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="payment-description">Payment Description</Label>
+                      <Label htmlFor="payment-description" className="text-white">Payment Description</Label>
                       <Textarea
                         id="payment-description"
                         placeholder="What's this payment for?"
@@ -476,7 +476,7 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Calendar className="mr-2 h-5 w-5 text-amber-400" />
-                      Scheduled Payments
+                      <span className="text-white">Scheduled Payments</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -534,12 +534,12 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Landmark className="mr-2 h-5 w-5 text-amber-400" />
-                      Add Collateral
+                      <span className="text-white">Add Collateral</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="collateral-amount">Amount to Add</Label>
+                      <Label htmlFor="collateral-amount" className="text-white">Amount to Add</Label>
                       <div className="relative">
                         <Input
                           id="collateral-amount"
@@ -586,12 +586,12 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <CreditCard className="mr-2 h-5 w-5 text-amber-400" />
-                      Take a Loan
+                      <span className="text-white">Take a Loan</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="loan-amount">Loan Amount</Label>
+                      <Label htmlFor="loan-amount" className="text-white">Loan Amount</Label>
                       <div className="relative">
                         <Input
                           id="loan-amount"
@@ -622,8 +622,8 @@ const NepaliPayTokenPage: React.FC = () => {
                     
                     <Alert className="bg-amber-500/10 border-amber-500/20">
                       <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <AlertTitle>Collateral Required</AlertTitle>
-                      <AlertDescription>
+                      <AlertTitle className="text-white">Collateral Required</AlertTitle>
+                      <AlertDescription className="text-white">
                         You must have sufficient collateral to take a loan. If you don't repay on time, you may forfeit your collateral.
                       </AlertDescription>
                     </Alert>
