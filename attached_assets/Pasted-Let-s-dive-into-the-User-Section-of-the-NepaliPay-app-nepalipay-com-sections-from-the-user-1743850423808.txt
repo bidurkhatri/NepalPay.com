@@ -1,0 +1,140 @@
+Let’s dive into the **User Section** of the `NepaliPay` app (`nepalipay.com/sections`) from the user’s perspective—focusing on their flow, features, UI, and UX concepts. This will reflect the capabilities of the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and cater to everyday Nepali users (e.g., vendors, workers, students) using BSC. The goal is a simple, engaging, and practical experience tied to Nepal’s context.
+
+---
+
+### **User Perspective**
+**POV**: Imagine Raju, a Kathmandu momo vendor, or Sita, a Pokhara student—new to blockchain but eager for affordable, local financial tools. They want to pay, borrow, earn rewards, and advertise with NPT (1 NPT = 1 NPR), trusting the app’s simplicity and security.
+
+---
+
+### **User Flow**
+1. **Onboarding**:
+   - **Step**: Raju visits `nepalipay.com/sections`, clicks "Get Started".
+   - **Action**: Connects MetaMask (BSC network) → Signs tx to set username (e.g., "RajuKtm") via `setUsername`.
+   - **Outcome**: Wallet linked, username set, sees welcome screen with 0 NPT balance.
+
+2. **Funding Wallet**:
+   - **Step**: Raju clicks "Add Funds".
+   - **Action**: Chooses NPT or USDT → Deposits 1,000 NPT (`depositTokens`) or mints 1,000 NPT with ~7.5 USDT (`mint`).
+   - **Outcome**: Balance shows 1,000 NPT (~1,000 NPR).
+
+3. **Sending Payments**:
+   - **Step**: Raju selects "Send NPT" → Enters "SitaPkr" and 500 NPT for momos.
+   - **Action**: Signs `sendTokens` tx—pays 500 NPT + ~5 NPT fee (0.05% transfer fee + gas).
+   - **Outcome**: Sita gets 500 NPT, Raju earns a "Yeti" avatar.
+
+4. **Taking a Loan**:
+   - **Step**: Raju clicks "Borrow" → Adds 1 BNB collateral (~300 NPT value).
+   - **Action**: Signs `addCollateral` → Requests 200 NPT loan (`takeLoan`).
+   - **Outcome**: Gets 200 NPT, collateral locked, pays ~5 NPT gas fee.
+
+5. **Repaying Loan**:
+   - **Step**: After 10 days, Raju clicks "Repay Loan" → Pays 205 NPT (200 + 5% interest).
+   - **Action**: Signs `repayLoan`—gets 50% gas fee rebate (~2.5 NPT) since <15 days.
+   - **Outcome**: Debt cleared, collateral available, rebate added.
+
+6. **Earning Rewards**:
+   - **Step**: Raju refers Sita → She joins as "SitaPkr" with Raju’s referral.
+   - **Action**: Raju claims 10 NPT (`claimReferralReward`) after 10 txs, claims cashback (`claimCashback`), collects 5 avatars for 5 NPT (`claimAvatarBonus`).
+   - **Outcome**: Earns 15+ NPT rewards.
+
+7. **Posting Ads**:
+   - **Step**: Raju clicks "Ad Bazaar" → Posts "Fresh Momos, 20 NPT" for 500 NPT (Base).
+   - **Action**: Signs `bidForFlame`—awaits admin approval.
+   - **Outcome**: Ad live for 1 day—customers call Raju’s number.
+
+8. **Browsing Ads**:
+   - **Step**: Sita clicks "Browse Ads" → Sees Raju’s momo ad.
+   - **Action**: Contacts Raju via phone → Pays 20 NPT in-person.
+   - **Outcome**: Local trade completed.
+
+---
+
+### **Features**
+1. **Wallet**:
+   - View NPT balance, USDT reserve, collateral (BNB/ETH/BTC).
+   - Deposit NPT/USDT, withdraw NPT, mint NPT with USDT.
+
+2. **Payments**:
+   - Send NPT to usernames—e.g., 500 NPT to "SitaPkr".
+   - Fee transparency—e.g., ~5 NPT gas + transfer fee.
+
+3. **Loans**:
+   - Add BNB/ETH/BTC collateral—e.g., 1 BNB (~300 NPR).
+   - Borrow up to 50,000 NPT—e.g., 200 NPT loan.
+   - Repay with rebate—50% gas back if <15 days.
+
+4. **Rewards**:
+   - Referral: 10 NPT per friend.
+   - Cashback: 0.1% balance after 10 txs.
+   - Avatars: Collect 5 for 5 NPT—e.g., "Yeti", "Everest".
+
+5. **Ad Bazaar**:
+   - Post ads: Base (500 NPT, 1 day), Wings (1,000 NPT, 1 day), Crest (15,000+ NPT, 7 days).
+   - Browse ads: Filter by tier—e.g., "Fresh Momos" in Base.
+
+---
+
+### **UI Concept**
+- **Homepage**: 
+  - **Top Bar**: Wallet connect, NPT balance (e.g., "1,000 NPT"), "Add Funds".
+  - **Main**: Buttons—"Send NPT", "Borrow", "Rewards", "Ad Bazaar", "Browse Ads".
+  - **Footer**: Links—FAQ, Support, Terms.
+
+- **Send NPT**: 
+  - Input: Username (e.g., "SitaPkr"), Amount (e.g., 500 NPT).
+  - Preview: Fee (~5 NPT), Total (505 NPT), Avatar earned ("Yeti").
+  - Button: "Confirm" → MetaMask popup.
+
+- **Borrow**: 
+  - Tabs: "Add Collateral" (BNB/ETH/BTC dropdown), "Take Loan" (amount slider).
+  - Display: Collateral value (e.g., "1 BNB = 300 NPT"), Loan terms (5% interest, 30 days).
+  - Button: "Borrow" → MetaMask.
+
+- **Rewards**: 
+  - Sections: Referral (link to share), Cashback (tx counter: 7/10), Avatars (gallery: "Yeti", "Everest").
+  - Buttons: "Claim" for each—MetaMask popup.
+
+- **Ad Bazaar**: 
+  - **Post Ad**: Form—Heading, Description, Business, Location, Contact, Tier (Base/Wings/Crest).
+  - **Browse Ads**: List—Crest at top, Wings on sides, Base scrolls below—e.g., "Fresh Momos - 20 NPT - Raju’s Stall - KTM - +977-...".
+
+- **Theme**: Nepal-inspired—Everest blue, prayer flag colors, simple icons (e.g., momo for ads).
+
+---
+
+### **UX Concept**
+- **Simplicity**: 
+  - **POV**: Raju doesn’t know blockchain—UI hides complexity (e.g., "Send 500 NPR" not "Sign `sendTokens`").
+  - **Flow**: One-click actions—e.g., "Send" → Fee preview → Confirm, no jargon.
+
+- **Engagement**: 
+  - **Rewards**: Gamified—e.g., "Collect 3 more avatars for 5 NPR!" with progress bars.
+  - **Ads**: Visual—e.g., Base ads scroll like a marketplace ticker, Crest glows at top.
+
+- **Trust**: 
+  - **Transparency**: Show fees upfront—e.g., "Total: 505 NPR (500 + 5 fee)".
+  - **Support**: Chat bubble—e.g., "Need help? Ask us!" in Nepali.
+
+- **Accessibility**: 
+  - **Language**: Nepali/English toggle—e.g., "Pay" = "भुक्तानी गर्नुहोस्".
+  - **Mobile-First**: Responsive—Raju uses a $50 Android—big buttons, no clutter.
+
+- **Feedback**: 
+  - **Visual**: Success popups—e.g., "Payment Sent! +Yeti Avatar" with animation.
+  - **Alerts**: "Loan due in 5 days" notifications—MetaMask push optional.
+
+---
+
+### **User Flow Example (Raju’s Day)**
+- **Morning**: Logs in → Sees 1,000 NPT → Sends 500 NPT to "SitaPkr" for supplies → Gets "Yeti" avatar.
+- **Afternoon**: Adds 1 BNB collateral → Borrows 200 NPT → Pays supplier → Posts "Fresh Momos" ad (500 NPT).
+- **Evening**: Claims 10 NPT for referring Sita → Browses ads → Calls "Lila’s Tea" for chai.
+
+---
+
+### **Concepts & Ideas**
+- **Local Flavor**: Avatars like "Yeti", "Phewa Lake"—Nepal pride boosts engagement.
+- **Micro-Finance**: Loans for small needs—e.g., 200 NPT for ingredients—empowers vendors.
+- **Community**: Ad Bazaar as a digital "haat bazaar"—e.g., "Raju’s Momos" next to "Sita’s Chai".
+- **Education**: Tooltips—e.g., "NPT = NPR on blockchain!"—teach Web3 simply.

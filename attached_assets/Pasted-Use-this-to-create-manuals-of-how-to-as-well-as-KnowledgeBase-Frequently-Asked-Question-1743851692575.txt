@@ -1,0 +1,177 @@
+Use this to create manuals of how to as well as KnowledgeBase
+
+---
+
+## Frequently Asked Questions (FAQ) for Users
+
+### 1. What is NepaliPay?
+**Answer**: NepaliPay is a mobile and web app that lets you send money, borrow, earn rewards, and advertise—all using NepaliPay Tokens (NPT), where 1 NPT equals 1 Nepalese Rupee (NPR). Think of it as a digital wallet for Nepal, as easy as using cash but with extra perks!
+
+### 2. How do I start using NepaliPay?
+**Answer**: Visit `nepalipay.com/sections`, click "Get Started," and connect your wallet (like MetaMask) set to the Binance Smart Chain (BSC). Choose a unique username (e.g., "RajuKtm"), confirm the transaction, and you’re in! Add some NPT to your wallet to begin.
+
+### 3. Is NepaliPay safe to use?
+**Answer**: Yes! Your funds are stored in your personal wallet, not with us—you control them. We use secure technology to protect transactions, and our team reviews ads and loans to keep things fair. Still, keep your wallet details private to stay extra safe.
+
+### 4. What can I do with NepaliPay?
+**Answer**: You can:
+- Send NPT to friends or vendors (like paying for momos).
+- Borrow NPT by locking collateral (e.g., BNB).
+- Earn rewards—like 10 NPT for inviting friends or avatars for sending money.
+- Post or browse ads to sell or buy locally.
+
+### 5. How much does it cost to use?
+**Answer**: Sending NPT has a small fee—about 0.05% plus a tiny gas fee (usually under 5 NPT, ~5 NPR). Borrowing has 5% interest over 30 days, and ads cost 500 NPT (Base), 1,000 NPT (Wings), or 15,000+ NPT (Crest). Fees are clear before you confirm!
+
+### 6. Can I get my money back if I make a mistake?
+**Answer**: Once you send NPT or post an ad, it’s final—like cash. Double-check details before confirming. If an ad is rejected, you’ll get a refund. For loans, repay early to save on fees and get a rebate!
+
+### 7. What happens if I don’t repay a loan?
+**Answer**: If you don’t repay within 30 days, your collateral (e.g., 1 BNB) may be taken to cover the loan. Pay on time to keep it safe—early repayment even earns you a bonus!
+
+### 8. How do I contact support?
+**Answer**: Click the "Need Help?" chat bubble on `nepalipay.com/sections`—available in Nepali and English. We’ll reply fast to assist with payments, loans, or ads.
+
+### 9. Why do ads need approval?
+**Answer**: Our team checks ads to ensure they’re real—no scams or fakes. If it’s legit (e.g., "Fresh Momos"), it goes live fast—usually within a day!
+
+### 10. Can I use NepaliPay without a smartphone?
+**Answer**: You’ll need a smartphone or computer with internet and a wallet like MetaMask. It’s designed for mobile, so even a basic phone with a browser works—just visit `nepalipay.com/sections`.
+
+---
+
+## Knowledgebase
+
+### What is NepaliPay?
+NepaliPay is your digital financial friend in Nepal. It’s an app where you can send money, borrow, earn extra NPT, and advertise your goods—all with a currency called NPT that’s worth exactly 1 NPR. It’s built to help everyday Nepalis like vendors, students, and workers manage money easily.
+
+### How Does NepaliPay Work?
+Think of NepaliPay like a digital rupee wallet on your phone. You add NPT to it, then use it to:
+- Pay people—like sending 500 NPT (~500 NPR) for groceries.
+- Borrow NPT—lock some crypto (like BNB) and get NPT to spend.
+- Earn rewards—invite friends, send money often, or collect avatars.
+- Post ads—tell Nepal about your momos or scarves.
+
+Every action is fast, costs a tiny fee (like 5 NPR), and happens through a secure app tied to your wallet.
+
+### Why Use NepaliPay?
+- **Fast**: Send money in seconds—no bank lines.
+- **Cheap**: Fees are low—way less than bank charges.
+- **Easy**: No complicated forms—just a few taps.
+- **Extra**: Earn NPT for inviting friends or using it often.
+- **Local**: Sell or buy from Nepalis near you.
+
+### Key Terms to Know
+- **NPT**: NepaliPay Token—1 NPT = 1 NPR, your digital rupee.
+- **Wallet**: A safe app (like MetaMask) where you keep NPT—your digital pocket.
+- **Collateral**: Crypto (like BNB) you lock to borrow NPT—your safety net.
+- **Ad Bazaar**: A place in the app to advertise or shop—Nepal’s digital market.
+- **Ember Pool**: 5% of ad fees go here—users vote to fund community projects like schools.
+
+### Safety Tips
+- Keep your wallet details (like a secret key) private—don’t share!
+- Check usernames before sending NPT—no refunds for mistakes.
+- Repay loans on time—keep your collateral safe.
+- Post honest ads—scams get rejected, wasting your NPT.
+
+---
+
+## How to Use NepaliPay
+
+### Step 1: Get Started
+1. Go to `nepalipay.com/sections` on your phone or computer.
+2. Click "Get Started"—you’ll need a wallet like MetaMask (download it free).
+3. Set MetaMask to Binance Smart Chain (BSC)—guides are online, or ask our support.
+4. Connect your wallet—click "Connect" and approve in MetaMask.
+5. Pick a username (e.g., "RajuKtm")—make it unique, 3-32 letters.
+6. Add a friend’s username if they invited you (e.g., "SitaPkr")—earn 10 NPT later!
+7. Click "Register"—sign the transaction in MetaMask. Done! You’re in.
+
+### Step 2: Add Money
+1. Tap "Add Funds" at the top—two choices pop up: NPT or USDT.
+2. **NPT**: Have NPT? Enter amount (e.g., 1,000), hit "Deposit," sign in MetaMask.
+3. **USDT**: Have USDT (like dollars)? Enter 7.5 USDT (~1,000 NPT), hit "Deposit," sign.
+4. Wait a moment—see "Added 1,000 NPT!"—your balance updates.
+
+### Step 3: Send Money
+1. Tap "Send NPT"—a form appears.
+2. Type the recipient’s username (e.g., "SitaPkr")—it suggests as you type.
+3. Enter amount (e.g., 500 NPT), add a note (e.g., "For momos").
+4. See "Total: 505 NPT (~5 NPT fee)"—tap "Send," sign in MetaMask.
+5. Done! "Sent! +Yeti Avatar" pops up—Sita gets 500 NPT.
+
+### Step 4: Borrow Money
+1. Tap "Borrow"—see "Add Collateral", "Take Loan", "Repay Loan".
+2. **Add Collateral**: Pick BNB (e.g., 1 BNB ~300 NPT), tap "Add," sign—collateral locks.
+3. **Take Loan**: Slide to 200 NPT, see "5% interest, 30 days," tap "Borrow," sign—get 200 NPT.
+4. **Repay Loan**: Later, enter 205 NPT, see "~2.5 NPT rebate if early," tap "Repay," sign—debt clears.
+
+### Step 5: Earn Rewards
+1. **Referral**: Tap "Rewards" → "Referral"—copy your link, share it. Friend joins? Claim 10 NPT.
+2. **Cashback**: Send 10 times—tap "Rewards" → "Cashback," claim 0.1% of your balance (e.g., 1 NPT).
+3. **Avatars**: Send NPT—get avatars (e.g., "Yeti"). Collect 5, tap "Rewards" → "Avatars," claim 5 NPT.
+
+### Step 6: Use the Ad Bazaar
+1. **Post Ad**: Tap "Ad Bazaar" → "Post Ad"—fill Heading ("Fresh Momos"), Description ("20 NPT, spicy"), Business ("Raju’s Stall"), Location ("Thamel, KTM"), Contact ("+977-..."), pick Base (500 NPT), sign—wait for approval.
+2. **Browse Ads**: Tap "Browse Ads"—see Crest (top), Wings (sides), Base (scroll). Call seller for "Fresh Momos".
+
+---
+
+## How to Get NPT
+
+### Option 1: Buy NPT with USDT
+1. **Get USDT**: Use an exchange (e.g., Binance) to buy USDT with NPR—send it to your MetaMask wallet.
+2. **Mint NPT**: On `nepalipay.com/sections`, tap "Add Funds," pick "USDT," enter 7.5 USDT (~1,000 NPT), sign in MetaMask.
+3. **Result**: Your balance shows 1,000 NPT—ready to use!
+
+### Option 2: Receive NPT from Others
+1. **Share Username**: Tell friends your username (e.g., "RajuKtm").
+2. **Get Paid**: They send NPT via "Send NPT"—e.g., 500 NPT for momos.
+3. **Result**: Balance updates—no purchase needed.
+
+### Option 3: Earn NPT through Rewards
+1. **Invite Friends**: Share your referral link—each join earns 10 NPT.
+2. **Send Often**: Make 10 payments—claim cashback (e.g., 1 NPT).
+3. **Collect Avatars**: Send NPT, collect 5 avatars, claim 5 NPT.
+4. **Result**: Free NPT—grow your balance!
+
+### Where to Start?
+- Need USDT? Try Binance or ask a friend with crypto.
+- No crypto? Ask someone to send NPT to your username—start small!
+
+---
+
+## Basic Knowledge and Education About Risks
+
+### What You Need to Know
+- **NPT is Like NPR**: 1 NPT = 1 NPR—it’s your digital rupee, easy to use.
+- **Your Wallet is Your Bank**: NepaliPay uses a wallet (e.g., MetaMask)—it’s yours, not ours. You control your NPT.
+- **Fees are Small**: Sending NPT costs ~5 NPR, borrowing has 5% interest—cheaper than banks!
+- **Collateral is Key**: To borrow, lock crypto (like BNB)—it’s your safety net, returned when you repay.
+- **Ads Need Approval**: Post ads to sell—our team checks them to keep out fakes.
+
+### How to Use NepaliPay Safely
+1. **Protect Your Wallet**: Your wallet has a secret key (like a password)—never share it, or someone could take your NPT.
+2. **Check Before Sending**: Type usernames carefully—no refunds if you send to the wrong person!
+3. **Repay Loans on Time**: Borrow 200 NPT? Pay 205 NPT in 30 days—or lose your collateral (e.g., 1 BNB).
+4. **Post Honest Ads**: Fake ads get rejected—you lose time, not NPT (refunded).
+5. **Start Small**: New? Try 20 NPT first—learn as you go.
+
+### Risks to Understand
+- **Wallet Loss**: If you lose your wallet key (e.g., forget it), your NPT is gone—no recovery like a bank.
+- **Price Risk**: NPT aims for 1 NPR, but if our system fails (rare!), it might wobble—check your balance often.
+- **Collateral Risk**: Borrowing locks crypto—if its value drops (e.g., BNB falls), you still owe the full NPT amount.
+- **Internet Risk**: No internet? No NepaliPay—keep your phone charged and connected.
+- **Scam Risk**: Someone pretends to be "RajuKtm"? Verify usernames—don’t trust strangers.
+
+### Education Tips
+- **Learn Your Wallet**: Practice with MetaMask—send 10 NPT to a friend first.
+- **Ask Us**: Stuck? Use "Need Help?"—we’ll guide you in Nepali or English.
+- **Stay Updated**: Prices (like BNB) change—check your collateral value in "Borrow".
+- **Be Patient**: Ads take a day to approve—plan ahead!
+
+### Why It’s Worth It
+NepaliPay isn’t risky like gambling—it’s a tool like cash, just digital. With small fees, instant payments, and rewards, it’s Nepal’s way to save time and money. Start with 20 NPT, grow to 1,000—your rupees, your rules.
+
+---
+

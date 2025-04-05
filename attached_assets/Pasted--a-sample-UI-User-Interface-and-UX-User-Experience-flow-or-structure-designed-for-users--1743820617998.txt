@@ -1,0 +1,186 @@
+ a sample **UI (User Interface)** and **UX (User Experience)** flow or structure designed for users interacting with the `NepaliPay` ecosystem on the Binance Smart Chain (BSC) mainnet. This assumes a web-based decentralized application (dApp) frontend (e.g., built with React, Vue, or similar) that connects to the deployed contracts (`NepaliPay Token` at `0x2dfcb0c0bbb874317ce10ae939792dc13df01868`, `NepaliPay` at `0x1e7cc7d891f6c0b7e8bc8fdf8ef193cf71f5dd88`, and `FeeRelayer` at `0x2D8befe108aAdF0A10D39b85AD953432d6616e32`).
+
+---
+
+### **UI Structure Sample**
+
+#### **1. Landing Page**
+- **Purpose**: Introduce users to NepaliPay and prompt wallet connection.
+- **Components**:
+  - **Header**: Logo ("NepaliPay"), tagline ("Your Crypto Financial Hub"), and "Connect Wallet" button (MetaMask).
+  - **Hero Section**: Brief intro ("Send, Borrow, and Fund with NPT"), call-to-action ("Get Started").
+  - **Features Overview**: Cards for Payments, Loans, Crowdfunding, and Gasless Transactions.
+  - **Footer**: Links to BSC contract addresses, support, and terms.
+
+#### **2. Dashboard (Main Interface)**
+- **Purpose**: Central hub after wallet connection, showing user status and actions.
+- **Components**:
+  - **Top Bar**: Wallet address (shortened, e.g., `0x123...abc`), NPT balance, "Disconnect" button.
+  - **Sidebar**: Navigation menu:
+    - Home (Dashboard)
+    - Profile
+    - Send Tokens
+    - Loans
+    - Crowdfunding
+    - Scheduled Payments
+  - **Main Content**:
+    - **Balance Card**: "Your NPT Balance: X NPT" (fetched from `NepaliPay.balance` and `NepaliPay Token.balanceOf`).
+    - **Quick Actions**: Buttons for "Deposit," "Withdraw," "Send Tip," "Request Loan."
+    - **Recent Transactions**: List of recent actions (e.g., "Sent 50 NPT to bob - Lunch payment") using event logs.
+
+#### **3. Profile Page**
+- **Purpose**: Set up and view user profile.
+- **Components**:
+  - **Username Form**: Input fields for "Username," "Role" (e.g., "customer"), "Country" (dropdown), and "Save" button (`setUsername`).
+  - **Profile Display**: "Username: alice," "Role: customer," "Country: Nepal," "International Permissions: Yes/No" (fetched from `NepaliPay` mappings).
+  - **Status**: "Pending Admin Approval" if modified by admin.
+
+#### **4. Send Tokens Page**
+- **Purpose**: Handle all payment types.
+- **Components**:
+  - **Form**: 
+    - "Recipient" (dropdown for usernames or address input).
+    - "Amount" (NPT input with max button).
+    - "Description" (text field).
+    - Toggle: "International Transfer" (shows permission status).
+    - Buttons: "Send" (`sendTokens` or `sendTokensWithPermissions`), "Send as Tip" (`sendTips`), "Pay Business" (`makeBusinessPayment`).
+  - **Status**: "Cooldown: X hours left" for international sends.
+
+#### **5. Loans Page**
+- **Purpose**: Manage borrowing and repayment.
+- **Components**:
+  - **Collateral Section**: "Current Collateral: X NPT," "Add Collateral" button (`addCollateral`) with amount input.
+  - **Loan Section**: 
+    - "Available to Borrow: Y NPT" (based on 150% collateral ratio).
+    - "Request Loan" button (`takeLoan`) with amount input.
+    - "Current Debt: Z NPT," "Due Date: MM/DD/YYYY," "Repay" button (`repayLoan`) with amount input.
+  - **Warning**: "Overdue loans may be liquidated by admins."
+
+#### **6. Crowdfunding Page**
+- **Purpose**: Create and contribute to campaigns.
+- **Components**:
+  - **Create Campaign**: 
+    - "Campaign ID" (text, e.g., "schoolFund"), "Target Amount" (NPT), "Description" (text), "Start" button (`startCampaign`).
+  - **Active Campaigns**: List with "ID," "Target," "Raised," "Contribute" button (`contribute`) with amount input.
+
+#### **7. Scheduled Payments Page**
+- **Purpose**: Plan future payments.
+- **Components**:
+  - **Form**: 
+    - "Payment ID" (text), "Amount" (NPT), "Date/Time" (picker), "Set Payment" button (`setScheduledPayment`).
+  - **Scheduled List**: Table with "ID," "Amount," "Date," "Modify" (`modifyScheduledPayment`), "Cancel" (`cancelScheduledPayment`) buttons.
+  - **Note**: "Payments require manual execution or admin action."
+
+#### **8. Gasless Option (FeeRelayer Integration)**
+- **Purpose**: Offer gasless transactions.
+- **Components**:
+  - **Toggle**: "Use Gasless Mode" (on any action page, e.g., Send Tokens).
+  - **Popup**: "Sign this transaction to proceed without BNB. Fee: X NPT" (relayed via `FeeRelayer.relay`).
+
+---
+
+### **UX Flow Sample**
+
+#### **Scenario: New User Sending a Payment**
+1. **Landing**:
+   - User visits `nepalipay-dapp.com`, sees "Connect Wallet," clicks it, and connects MetaMask (BSC mainnet).
+   - Perspective: "Okay, I’m in—looks like a crypto app."
+
+2. **Dashboard**:
+   - Sees "NPT Balance: 0" and "Deposit" button. Clicks "Deposit," enters 1000 NPT, approves via MetaMask (`approve`), then confirms deposit (`depositTokens`).
+   - Perspective: "Had to approve first, but now my balance is 1000 NPT—easy enough."
+
+3. **Profile**:
+   - Navigates to "Profile," enters "Username: alice," "Role: user," "Country: Nepal," clicks "Save" (`setUsername`).
+   - Perspective: "Setting my name was quick, like signing up."
+
+4. **Send Tokens**:
+   - Goes to "Send Tokens," selects "bob" from dropdown (or enters address), inputs "50 NPT," "Lunch payment," clicks "Send" (`sendTokens`).
+   - Perspective: "Sending money by username is cool—no need to copy weird addresses."
+
+5. **Confirmation**:
+   - MetaMask pops up (or gasless popup if enabled), user confirms, sees "Transaction Successful" with a BscScan link.
+   - Perspective: "It worked! Took a second, but I like the receipt."
+
+#### **Scenario: Borrowing a Loan**
+1. **Dashboard**:
+   - User sees "Request Loan" button, clicks it to go to "Loans."
+
+2. **Loans**:
+   - Adds 1500 NPT collateral (`addCollateral`), sees "Available to Borrow: 1000 NPT."
+   - Requests 800 NPT (`takeLoan`), confirms in MetaMask.
+   - Perspective: "Locked more than I borrowed—makes sense for safety."
+
+3. **Monitoring**:
+   - Sees "Debt: 840 NPT" (800 + 5% interest), "Due: May 4, 2025."
+   - Later, repays 840 NPT (`repayLoan`).
+   - Perspective: "Interest is clear, but I need to repay on time or lose my collateral."
+
+#### **Scenario: Crowdfunding Contribution**
+1. **Crowdfunding**:
+   - Sees campaign "schoolFund" (Target: 5000 NPT, Raised: 2000 NPT).
+   - Inputs 500 NPT, clicks "Contribute" (`contribute`).
+   - Perspective: "Feels like donating to a cause—hope the creator can use it."
+
+---
+
+### **UI/UX Design Principles**
+- **Simplicity**: Clean layout, minimal clicks (e.g., dropdowns for usernames, one-click actions).
+- **Feedback**: Real-time updates (e.g., balance refreshes post-transaction), transaction status (e.g., "Pending," "Success").
+- **Transparency**: Show contract interactions (e.g., "Approving NPT spending"), links to BscScan.
+- **Accessibility**: Gasless toggle for non-crypto-savvy users, tooltips for terms like "collateral ratio."
+- **Responsiveness**: Mobile-friendly design for broader reach.
+
+---
+
+### **Sample Wireframe (Text-Based)**
+
+#### **Dashboard**
+```
+---------------------------------------------------
+| NepaliPay       | 0x123...abc | NPT: 1000 | Disconnect |
+---------------------------------------------------
+| Sidebar: Home | Profile | Send | Loans | Crowd | Sched |
+---------------------------------------------------
+| Balance: 1000 NPT                                 |
+| [Deposit]  [Withdraw]  [Send Tip]  [Request Loan] |
+---------------------------------------------------
+| Recent Transactions:                              |
+| - Sent 50 NPT to bob - Lunch payment             |
+| - Deposited 1000 NPT                             |
+---------------------------------------------------
+```
+
+#### **Send Tokens**
+```
+---------------------------------------------------
+| Send Tokens                                      |
+---------------------------------------------------
+| Recipient: [bob ▼] or [0x456...]                |
+| Amount: [50 NPT]  [Max]                          |
+| Description: [Lunch payment]                     |
+| [ ] International Transfer (Cooldown: 0h)        |
+| [Send]  [Send as Tip]  [Pay Business]            |
+---------------------------------------------------
+```
+
+#### **Loans**
+```
+---------------------------------------------------
+| Loans                                            |
+---------------------------------------------------
+| Collateral: 1500 NPT   [Add Collateral: ___ NPT] |
+| Available to Borrow: 1000 NPT                    |
+| [Request Loan: ___ NPT]                          |
+| Debt: 840 NPT  Due: 05/04/2025                   |
+| [Repay: ___ NPT]                                 |
+| *Overdue loans may be liquidated                |
+---------------------------------------------------
+```
+
+---
+
+### **User Perspective on UX**
+- **Positive**: "It’s intuitive—deposit, send, borrow—all in one place. Gasless mode is a lifesaver."
+- **Negative**: "Scheduled payments confuse me—do I wait for an admin? And why so many wallet popups?"
+- **Overall**: A seamless crypto wallet with extra features, though some blockchain quirks (e.g., approvals) might need explanation.

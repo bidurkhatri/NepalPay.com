@@ -1,0 +1,141 @@
+Here are the deployed and verified contract addresses on the Binance Smart Chain (BSC) mainnet for `FeeRelayer`, `NepaliPay`, and `NepaliPay Token`, I’ve reviewed the source code available on BscScan to identify the features and functions of the `NepaliPay` ecosystem as it exists now. Below, I’ll summarize the key features and functions based on the deployed contracts, focusing primarily on `NepaliPay` (since it’s the core application contract), while also noting how `NepaliPay Token` and `FeeRelayer` integrate with it.
+
+---
+
+### **Deployed Contracts Overview**
+1. **NepaliPay Token** (`0x2dfcb0c0bbb874317ce10ae939792dc13df01868`):
+   - A standard ERC20 token (BEP-20 on BSC) with burnable functionality.
+   - Initial supply: 1,000,000 NPT with 18 decimals.
+
+2. **NepaliPay** (`0x1e7cc7d891f6c0b7e8bc8fdf8ef193cf71f5dd88`):
+   - The main application contract managing payments, loans, crowdfunding, and user profiles.
+   - Integrates with `NepaliPay Token` for transactions.
+
+3. **FeeRelayer** (`0x2D8befe108aAdF0A10D39b85AD953432d6616e32`):
+   - A utility contract to relayFacilitate gasless transactions by relaying fees through a third party.
+
+---
+
+### **Features and Functions of NepaliPay Ecosystem**
+
+#### **1. NepaliPay Token (NPT)**
+- **Token Standard**: BEP-20 (ERC20-compliant on BSC).
+- **Name**: "NepaliPay Token"
+- **Symbol**: "NPT"
+- **Total Supply**: 1,000,000 NPT (1 million tokens with 18 decimals).
+- **Burnable**: Token holders can burn their tokens using `burn` or `burnFrom` (with approval), reducing total supply.
+- **Functions**:
+  - `transfer(address to, uint256 amount)`: Transfer NPT to another address.
+  - `approve(address spender, uint256 amount)`: Allow a spender (e.g., `NepaliPay`) to spend NPT on behalf of the owner.
+  - `transferFrom(address from, address to, uint256 amount)`: Transfer NPT on behalf of an approved sender.
+  - `burn(uint256 amount)`: Destroy tokens from the caller’s balance.
+  - `burnFrom(address account, uint256 amount)`: Destroy tokens from an approved account.
+
+**Role**: Serves as the native currency for all transactions within the `NepaliPay` ecosystem (e.g., payments, loans, fees).
+
+---
+
+#### **2. NepaliPay**
+The `NepaliPay` contract is a comprehensive financial services platform with the following features and functions:
+
+##### **Core Features**
+1. **User Management**:
+   - **Profiles**: Users can set a `username`, `role`, and `country` (`setUsername`).
+   - **Role-Based Access Control (RBAC)**:
+     - Roles: `NONE`, `USER`, `MODERATOR`, `ADMIN`.
+     - Admins can assign roles (`setRole`) and modify usernames (`modifyUsername`).
+   - **Username Reservation**: Admins can reserve usernames (`reserveUsername`).
+
+2. **Token Transactions**:
+   - **Deposit**: Users deposit NPT into the contract (`depositTokens`).
+   - **Withdraw**: Withdraw NPT from the contract (`withdrawTokens`).
+   - **Send Tokens**: Transfer NPT internally (`sendTokens`) or with international permissions (`sendTokensWithPermissions`).
+   - **Tips**: Send NPT as tips with a description (`sendTips`).
+   - **Business Payments**: Pay via username with a description (`makeBusinessPayment`).
+
+3. **International Payments**:
+   - **Permissions**: Admins set `canSendInternationalPayments` and `canReceiveInternationalPayments` for users.
+   - **Restrictions**: Non-permitted users can only send internationally from Nepal to non-Nepal countries, with a cooldown (`internationalTxCooldown`: 1 hour) and max amount (`maxInternationalTxAmount`: 10,000 NPT).
+
+4. **Loan System**:
+   - **Collateral**: Users deposit NPT as collateral (`addCollateral`).
+   - **Borrowing**: Take loans up to `maxLoanPerUser` (50,000 NPT) with a 150% collateral ratio (`minCollateralRatio`), 5% annual interest (`interestRate`), and 30-day duration (`loanDuration`) (`takeLoan`).
+   - **Repayment**: Repay loans partially or fully (`repayLoan`).
+   - **Liquidation**: Admins can liquidate overdue loans, seizing collateral (`liquidate`).
+
+5. **Crowdfunding**:
+   - **Campaigns**: Start a campaign with a target amount and description (`startCampaign`).
+   - **Contributions**: Contribute NPT to a campaign (`contribute`).
+
+6. **Scheduled Payments**:
+   - **Set**: Schedule a future payment with amount and timestamp (`setScheduledPayment`).
+   - **Modify**: Update scheduled payment details (`modifyScheduledPayment`).
+   - **Cancel**: Cancel a scheduled payment (`cancelScheduledPayment`).
+
+7. **Pausability**:
+   - **Pause/Unpause**: Owner can pause (`pause`) or unpause (`unpause`) the contract, restricting non-admin actions during pauses.
+
+##### **Key Functions**
+- `depositTokens(uint256 _amount)`: Deposit NPT into the contract.
+- `withdrawTokens(uint256 _amount)`: Withdraw NPT from the contract.
+- `sendTokens(address _recipient, uint256 _amount, string memory _description)`: Internal NPT transfer.
+- `sendTokensWithPermissions(address _recipient, uint256 _amount, string memory _description)`: International transfer with checks.
+- `addCollateral(uint256 _amount)`: Add NPT as collateral.
+- `takeLoan(uint256 _amount)`: Borrow NPT against collateral.
+- `repayLoan(uint256 _amount)`: Repay loan debt.
+- `liquidate(address _borrower)`: Admin liquidates overdue loans.
+- `setUsername(string memory _username, string memory _role, string memory _country)`: Set user profile.
+- `startCampaign(bytes32 _campaignId, uint256 _targetAmount, string memory _description)`: Start crowdfunding.
+- `contribute(bytes32 _campaignId, uint256 _amount)`: Contribute to a campaign.
+
+##### **Security Features**
+- **Modifiers**: `onlyRole(Role _role)` for RBAC, `whenNotPausedOrAdmin` for pausability.
+- **Limits**: Small payments (50/day, max 100 NPT), international caps, and loan constraints.
+- **Events**: Extensive event logging for transparency (e.g., `TokensDeposited`, `LoanTaken`).
+
+---
+
+#### **3. FeeRelayer**
+The `FeeRelayer` contract enables gasless transactions by allowing a relayer to pay gas fees on behalf of users, who repay in NPT.
+
+##### **Features**
+1. **Gasless Transactions**:
+   - Users sign a message off-chain with transaction details (to, value, data, nonce, chainId).
+   - Relayers execute the transaction (`relay`) and charge a fee in NPT.
+
+2. **Fee Management**:
+   - **Fee Token**: NPT (set to `NepaliPay Token` address).
+   - **Fee Amount**: Configurable by owner (`setFeeAmount`).
+
+3. **Security**:
+   - **Nonces**: Prevent replay attacks (`usedNonces` mapping).
+   - **Signature Verification**: Ensures user authorization (`relay` recovers signer).
+
+##### **Key Functions**
+- `relay(address from, address to, uint256 value, bytes memory data, uint256 nonce, bytes memory signature)`: Execute a transaction and charge NPT fee.
+- `setFeeAmount(uint256 _feeAmount)`: Owner sets the fee (default: 0 in deployed version).
+- `withdraw(address token, address to, uint256 amount)`: Owner withdraws tokens (e.g., NPT) from the contract.
+
+##### **Integration with NepaliPay**
+- Users can interact with `NepaliPay` functions (e.g., `depositTokens`) without paying gas directly, improving UX.
+
+---
+
+### **How It Works Together**
+- **NepaliPay Token**: The currency for all operations (deposits, payments, loans, fees).
+- **NepaliPay**: The core dApp managing financial services, using NPT for all transactions.
+- **FeeRelayer**: Enhances usability by offloading gas costs to relayers, repaid in NPT.
+
+### **Current Features Summary (April 4, 2025)**
+- **Payment System**: P2P transfers, tips, business payments, international transfers.
+- **Lending**: Collateralized loans with liquidation.
+- **Crowdfunding**: Campaign creation and contributions.
+- **Scheduled Payments**: Future payment scheduling (manual execution required).
+- **User Profiles**: Username and role management.
+- **Gasless UX**: Via `FeeRelayer`.
+- **Security**: RBAC, pausability, limits, and event logging.
+
+### **Limitations**
+- **Scheduled Payment Execution**: No built-in mechanism to trigger payments; requires off-chain automation.
+- **Centralization**: Owner and admin roles have significant control (e.g., liquidation, role assignment).
+- **FeeRelayer Fee**: Set to 0 by default, needing adjustment for practical use.

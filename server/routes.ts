@@ -345,15 +345,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid amount" });
       }
 
-      // Amount in cents
-      const amountInCents = Math.round(amount * 100);
+      // Amount in cents - 1 NPT = 1 NPR = ~$0.0075 USD
+      // Convert NPR to USD at roughly 1:0.0075 rate
+      const amountInUsd = amount * 0.0075;
+      const amountInCents = Math.round(amountInUsd * 100);
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountInCents,
         currency: 'usd',
         metadata: {
           userId: req.session.userId!.toString(),
-          tokenAmount: (amount * 2).toString(), // $0.50 per token, so $1 = 2 tokens
+          tokenAmount: amount.toString(), // 1:1 NPR to NPT
+          walletAddress: req.body.walletAddress || ""
         },
       });
 
@@ -361,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         userId: req.session.userId!,
         action: "PAYMENT_INTENT_CREATED",
-        details: `Created payment intent for $${amount} (${amount * 2} NPT tokens)`,
+        details: `Created payment intent for NPR ${amount} (${amount} NPT tokens)`,
         ipAddress: req.ip
       });
       
@@ -397,21 +400,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Extract metadata
         const userId = parseInt(paymentIntent.metadata.userId);
         const tokenAmount = parseInt(paymentIntent.metadata.tokenAmount);
+        const walletAddress = paymentIntent.metadata.walletAddress;
         
         if (userId && tokenAmount) {
           // Handle token purchase success
           // In a real app, this would mint the tokens to the user's address
-          // For now, let's just log an activity
           await storage.createActivity({
             userId,
             action: "TOKEN_PURCHASE",
-            details: `Purchased ${tokenAmount} NPT tokens`,
+            details: `Purchased ${tokenAmount} NPT tokens to wallet ${walletAddress || "unknown"}`,
             ipAddress: req.ip || "webhook"
           });
 
-          // Here you would trigger your blockchain function to mint tokens
-          // For now, let's just log it
-          console.log(`User ${userId} purchased ${tokenAmount} NPT tokens`);
+          // Here you would trigger your blockchain function to mint/transfer tokens
+          // For a real implementation, you would:
+          // 1. Connect to the blockchain using a backend wallet
+          // 2. Call the NepaliPayToken contract's transfer or mint function
+          // 3. Send the tokens to the user's wallet address
+          console.log(`User ${userId} purchased ${tokenAmount} NPT tokens to wallet ${walletAddress || "unknown"}`);
         }
       }
 

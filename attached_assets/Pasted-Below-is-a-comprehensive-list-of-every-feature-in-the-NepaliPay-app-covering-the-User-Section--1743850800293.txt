@@ -1,0 +1,221 @@
+Below is a comprehensive list of every feature in the `NepaliPay` app, covering the **User Section** (`nepalipay.com/sections`), **Admin Panel** (`admin.nepalipay.com`), and **Owner Dashboard** (`superadmin.nepalipay.com`). For each feature, I’ll detail how it works, how it should look and be visible, where it’s available in the app, and what it does. This aligns with the deployed contracts (`NepaliPayToken` at `0x69d34B25809b346702C21EB0E22EAD8C1de58D66`, `NepaliPay` at `0xe2d189f6696ee8b247ceae97fe3f1f2879054553`, `FeeRelayer` at `0x7ff2271749409f9137dac1e082962e21cc99aee6`) and reflects Nepal’s context on BSC.
+
+---
+
+### **1. User Section (nepalipay.com/sections)**
+
+#### **Wallet Management**
+1. **Register Username**
+   - **How It Works**: User connects wallet (MetaMask), enters a unique username (3-32 chars), optionally adds a referrer, signs `setUsername` tx—registers as USER role.
+   - **Look & Visibility**: Form—text box ("Enter Username: RajuKtm"), optional referrer field ("Referred by: SitaPkr"), "Register" button (blue, bold). Success popup: "Welcome, RajuKtm!".
+   - **Where**: Homepage → "Get Started" button → Modal or onboarding page.
+   - **What It Does**: Links wallet to a username, activates account, enables referral rewards.
+
+2. **View Balance**
+   - **How It Works**: Fetches `userBalances` (NPT) and `userCollaterals` (BNB/ETH/BTC) from `NepaliPay`, `getUsdtReserve` from NPT—displays real-time.
+   - **Look & Visibility**: Top bar—e.g., "Balance: 1,000 NPT | Collateral: 1 BNB" (white text, blue background), clickable to expand details (e.g., "BNB: 1, ETH: 0, BTC: 0").
+   - **Where**: Always visible in top bar across all pages.
+   - **What It Does**: Shows user’s NPT and collateral holdings—core financial overview.
+
+3. **Deposit Funds**
+   - **How It Works**: User selects NPT or USDT, enters amount, signs `depositTokens` (NPT) or `mint` (USDT → NPT)—updates `userBalances`.
+   - **Look & Visibility**: "Add Funds" button (green, top bar) → Modal: Dropdown (NPT/USDT), input ("Amount: 1,000"), "Deposit" button. Success: "Added 1,000 NPT!".
+   - **Where**: Homepage → "Add Funds" or Wallet page.
+   - **What It Does**: Funds wallet with NPT—direct deposit or USDT minting.
+
+4. **Withdraw Funds**
+   - **How It Works**: User enters NPT amount, signs `withdrawTokens`—deducts from `userBalances`, pays gas fee, transfers to wallet.
+   - **Look & Visibility**: "Withdraw" button (orange, top bar) → Modal: Input ("Amount: 500 NPT"), fee preview ("~5 NPT"), "Withdraw" button. Success: "Withdrawn 500 NPT!".
+   - **Where**: Homepage → "Withdraw" or Wallet page.
+   - **What It Does**: Moves NPT back to user’s external wallet (e.g., MetaMask).
+
+#### **Payments**
+5. **Send NPT**
+   - **How It Works**: User enters recipient username and amount, signs `sendTokens`—deducts NPT + fees (`transferFeePercentage` + gas), mints avatar, updates `txCount`.
+   - **Look & Visibility**: "Send NPT" button (blue, homepage) → Form: Recipient ("SitaPkr"), Amount ("500 NPT"), Description ("Momos"), Fee ("~5 NPT"), "Send" button. Success: "Sent! +Yeti Avatar".
+   - **Where**: Homepage → "Send NPT" or Payments page.
+   - **What It Does**: Transfers NPT to another user—core payment feature.
+
+#### **Loans**
+6. **Add Collateral**
+   - **How It Works**: User selects BNB/ETH/BTC, enters amount, signs `addCollateral`—locks collateral, updates `userCollaterals.nptValue`.
+   - **Look & Visibility**: "Borrow" tab → "Add Collateral" section: Dropdown (BNB/ETH/BTC), Input ("1 BNB"), Value ("~300 NPT"), "Add" button (green). Success: "Collateral Added!".
+   - **Where**: Homepage → "Borrow" → "Add Collateral".
+   - **What It Does**: Secures loan eligibility—locks crypto for NPT borrowing.
+
+7. **Take Loan**
+   - **How It Works**: User enters NPT amount, signs `takeLoan`—checks collateral (150% min), adds debt to `userDebts`, transfers NPT.
+   - **Look & Visibility**: "Borrow" tab → "Take Loan": Slider (0-50,000 NPT), Collateral check ("300 NPT available"), Interest ("5%"), "Borrow" button (blue). Success: "Borrowed 200 NPT!".
+   - **Where**: Homepage → "Borrow" → "Take Loan".
+   - **What It Does**: Provides NPT loan against collateral—financial flexibility.
+
+8. **Repay Loan**
+   - **How It Works**: User enters repayment amount, signs `repayLoan`—deducts NPT + gas, clears `userDebts`, refunds collateral if zero, gives rebate if <15 days.
+   - **Look & Visibility**: "Borrow" tab → "Repay Loan": Debt ("205 NPT"), Input ("205 NPT"), Rebate ("~2.5 NPT if early"), "Repay" button (red). Success: "Repaid! +2.5 NPT".
+   - **Where**: Homepage → "Borrow" → "Repay Loan".
+   - **What It Does**: Settles loan, unlocks collateral—offers early repayment incentive.
+
+#### **Rewards**
+9. **Referral Reward**
+   - **How It Works**: User shares referral link, friend joins via `setUsername`, user signs `claimReferralReward`—gets 10 NPT from `feeReserve`.
+   - **Look & Visibility**: "Rewards" tab → "Referral": Link ("nepalipay.com/ref/RajuKtm"), Claimable ("10 NPT, 1 referral"), "Claim" button (green). Success: "Claimed 10 NPT!".
+   - **Where**: Homepage → "Rewards" → "Referral".
+   - **What It Does**: Incentivizes growth—earns NPT for inviting users.
+
+10. **Cashback Reward**
+    - **How It Works**: User completes 10 txs (`txCount`), signs `claimCashback`—gets 0.1% of balance from `feeReserve`, resets counter.
+    - **Look & Visibility**: "Rewards" tab → "Cashback": Counter ("7/10 txs"), Claimable ("1 NPT at 10"), "Claim" button (disabled until 10). Success: "Claimed 1 NPT!".
+    - **Where**: Homepage → "Rewards" → "Cashback".
+    - **What It Does**: Rewards frequent use—small NPT bonus.
+
+11. **Holographic Avatars**
+    - **How It Works**: Each `sendTokens` mints an avatar (`avatars`), user collects 5, signs `claimAvatarBonus`—gets 5 NPT from `feeReserve`.
+    - **Look & Visibility**: "Rewards" tab → "Avatars": Gallery ("Yeti", "Everest", 3/5 collected), "Claim 5 NPT" button (green at 5). Success: "Claimed 5 NPT!".
+    - **Where**: Homepage → "Rewards" → "Avatars".
+    - **What It Does**: Gamifies payments—collectible avatars with rewards.
+
+#### **Ad Bazaar**
+12. **Post Ad**
+    - **How It Works**: User fills ad form, selects tier (Base: 500 NPT, Wings: 1,000 NPT, Crest: 15,000+ NPT), signs `bidForFlame`—awaits admin approval.
+    - **Look & Visibility**: "Ad Bazaar" tab → "Post Ad": Form (Heading: "Fresh Momos", Description: "20 NPT, spicy...", Business: "Raju’s Stall", Location: "KTM", Contact: "+977-..."), Tier dropdown, "Post" button (blue). Pending: "Awaiting Approval".
+    - **Where**: Homepage → "Ad Bazaar" → "Post Ad".
+    - **What It Does**: Advertises goods/services—drives local trade.
+
+13. **Browse Ads**
+    - **How It Works**: Displays approved ads (`adFlames`)—users contact sellers IRL.
+    - **Look & Visibility**: "Ad Bazaar" tab → "Browse Ads": List—Crest (top banner: "Gold Rings - 10,000 NPT"), Wings (side banners), Base (scroll: "Fresh Momos - 20 NPT"). Details expand on click.
+    - **Where**: Homepage → "Ad Bazaar" → "Browse Ads".
+    - **What It Does**: Connects buyers to sellers—digital marketplace.
+
+---
+
+### **2. Admin Panel (admin.nepalipay.com)**
+
+#### **User Management**
+1. **Assign Roles**
+   - **How It Works**: Admin selects user, assigns role (NONE/USER/ADMIN), signs `setRole`—updates `userRoles`.
+   - **Look & Visibility**: "Users" tab → Table: Username ("RajuKtm"), Role ("NONE"), Action ("Set Role" dropdown → USER/ADMIN), "Apply" button (blue). Success: "Role Set!".
+   - **Where**: Admin homepage → "Users".
+   - **What It Does**: Activates users or promotes admins—controls access.
+
+2. **View User Details**
+   - **How It Works**: Fetches `userNames`, `userBalances`, `userDebts`, `userCollaterals`—displays profile.
+   - **Look & Visibility**: "Users" tab → Search ("RajuKtm") → Profile card: "Balance: 1,000 NPT, Debt: 205 NPT, Collateral: 1 BNB".
+   - **Where**: Admin homepage → "Users" → User row click.
+   - **What It Does**: Monitors user activity—basis for moderation.
+
+#### **Loan Oversight**
+3. **Monitor Loans**
+   - **How It Works**: Fetches `userDebts`, `loanStartTimestamps`, `userCollaterals`—shows loan status.
+   - **Look & Visibility**: "Loans" tab → Table: Username ("SitaPkr"), Debt ("205 NPT"), Collateral ("1 BNB"), Due ("35 days ago"), Status ("Overdue" in red).
+   - **Where**: Admin homepage → "Loans".
+   - **What It Does**: Tracks loan health—identifies issues.
+
+4. **Liquidate Overdue Loans**
+   - **How It Works**: Admin selects overdue loan, signs `liquidate`—seizes collateral, clears debt.
+   - **Look & Visibility**: "Loans" tab → Overdue filter → "Liquidate" button (red) next to "SitaPkr". Success: "Liquidated! 1 BNB seized".
+   - **Where**: Admin homepage → "Loans" → Overdue row.
+   - **What It Does**: Recovers funds—protects system integrity.
+
+#### **Ad Bazaar Moderation**
+5. **Approve/Reject Ads**
+   - **How It Works**: Admin reviews `adFlames`, signs `approveFlame` (posts ad) or `rejectFlame` (refunds NPT)—updates status.
+   - **Look & Visibility**: "Ad Bazaar" tab → Pending list: Card ("Fresh Momos - 20 NPT - 500 NPT - Base"), "Approve" (green) / "Reject" (red) buttons. Success: "Approved!" or "Refunded!".
+   - **Where**: Admin homepage → "Ad Bazaar" → "Pending Ads".
+   - **What It Does**: Ensures ad quality—filters spam.
+
+6. **View Active Ads**
+   - **How It Works**: Fetches approved `adFlames`—displays live ads.
+   - **Look & Visibility**: "Ad Bazaar" tab → Active list: Filter (Crest/Wings/Base), Card ("Gold Rings - 10,000 NPT - Crest - 7d left").
+   - **Where**: Admin homepage → "Ad Bazaar" → "Active Ads".
+   - **What It Does**: Monitors ad ecosystem—tracks performance.
+
+#### **Analytics**
+7. **View Analytics**
+   - **How It Works**: Aggregates events (`TokensSent`, `LoanTaken`, etc.)—displays trends.
+   - **Look & Visibility**: "Analytics" tab → Graphs: Tx volume (line: "5,000 NPT/day"), Loans (bar: "50 active"), Ads (pie: "50% Base"). Filter: Date/Admin.
+   - **Where**: Admin homepage → "Analytics".
+   - **What It Does**: Provides insights—guides moderation decisions.
+
+---
+
+### **3. Owner Dashboard (superadmin.nepalipay.com)**
+
+#### **System Control**
+1. **Pause/Unpause System**
+   - **How It Works**: Signs `pause`/`unpause` on NPT and `NepaliPay`—halts/resumes transfers.
+   - **Look & Visibility**: "Control" tab → Toggle ("Pause System: Off" → Red when On), "Confirm" button. Success: "Paused!" or "Resumed!".
+   - **Where**: Owner homepage → "Control".
+   - **What It Does**: Freezes operations—emergency response.
+
+2. **Update Addresses**
+   - **How It Works**: Signs `setUsdtAddress`, `setPriceFeedAddress` (NPT), `setNepaliPayAddress`, `setNPTAddress` (`FeeRelayer`)—updates contract links.
+   - **Look & Visibility**: "Control" tab → Form: Fields ("USDT: 0x55d...", "Feed: 0xeF0..."), "Update" button (blue). Success: "Address Updated!".
+   - **Where**: Owner homepage → "Control" → "Addresses".
+   - **What It Does**: Adapts to network changes—e.g., new USDT contract.
+
+#### **NPT Stability**
+3. **Emergency Mint/Burn**
+   - **How It Works**: Signs `emergencyMint` (adds NPT) or `emergencyBurn` (removes NPT)—adjusts supply.
+   - **Look & Visibility**: "Stability" tab → Inputs: "Mint To" (address), "Amount" (50,000 NPT), "Burn" (50,000 NPT), "Execute" buttons (green/red). Success: "Minted!" or "Burned!".
+   - **Where**: Owner homepage → "Stability".
+   - **What It Does**: Corrects peg—e.g., mints if reserve low.
+
+4. **Set NPR/USD Fallback**
+   - **How It Works**: Signs `setNprUsdFallback`—updates fallback rate if Chainlink fails.
+   - **Look & Visibility**: "Stability" tab → Input ("Fallback: $0.0075"), "Set" button (blue). Success: "Fallback Set!".
+   - **Where**: Owner homepage → "Stability" → "Fallback".
+   - **What It Does**: Ensures peg stability—backup for feed issues.
+
+5. **Monitor Peg & Reserve**
+   - **How It Works**: Fetches `getNprUsdRate` (peg), `getUsdtReserve` (USDT)—displays health.
+   - **Look & Visibility**: "Stability" tab → Cards: "Peg: $0.0075" (green if ±5%), "Reserve: 7,500 USDT" (red if <7,000).
+   - **Where**: Owner homepage → "Stability".
+   - **What It Does**: Tracks NPT stability—alerts for action.
+
+#### **Admin Management**
+6. **Assign/Remove Admins**
+   - **How It Works**: Signs `setRole`—updates `userRoles` to NONE/USER/ADMIN.
+   - **Look & Visibility**: "Admins" tab → Table: Username ("AnilKtm"), Role ("ADMIN"), Action ("Set Role" dropdown), "Apply" button (blue). Success: "Role Set!".
+   - **Where**: Owner homepage → "Admins".
+   - **What It Does**: Manages admin team—controls access.
+
+7. **Blacklist Users**
+   - **How It Works**: Signs `blacklistAddress`—blocks/unblocks user transfers.
+   - **Look & Visibility**: "Admins" tab → Search ("RajuKtm") → Toggle ("Blacklist: Off" → Red when On), "Confirm" button. Success: "Blacklisted!".
+   - **Where**: Owner homepage → "Admins" → User profile.
+   - **What It Does**: Stops scammers—protects system.
+
+#### **Financial Oversight**
+8. **View Fees**
+   - **How It Works**: Fetches `feeReserve` (gas fees), `emberPool` (5% ad revenue)—displays totals.
+   - **Look & Visibility**: "Finance" tab → Cards: "Fee Reserve: 50,000 NPT", "Ember Pool: 2,500 NPT".
+   - **Where**: Owner homepage → "Finance".
+   - **What It Does**: Tracks revenue—basis for withdrawals.
+
+9. **Swap to Fiat**
+   - **How It Works**: Signs `swapToFiat`—converts NPT to USDT, off-chain to bank.
+   - **Look & Visibility**: "Finance" tab → Form: Amount ("15,000 NPT"), Bank Details ("Account: 123..."), "Swap" button (blue). Success: "Swapped!".
+   - **Where**: Owner homepage → "Finance" → "Swap to Fiat".
+   - **What It Does**: Withdraws profits—converts NPT to NPR.
+
+10. **Vote Ember Pool**
+    - **How It Works**: Signs `voteEmberPool`—allocates 5% ad revenue to causes.
+    - **Look & Visibility**: "Finance" tab → List: "School Fund (1,000 NPT)", "Clinic Fund (1,500 NPT)", "Vote" buttons (blue). Success: "Voted!".
+    - **Where**: Owner homepage → "Finance" → "Ember Pool".
+    - **What It Does**: Funds community projects—enhances goodwill.
+
+#### **Analytics**
+11. **View Analytics**
+    - **How It Works**: Aggregates events (`TokensSent`, `LoanTaken`, etc.)—shows ecosystem trends.
+    - **Look & Visibility**: "Analytics" tab → Graphs: Tx volume (line: "10,000 NPT/day"), Loans (bar: "50"), Ads (pie: "50% Base"), Rewards (table: "100 referrals"). Filter: Date/Admin.
+    - **Where**: Owner homepage → "Analytics".
+    - **What It Does**: Guides strategy—e.g., scale ads if Base dominates.
+
+---
+
+### **Summary**
+- **User (13 Features)**: Wallet (4), Payments (1), Loans (3), Rewards (3), Ad Bazaar (2)—everyday Nepal tools.
+- **Admin (7 Features)**: User Management (2), Loans (2), Ad Bazaar (2), Analytics (1)—moderation focus.
+- **Owner (11 Features)**: Control (2), Stability (3), Admin (2), Finance (3), Analytics (1)—ecosystem oversight.
+

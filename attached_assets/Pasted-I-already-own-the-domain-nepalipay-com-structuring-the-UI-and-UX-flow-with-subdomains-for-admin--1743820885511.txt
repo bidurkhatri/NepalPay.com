@@ -1,0 +1,238 @@
+I already own the domain `nepalipay.com`, structuring the UI and UX flow with subdomains for admin (`admin.nepalipay.com`) and owner/superadmin (`superadmin.nepalipay.com`), while keeping user-facing sections under the main domain (e.g., `nepalipay.com/section`), is a practical and organized approach. This separation enhances security, clarity, and scalability.  refine the UI/UX to fit this domain structure, providing a cohesive flow for users, admins, and the superadmin (owner), tailored to the `NepaliPay` ecosystem.
+
+### **Domain Structure**
+- **User**: `nepalipay.com` (main site with sections like `/dashboard`, `/send`, etc.)
+- **Admin**: `admin.nepalipay.com` (for `Role.ADMIN` users)
+- **Superadmin (Owner)**: `superadmin.nepalipay.com` (for the contract owner)
+
+---
+
+### **UI and UX Flow for Users**
+
+#### **Base URL: `nepalipay.com`**
+
+##### **1. Landing Page (`nepalipay.com`)**
+- **Purpose**: Welcome users and prompt wallet connection.
+- **Components**:
+  - **Header**: "NepaliPay" logo, "Connect Wallet" (MetaMask), links to "About," "FAQ."
+  - **Hero**: "Pay, Borrow, and Fund with NPT" with "Get Started" button.
+  - **Footer**: Links to BSC contracts, support, `admin.nepalipay.com` (for admin login).
+
+##### **2. Dashboard (`nepalipay.com/dashboard`)**
+- **Purpose**: Main user hub post-login.
+- **Components**:
+  - **Top Bar**: `0x123...abc`, "NPT: 1000," "Disconnect."
+  - **Sidebar**: 
+    - Dashboard (`/dashboard`)
+    - Profile (`/profile`)
+    - Send Tokens (`/send`)
+    - Loans (`/loans`)
+    - Crowdfunding (`/crowdfunding`)
+    - Scheduled Payments (`/scheduled`)
+  - **Content**: 
+    - "Balance: 1000 NPT" with "Deposit" and "Withdraw" buttons.
+    - Quick actions: "Send Tip," "Request Loan."
+    - Recent transactions list.
+
+##### **3. Profile (`nepalipay.com/profile`)**
+- **Components**: 
+  - Form: "Username," "Role," "Country," "Save" (`setUsername`).
+  - Display: Current profile data and permission status.
+
+##### **4. Send Tokens (`nepalipay.com/send`)**
+- **Components**: 
+  - Form: "Recipient" (username/address), "Amount," "Description," "International" toggle, "Send"/"Tip"/"Business" buttons.
+  - Gasless toggle: "Pay with NPT" (`FeeRelayer`).
+
+##### **5. Loans (`nepalipay.com/loans`)**
+- **Components**: 
+  - "Collateral: X NPT" with "Add" button.
+  - "Borrow: Y NPT" with "Request" button.
+  - "Debt: Z NPT, Due: MM/DD/YYYY" with "Repay" button.
+
+##### **6. Crowdfunding (`nepalipay.com/crowdfunding`)**
+- **Components**: 
+  - "Start Campaign" form: "ID," "Target," "Description."
+  - Campaign list with "Contribute" buttons.
+
+##### **7. Scheduled Payments (`nepalipay.com/scheduled`)**
+- **Components**: 
+  - "Set Payment" form: "ID," "Amount," "Date."
+  - List with "Modify," "Cancel" options.
+
+---
+
+### **UI and UX Flow for Admins**
+
+#### **Base URL: `admin.nepalipay.com`**
+
+##### **1. Login Page (`admin.nepalipay.com`)**
+- **Purpose**: Restrict access to `Role.ADMIN` users.
+- **Components**:
+  - **Header**: "NepaliPay Admin Login."
+  - **Form**: "Connect Wallet" (checks `roles` for `ADMIN`).
+  - **Message**: "Admins only. Contact superadmin for access."
+
+##### **2. Admin Dashboard (`admin.nepalipay.com/dashboard`)**
+- **Purpose**: Overview and quick actions.
+- **Components**:
+  - **Top Bar**: `0x123...abc`, "Role: Admin," "Disconnect."
+  - **Sidebar**: 
+    - Dashboard (`/dashboard`)
+    - Users (`/users`)
+    - International (`/international`)
+    - Loans (`/loans`)
+  - **Content**: 
+    - "System: Active," "Total NPT: X."
+    - Buttons: "Assign Role," "View Overdue Loans."
+    - Alerts: "3 Overdue Loans," "2 Permission Requests."
+
+##### **3. Users (`admin.nepalipay.com/users`)**
+- **Components**: 
+  - Table: "Address," "Username," "Role," "Country," "Modify" (form), "Set Role" (dropdown).
+  - "Reserve Username" input and button.
+
+##### **4. International Permissions (`admin.nepalipay.com/international`)**
+- **Components**: 
+  - Table: "Address," "Username," "Can Send," "Can Receive," toggles (`setInternationalPaymentPermissions`).
+  - "Pending Requests" section with "Approve/Reject" buttons.
+
+##### **5. Loans (`admin.nepalipay.com/loans`)**
+- **Components**: 
+  - "Total Loans: X NPT," "Overdue: Y."
+  - Table: "Borrower," "Debt," "Collateral," "Due," "Liquidate" button for overdue.
+
+---
+
+### **UI and UX Flow for Superadmin (Owner)**
+
+#### **Base URL: `superadmin.nepalipay.com`**
+
+##### **1. Login Page (`superadmin.nepalipay.com`)**
+- **Purpose**: Restrict to contract owner.
+- **Components**:
+  - **Header**: "NepaliPay Superadmin Login."
+  - **Form**: "Connect Wallet" (checks `Ownable.owner()`).
+  - **Message**: "Owner only."
+
+##### **2. Superadmin Dashboard (`superadmin.nepalipay.com/dashboard`)**
+- **Purpose**: Full system control.
+- **Components**:
+  - **Top Bar**: `0x123...abc`, "Role: Owner," "Disconnect."
+  - **Sidebar**: 
+    - Dashboard (`/dashboard`)
+    - Users (`/users`)
+    - International (`/international`)
+    - Loans (`/loans`)
+    - System Control (`/control`)
+    - Fee Management (`/fees`)
+  - **Content**: 
+    - "System: Active," "Total NPT: X."
+    - Buttons: "Pause," "Unpause," "Assign Role."
+    - Alerts: Same as admin, plus "Fee Balance: Y NPT."
+
+##### **3. Users, International, Loans** 
+- **Components**: Identical to `admin.nepalipay.com` sections, with full access.
+
+##### **4. System Control (`superadmin.nepalipay.com/control`)**
+- **Components**: 
+  - "Status: Active" with "Pause"/"Unpause" buttons (`pause`, `unpause`).
+  - "Settings" (requires contract updates for now): "Interest Rate," "Loan Duration," "Max Loan."
+  - "Transfer Ownership" form: "New Owner Address," "Transfer" (`transferOwnership`).
+
+##### **5. Fee Management (`superadmin.nepalipay.com/fees`)**
+- **Components**: 
+  - "Fee: X NPT," "Set Fee" input (`setFeeAmount` on `FeeRelayer`).
+  - "Balance: Y NPT," "Withdraw" form: "Amount," "To Address" (`withdraw`).
+
+---
+
+### **UX Flow Examples**
+
+#### **User: Sending a Tip**
+- **URL**: `nepalipay.com/send`
+- **Flow**: 
+  1. Connects wallet at `nepalipay.com`.
+  2. Goes to `/send`, selects "bob," enters "20 NPT," "Thanks!," clicks "Send as Tip."
+  3. Confirms via MetaMask or gasless popup.
+  - **Perspective**: "Quick and familiar—like tipping on a payment app."
+
+#### **Admin: Assigning a Moderator**
+- **URL**: `admin.nepalipay.com/users`
+- **Flow**: 
+  1. Logs in at `admin.nepalipay.com`.
+  2. Navigates to `/users`, finds `0x456...abc`, sets "Role: MODERATOR," confirms (`setRole`).
+  - **Perspective**: "Managing my team is easy—just a dropdown and click."
+
+#### **Superadmin: Pausing System**
+- **URL**: `superadmin.nepalipay.com/control`
+- **Flow**: 
+  1. Logs in at `superadmin.nepalipay.com`.
+  2. Goes to `/control`, clicks "Pause," confirms (`pause`).
+  3. Resolves issue, clicks "Unpause."
+  - **Perspective**: "Full control at my fingertips—feels like running a bank."
+
+---
+
+### **Sample Wireframes (Text-Based)**
+
+#### **User Dashboard (`nepalipay.com/dashboard`)**
+```
+---------------------------------------------------
+| NepaliPay       | 0x123...abc | NPT: 1000 | Disconnect |
+---------------------------------------------------
+| Dashboard | Profile | Send | Loans | Crowd | Sched    |
+---------------------------------------------------
+| Balance: 1000 NPT                                 |
+| [Deposit]  [Withdraw]  [Send Tip]  [Request Loan] |
+---------------------------------------------------
+| Recent: Sent 20 NPT to bob - Thanks!             |
+---------------------------------------------------
+```
+
+#### **Admin Users (`admin.nepalipay.com/users`)**
+```
+---------------------------------------------------
+| Admin Portal | 0x123...abc | Role: Admin | Disconnect |
+---------------------------------------------------
+| Dashboard | Users | Int’l | Loans                  |
+---------------------------------------------------
+| Search: [bob]                                    |
+| Addr       | Username | Role | Country | Actions   |
+| 0x456...abc| bob     | USER | Nepal   | [Modify] [Role] |
+| [Set Role: Addr ___ | Role ▼ | Save]              |
+---------------------------------------------------
+```
+
+#### **Superadmin Control (`superadmin.nepalipay.com/control`)**
+```
+---------------------------------------------------
+| Superadmin | 0x123...abc | Role: Owner | Disconnect |
+---------------------------------------------------
+| Dashboard | Users | Int’l | Loans | Control | Fees  |
+---------------------------------------------------
+| Status: Active  [Pause]  [Unpause]               |
+| Interest Rate: 5%  [Update: ___]                 |
+| Loan Duration: 30 days  [Update: ___]            |
+| Transfer Ownership: [Addr ___]  [Transfer]       |
+---------------------------------------------------
+```
+
+---
+
+### **Implementation Notes**
+- **Hosting**: 
+  - Host user dApp on `nepalipay.com` (e.g., via Netlify).
+  - Set up subdomains `admin.nepalipay.com` and `superadmin.nepalipay.com` with DNS (e.g., A records or CNAME) pointing to separate builds or routes.
+- **Access Control**: 
+  - User site checks wallet connection only.
+  - Admin site checks `NepaliPay.roles(address) == 3` (ADMIN).
+  - Superadmin site checks `NepaliPay.owner() == address`.
+- **Tech Stack**: React/Vue, Web3.js/Ethers.js, Tailwind CSS for responsive design.
+
+---
+
+### **Admin/Owner Perspective**
+- **Admin**: "My subdomain keeps things separate—managing users and loans is clear and focused."
+- **Superadmin**: "Superadmin.nepalipay.com feels like the control room—I can pause, tweak, or hand over the reins."
+

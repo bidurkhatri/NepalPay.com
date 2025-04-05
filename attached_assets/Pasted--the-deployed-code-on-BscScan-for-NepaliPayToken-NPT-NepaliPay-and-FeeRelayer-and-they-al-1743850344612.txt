@@ -1,0 +1,141 @@
+ the deployed code on BscScan for `NepaliPayToken` (NPT), `NepaliPay`, and `FeeRelayer`, and they align with the features we’ve developed. Now, let’s outline the features, workflows, ideas, and concepts for the `NepaliPay` app across its user sections (`nepalipay.com/sections`), admin panel (`admin.nepalipay.com`), and owner dashboard (`superadmin.nepalipay.com`). These will reflect the deployed contracts’ capabilities, BSC blockchain integration, and a practical POV for Nepal’s context.
+
+---
+
+### **App Overview**
+- **Purpose**: A blockchain-based financial platform on BSC, pegging 1 NPT = 1 NPR, enabling payments, loans, ads, and rewards for Nepali users, admins, and owners.
+- **Contracts**:
+  - **NepaliPayToken (0x69d34B25809b346702C21EB0E22EAD8C1de58D66)**: 1M NPT supply, pegged via Chainlink INR/USD, mint/burn with USDT.
+  - **NepaliPay (0xe2d189f6696ee8b247ceae97fe3f1f2879054553)**: Core payment, loan, and ad system with rebate, referral, cashback, avatars, and ad bazaar.
+  - **FeeRelayer (0x7ff2271749409f9137dac1e082962e21cc99aee6)**: Calculates dynamic NPT gas fees.
+
+---
+
+### **Features by Section**
+
+#### **1. User Section (nepalipay.com/sections)**
+**POV**: Everyday Nepali users—small vendors, workers, students—seeking affordable, blockchain-based financial tools.
+
+##### **Features**
+1. **Wallet Management**:
+   - Register with a username (via `setUsername`)—e.g., "RajuKtm".
+   - View NPT balance (`userBalances`) and USDT reserve.
+   - Deposit NPT/USDT (`depositTokens`, `mint` NPT with USDT).
+   - Withdraw NPT (`withdrawTokens`) to wallet (e.g., MetaMask).
+
+2. **Payments**:
+   - Send NPT to others (`sendTokens`)—e.g., pay 500 NPT (~500 NPR) to "SitaPkr" for goods.
+   - Dynamic gas fees in NPT (`getDynamicGasFee`, capped at 1,000 NPT).
+
+3. **Loans**:
+   - Add collateral (BNB, BSC ETH, BSC BTC via `addCollateral`)—e.g., 1 BNB (~300 NPT value).
+   - Take loans (`takeLoan`) up to 50,000 NPT—e.g., borrow 200 NPT with 300 NPT collateral.
+   - Repay loans (`repayLoan`)—early repayment earns 50% gas fee rebate (`rebatePercentage`).
+
+4. **Rewards**:
+   - **Referral**: Invite friends (`setUsername` with referrer)—earn 10 NPT (`claimReferralReward`).
+   - **Cashback**: Send 10+ txs (`txCount`)—claim 0.1% balance cashback (`claimCashback`).
+   - **Holographic Avatars**: Each `sendTokens` mints an avatar—collect 5 for 5 NPT bonus (`claimAvatarBonus`).
+
+5. **Ad Bazaar Participation**:
+   - Post ads (`bidForFlame`)—e.g., "Fresh Momo, 20 NPT" for 500 NPT (Base, 1 day) or 1,000 NPT (Wings, 1 day).
+   - Bid for Crest (15,000+ NPT, 7 days)—e.g., "Gold Rings, 10,000 NPT".
+   - Browse ads—visit sellers IRL using contact details.
+
+##### **Workflow**
+- **User Onboarding**: Connect wallet → Set username → Deposit NPT/USDT.
+- **Payment**: Select recipient → Enter amount → Confirm tx (gas fee shown) → Avatar minted.
+- **Loan**: Add collateral → Request loan → Repay with NPT → Claim rebate if early.
+- **Rewards**: Refer friend → Claim 10 NPT; Send 10 txs → Claim cashback; Collect 5 avatars → Claim bonus.
+- **Ads**: Post ad (Base/Wings/Crest) → Wait for admin approval → Browse ads → Contact seller.
+
+##### **Concepts/Ideas**
+- **Accessibility**: Simple UI for Nepal’s low-tech users—e.g., Nepali language option.
+- **Gamification**: Avatars and rewards encourage usage—e.g., "Yeti" avatar for txs.
+- **Local Utility**: Ads for small vendors (e.g., momo stalls) boost micro-commerce.
+
+---
+
+#### **2. Admin Panel (admin.nepalipay.com)**
+**POV**: Local admins (e.g., NepaliPay staff) managing loans, ads, and user verification with controlled access.
+
+##### **Features**
+1. **User Management**:
+   - Assign roles (`setRole`)—e.g., promote "RajuKtm" to USER or ADMIN.
+   - View user details (`userNames`, `userBalances`, `userDebts`).
+
+2. **Loan Oversight**:
+   - Monitor loans (`userDebts`, `userCollaterals`, `loanStartTimestamps`).
+   - Liquidate overdue loans (`liquidate`)—e.g., seize 1 BNB collateral if 30 days past due.
+
+3. **Ad Bazaar Moderation**:
+   - Approve/reject ads (`approveFlame`, `rejectFlame`)—e.g., approve "Fresh Momo" or reject spam.
+   - View pending/active ads (`adFlames`)—e.g., Crest: "Gold Rings, 15,000 NPT".
+
+4. **Analytics**:
+   - Track tx volume (`TokensSent` events), loan activity (`LoanTaken`, `LoanRepaid`), ad postings (`FlamePosted`).
+
+##### **Workflow**
+- **User Role**: Review new user → Assign USER role → Notify via app.
+- **Loan**: Check overdue loans → Liquidate if >30 days → Transfer collateral (BNB/ETH/BTC).
+- **Ads**: Review ad (`adFields`) → Approve if valid → Reject with refund if spam → Update UI.
+- **Monitor**: Dashboard shows txs, loans, ads—filter by date/user.
+
+##### **Concepts/Ideas**
+- **Trust**: Admins ensure ad quality—e.g., no scams in bazaar.
+- **Efficiency**: Bulk approval/rejection UI—e.g., process 10 ads at once.
+- **Transparency**: Log actions (e.g., `FlameApproved`)—visible to owner.
+
+---
+
+#### **3. Owner Dashboard (superadmin.nepalipay.com)**
+**POV**: You, the owner, overseeing the ecosystem, stabilizing NPT, and managing emergencies.
+
+##### **Features**
+1. **System Control**:
+   - Pause/unpause contracts (`pause`, `unpause`)—e.g., halt during exploit.
+   - Update addresses (`setUsdtAddress`, `setPriceFeedAddress` in NPT; `setNepaliPayAddress` in `FeeRelayer`).
+
+2. **NPT Stability**:
+   - Emergency mint/burn (`emergencyMint`, `emergencyBurn`)—e.g., mint 50,000 NPT if USDT reserve low.
+   - Set NPR/USD fallback (`setNprUsdFallback`)—e.g., $0.008 if Chainlink fails.
+   - Monitor USDT reserve (`getUsdtReserve`)—ensure ~7,500 USDT for 1M NPT.
+
+3. **Admin Management**:
+   - Assign/remove admins (`setRole`)—e.g., add "Admin1" as ADMIN.
+   - Blacklist users (`blacklistAddress`)—e.g., block scammer wallet.
+
+4. **Financial Oversight**:
+   - View fees (`feeReserve`, `emberPool`)—e.g., 95% ad revenue (dev share).
+   - Swap NPT to fiat (`swapToFiat`)—e.g., 15,000 NPT → USDT → bank payout.
+   - Vote ember pool causes (`voteEmberPool`)—e.g., "Fund school" with 5% ad fees.
+
+5. **Analytics**:
+   - Total txs (`TokensSent`), loans (`LoanTaken`), ads (`FlamePosted`), rewards (`ReferralClaimed`, etc.).
+   - Peg health—NPR/USD rate (`getNprUsdRate`) vs. reserve.
+
+##### **Workflow**
+- **Stability**: Check `getNprUsdRate` → If off-peg (e.g., $0.006), mint/burn NPT → Update fallback if feed fails.
+- **Admin**: Add new admin → Review admin actions (e.g., ad approvals) → Blacklist if abuse detected.
+- **Finance**: Collect ad revenue → Swap to fiat → Disburse ember pool funds.
+- **Emergency**: Pause if exploit → Fix (e.g., update feed address) → Unpause.
+
+##### **Concepts/Ideas**
+- **Peg Defense**: Auto-notify if reserve < 7,000 USDT—trigger emergency mint.
+- **Audit Trail**: Log all owner actions (e.g., `emergencyMint`)—BSC transparency.
+- **Scalability**: Add new Chainlink feeds (e.g., BTC/USD) via `setPriceFeedAddress` later.
+
+---
+
+### **General Concepts & Ideas**
+- **BSC Advantage**: Low fees (~$0.01/tx) make NPT viable for Nepal’s micro-transactions—e.g., 20 NPT chai payments.
+- **Nepal Focus**: Ads for local vendors, loans for small farmers—e.g., 200 NPT loan for seeds.
+- **Web3 Empowerment**: Users own wallets, admins moderate, owner stabilizes—decentralized yet controlled.
+- **Workflow Simplicity**: App UI mirrors contract calls—e.g., "Send NPT" button → `sendTokens`.
+
+---
+
+### **Size Check**
+- **NPT**: ~7-8KB.
+- **NepaliPay**: ~22KB.
+- **FeeRelayer**: ~10-15KB—all fit < 24,576 bytes.
