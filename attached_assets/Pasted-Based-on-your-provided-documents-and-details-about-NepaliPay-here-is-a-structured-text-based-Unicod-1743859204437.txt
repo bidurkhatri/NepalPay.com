@@ -1,0 +1,117 @@
+Based on your provided documents and details about NepaliPay, here is a structured text-based Unicode UI outline for the app, covering the main sections, buttons, and functionalities clearly and visually arranged:
+
+# NepaliPay UI Outline (Unicode Text Format)
+
+## 📱 **User Interface** (`nepalipay.com`)
+```
+NepaliPay
+├─ Splash Screen
+│   ├─ 🌐 NepaliPay Logo (rupee swirl)
+│   └─ "Welcome to Nepal’s Digital Wallet"
+│
+├─ Homepage
+│   ├─ 🔹 Header
+│   │   ├─ Balance: "1,000 NPT (~1,000 NPR)"
+│   │   ├─ [➕ Add Funds] (green button)
+│   │   ├─ [💳 Withdraw] (orange button)
+│   │   └─ 🇳🇵 Nepali | 🇺🇸 English (Toggle)
+│   ├─ 🔸 Main Options Grid
+│   │   ├─ [🥟 Send NPT]
+│   │   ├─ [💰 Borrow]
+│   │   ├─ [🎁 Rewards]
+│   │   └─ [🏪 Ad Bazaar]
+│   └─ 🗨️ [Help Chat]
+│
+├─ 🥟 Send NPT
+│   ├─ Recipient: Autocomplete
+│   ├─ Amount Slider: 1 - 50,000 NPT
+│   ├─ Description Box
+│   ├─ Fee: Preview ("Total: 505 NPT")
+│   └─ [📤 Send]
+│
+├─ 💰 Borrow
+│   ├─ Tabs: 
+│   │   ├─ Add Collateral: Select (BNB/ETH/BTC), Amount input
+│   │   ├─ Take Loan: Amount Slider, Terms ("5% interest, 30 days")
+│   │   └─ Repay Loan: Debt ("205 NPT due"), Early Repayment Incentives
+│   └─ Action Buttons: [➕ Add], [💵 Borrow], [🔄 Repay]
+│
+├─ 🎁 Rewards
+│   ├─ Referral: Link ("nepalipay.com/ref/username"), Status, Claim Button
+│   ├─ Cashback: Progress bar ("7/10 transactions"), Reward details
+│   └─ Avatars: Collected ("Yeti", "Everest"), Claim rewards
+│
+└─ 🏪 Ad Bazaar
+    ├─ Tabs:
+    │   ├─ Post Ad: Heading, Description, Location, Contact, Tier (Base/Wings/Crest), Cost
+    │   └─ Browse Ads: Categorized layout (Crest/Wings/Base), Click-to-Call action
+    └─ Action Buttons: [📢 Post], [📞 Call]
+```
+
+## 🛠️ **Admin Interface** (`admin.nepalipay.com`)
+```
+Admin Panel
+├─ Login: "Admin Access Required" | [🔑 Connect Wallet]
+│
+├─ Dashboard
+│   ├─ Overview Cards: Active Users, Active Loans, Pending Ads
+│   └─ Tabs: [👥 Users] [💳 Loans] [🏪 Ad Bazaar] [📊 Analytics]
+│
+├─ 👥 Users
+│   ├─ User Table: Username | Role | Balance | Debt
+│   └─ Actions: Set Role (USER/ADMIN/NONE), Apply
+│
+├─ 💳 Loans
+│   ├─ Loan Table: Username | Debt | Collateral | Due Date
+│   └─ Actions: [⚠️ Liquidate] (overdue loans)
+│
+├─ 🏪 Ad Bazaar
+│   ├─ Pending Ads: Ad details, Approve/Reject buttons
+│   └─ Active Ads: Filter by Tier/Date
+│
+└─ 📊 Analytics
+    ├─ Graphs: Transactions, Loans, Ads performance
+    └─ Filters: Date range, Admin-specific view
+```
+
+## 🏦 **Owner Interface** (`superadmin.nepalipay.com`)
+```
+SuperAdmin Panel
+├─ Login: "Owner Access Only" | [🔑 Connect Wallet]
+│
+├─ Dashboard
+│   ├─ Summary Cards: Peg status, Reserve, Collected Fees
+│   └─ Tabs: [⚙️ Control] [📈 Stability] [👤 Admins] [💼 Finance] [📉 Analytics]
+│
+├─ ⚙️ Control
+│   ├─ [⏸️ Pause System] (Toggle)
+│   └─ Update Address Form (USDT, Feed, NepaliPay, NPT) | [🔄 Update]
+│
+├─ 📈 Stability
+│   ├─ Graph: Peg monitoring
+│   ├─ Mint/Burn NPT: Input & buttons
+│   └─ Fallback action: Set NPR/USD peg
+│
+├─ 👤 Admins
+│   ├─ Admin Table: Username | Role
+│   └─ Actions: Add/Remove Admin, Blacklist Toggle
+│
+├─ 💼 Finance
+│   ├─ Fees: Display, Swap-to-Fiat option
+│   └─ Ember Pool: Voting on community projects
+│
+└─ 📉 Analytics
+    ├─ Graphs: User engagement, System Transactions, Loan activity
+    └─ Filters: Date, Admin, Specific Metrics
+```
+
+### 🎨 **Overall Design Theme**:
+- Colors: Himalayan Blue and Nepali Flag Red
+- Typography: Clean, simple fonts, readable in mobile
+- Icons: Relevant Nepali cultural icons (momo, rupee symbol, Yeti avatar, Everest icon)
+- Navigation: Intuitive and minimal taps, clear action buttons
+- Language: Dual toggle Nepali 🇳🇵 and English 🇺🇸
+
+---
+
+This clear, concise UI outline provides you a structured approach, aligning with your vision to create a user-friendly, culturally resonant, and robust digital wallet for the Nepali community.

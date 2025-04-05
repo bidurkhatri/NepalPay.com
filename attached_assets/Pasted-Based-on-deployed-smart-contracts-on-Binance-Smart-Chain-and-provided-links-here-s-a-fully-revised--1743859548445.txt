@@ -1,0 +1,134 @@
+Based on deployed smart contracts on Binance Smart Chain and provided links, here's a fully revised and structured NepaliPay app UI design aligned specifically with the interactions supported by these contracts:
+
+## NepaliPay Blockchain Integrated App Structure
+
+### 🔗 Deployed Smart Contracts:
+- **NepaliPay Token:** [0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+- **NepaliPay Main Contract:** [0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+- **FeeRelayer Contract:** [0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+
+---
+
+## 🌐 [nepalipay.com (User Interface)](https://nepalipay.com)
+**Purpose:** User-focused, blockchain-integrated wallet & services.
+
+```
+NepaliPay User
+├─ Wallet Dashboard
+│   ├─ NPT Balance (fetched from NepaliPay Token contract)
+│   ├─ [➕ Deposit NPT] (NepaliPay Main Contract)
+│   └─ [💳 Withdraw NPT] (NepaliPay Main Contract)
+│
+├─ 🥟 Send NPT
+│   ├─ Recipient Address (Wallet Address)
+│   ├─ Amount (NPT)
+│   ├─ [📤 Send] (Calls `transfer` method on NepaliPay Token)
+│   └─ Transaction confirmation (via FeeRelayer)
+│
+├─ 💰 Borrow NPT (NepaliPay Main Contract)
+│   ├─ Collateral (BNB/ETH/BTC pegged tokens)
+│   ├─ Amount NPT to Borrow
+│   ├─ Interest Rate Display
+│   └─ [💵 Borrow Now] (calls `borrow` method)
+│
+├─ 🔄 Repay Loan (NepaliPay Main Contract)
+│   ├─ Active Loan Display
+│   ├─ Repayment Amount (auto-calc with interest)
+│   └─ [🔄 Repay] (calls `repayLoan` method)
+│
+├─ 🎁 Rewards (FeeRelayer Contract)
+│   ├─ Referral Code (user-specific)
+│   ├─ Claimable Rewards (based on on-chain referrals)
+│   └─ [🎉 Claim Rewards] (calls claim method)
+│
+└─ 📢 Ad Bazaar (NepaliPay Main Contract)
+    ├─ Post New Ad (Tier selection, pricing)
+    ├─ Existing Ads Display (on-chain fetch)
+    ├─ [📤 Submit Ad] (calls `postAd` method)
+    └─ Ad Status (Pending/Approved on-chain status)
+```
+
+---
+
+## ⚙️ [admin.nepalipay.com (Admin Interface)](https://admin.nepalipay.com)
+**Purpose:** Administrative blockchain management.
+
+```
+NepaliPay Admin
+├─ Dashboard Overview
+│   ├─ Active Users (fetched from blockchain)
+│   ├─ Active Loans (fetched from NepaliPay Main Contract)
+│   └─ Pending Ads (fetched from NepaliPay Main Contract)
+│
+├─ 👥 User Management
+│   ├─ User Details (Address, Balance, Loans)
+│   ├─ Update User Roles (calls role assignment in contract)
+│   └─ Blacklist Users (calls blacklist function)
+│
+├─ 💳 Loan Management
+│   ├─ Loan Details (User, Amount, Collateral, Due Date)
+│   ├─ Loan Liquidation (calls `liquidateLoan`)
+│   └─ Manual Loan Adjustments (contract methods)
+│
+├─ 📢 Ad Management
+│   ├─ Pending Ads Approval/Rejection (calls `approveAd` / `rejectAd`)
+│   └─ Active Ads Monitoring (fetched from blockchain)
+│
+└─ 📊 Blockchain Analytics
+    ├─ Transaction Statistics (fetched via contracts)
+    ├─ Loan Statistics
+    └─ Ad Performance Data (blockchain driven)
+```
+
+---
+
+## 🔐 [superadmin.nepalipay.com (Owner Interface)](https://superadmin.nepalipay.com)
+**Purpose:** Strategic blockchain & financial control.
+
+```
+NepaliPay SuperAdmin
+├─ Dashboard Overview
+│   ├─ NPT Peg Status (fetched from blockchain, real-time)
+│   ├─ Reserve Holdings (blockchain wallet balances)
+│   └─ Collected Fees (on-chain data via FeeRelayer)
+│
+├─ 🛠️ System Control
+│   ├─ System Pausing (calls `pause` method)
+│   ├─ Contract Address Updates (USDT/Feed/NepaliPay/NPT, via owner-only methods)
+│   └─ Fee Management (calls FeeRelayer methods)
+│
+├─ 📈 Token Stability
+│   ├─ Mint/Burn NepaliPay Token (calls mint/burn method in token contract)
+│   └─ Adjust Pegging Mechanism (via contract inputs)
+│
+├─ 👤 Admin Management
+│   ├─ Admin Accounts (address list & roles, contract-based roles)
+│   ├─ Add/Remove Admins (blockchain-based role assignment)
+│   └─ Blacklist Control (toggle blacklist on contract)
+│
+├─ 💰 Financial Controls
+│   ├─ Fees Conversion (NPT to Fiat via blockchain swap contracts)
+│   └─ Ember Pool Management (contract-driven voting & allocation)
+│
+└─ 📊 Comprehensive Analytics
+    ├─ Blockchain Transaction Volumes
+    ├─ Financial Health Metrics (peg, reserve, fees)
+    └─ Custom Filtered Blockchain Reports (Admin, Date Range, Metrics)
+```
+
+---
+
+## 🚨 **Blockchain Integration Details:**
+- Every action (e.g., sending NPT, borrowing, ad posting) directly invokes methods provided in your deployed smart contracts.
+- Transaction confirmations and results are handled via blockchain event listening.
+- FeeRelayer is utilized for efficient fee handling, allowing gasless transactions for certain user interactions (especially beneficial for small payments and rewards).
+
+## 🎨 **Design Principles for Blockchain App:**
+- Transparent Blockchain Transactions: Real-time blockchain confirmations and clear status updates.
+- User-Friendly Wallet: Easy access to blockchain balances and transaction history.
+- Security and Transparency: Blockchain-based role assignments and permission settings.
+- Community-driven: On-chain governance via Ember pool and community voting.
+
+---
+
+This UI structure aligns explicitly with the deployed smart contracts and ensures full integration and functionality from the blockchain backend to the user frontend. 
