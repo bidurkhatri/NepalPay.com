@@ -58,7 +58,9 @@ const NepaliPayTokenPage: React.FC = () => {
     userAddress,
     isConnected,
     connectWallet,
-    sendTokens
+    sendTokens,
+    addCollateral,
+    takeLoan
   } = useBlockchain();
   
   // State
@@ -73,6 +75,8 @@ const NepaliPayTokenPage: React.FC = () => {
   const [collateralType, setCollateralType] = useState('bnb');
   const [collateralAmount, setCollateralAmount] = useState('');
   const [loanAmount, setLoanAmount] = useState('');
+  const [addingCollateral, setAddingCollateral] = useState(false);
+  const [takingLoan, setTakingLoan] = useState(false);
   
   // Loan-to-Value (LTV) ratios for different collateral types
   const ltv = {
@@ -627,7 +631,7 @@ const NepaliPayTokenPage: React.FC = () => {
                     
                     <Button 
                       className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!collateralAmount || parseFloat(collateralAmount) <= 0) {
                           toast({
                             title: "Invalid Amount",
@@ -637,11 +641,40 @@ const NepaliPayTokenPage: React.FC = () => {
                           return;
                         }
                         
-                        // Add collateral (would integrate with blockchain)
-                        toast({
-                          title: "Collateral Added",
-                          description: `Successfully added ${collateralAmount} ${collateralType.toUpperCase()} as collateral`,
-                        });
+                        if (!isConnected) {
+                          toast({
+                            title: "Wallet Not Connected",
+                            description: "Please connect your wallet to add collateral",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
+                        try {
+                          setAddingCollateral(true);
+                          
+                          // Call blockchain method
+                          if (addCollateral) {
+                            await addCollateral(collateralType, collateralAmount);
+                          }
+                          
+                          toast({
+                            title: "Collateral Added",
+                            description: `Successfully added ${collateralAmount} ${collateralType.toUpperCase()} as collateral`,
+                          });
+                          
+                          // Reset form
+                          setCollateralAmount('');
+                        } catch (error: any) {
+                          console.error("Error adding collateral:", error);
+                          toast({
+                            title: "Transaction Failed",
+                            description: error.message || "Failed to add collateral. Please try again.",
+                            variant: "destructive"
+                          });
+                        } finally {
+                          setAddingCollateral(false);
+                        }
                       }}
                     >
                       Add Collateral
@@ -699,7 +732,7 @@ const NepaliPayTokenPage: React.FC = () => {
                     
                     <Button 
                       className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!loanAmount || parseFloat(loanAmount) <= 0) {
                           toast({
                             title: "Invalid Amount",
@@ -718,6 +751,15 @@ const NepaliPayTokenPage: React.FC = () => {
                           return;
                         }
                         
+                        if (!isConnected) {
+                          toast({
+                            title: "Wallet Not Connected",
+                            description: "Please connect your wallet to take a loan",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                        
                         const maxLoanValue = parseFloat(collateralAmount) * 
                           exchangeRates[collateralType as keyof typeof exchangeRates] * 
                           ltv[collateralType as keyof typeof ltv];
@@ -731,11 +773,31 @@ const NepaliPayTokenPage: React.FC = () => {
                           return;
                         }
                         
-                        // Process loan (would integrate with blockchain)
-                        toast({
-                          title: "Loan Request Submitted",
-                          description: "Your loan request has been submitted",
-                        });
+                        try {
+                          setTakingLoan(true);
+                          
+                          // Call blockchain method (uses borrow() contract function)
+                          if (takeLoan) {
+                            await takeLoan(loanAmount);
+                          }
+                          
+                          toast({
+                            title: "Loan Request Submitted",
+                            description: "Your loan request has been processed successfully",
+                          });
+                          
+                          // Reset form
+                          setLoanAmount('');
+                        } catch (error: any) {
+                          console.error("Error taking loan:", error);
+                          toast({
+                            title: "Transaction Failed",
+                            description: error.message || "Failed to process loan. Please try again.",
+                            variant: "destructive"
+                          });
+                        } finally {
+                          setTakingLoan(false);
+                        }
                       }}
                     >
                       Take Loan
