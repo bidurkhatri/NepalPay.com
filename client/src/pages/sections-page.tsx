@@ -14,7 +14,15 @@ import {
   LogIn, 
   Menu, 
   X,
-  ExternalLink
+  ExternalLink,
+  Send,
+  ArrowDownCircle,
+  Plus,
+  Clock,
+  PiggyBank,
+  CreditCard,
+  Newspaper,
+  Building
 } from 'lucide-react';
 import ContractLinks from '@/components/contract-links';
 
@@ -62,11 +70,32 @@ const SectionsPage: React.FC = () => {
       color: "from-blue-500 to-cyan-400"
     },
     {
-      title: "Payments",
-      description: "Send and receive payments with other NepaliPay users",
-      icon: <CircleDollarSign className="h-8 w-8" />,
-      path: "/transactions",
+      title: "Send",
+      description: "Send NPT tokens to friends or businesses",
+      icon: <Send className="h-8 w-8" />,
+      path: "/send",
+      color: "from-indigo-500 to-blue-400"
+    },
+    {
+      title: "Receive",
+      description: "Generate your receive address or QR code",
+      icon: <ArrowDownCircle className="h-8 w-8" />,
+      path: "/receive",
       color: "from-green-500 to-emerald-400"
+    },
+    {
+      title: "Schedule Payments",
+      description: "Set up recurring or future payments",
+      icon: <Clock className="h-8 w-8" />,
+      path: "/schedule",
+      color: "from-cyan-500 to-teal-400"
+    },
+    {
+      title: "NPT Savings",
+      description: "Stake NPT tokens and earn rewards",
+      icon: <PiggyBank className="h-8 w-8" />,
+      path: "/savings",
+      color: "from-yellow-500 to-amber-400"
     },
     {
       title: "Loans",
@@ -76,25 +105,39 @@ const SectionsPage: React.FC = () => {
       color: "from-purple-500 to-indigo-400"
     },
     {
-      title: "Rewards",
-      description: "Earn rewards through referrals, cashback, and avatars",
-      icon: <Award className="h-8 w-8" />,
-      path: "/rewards",
-      color: "from-yellow-500 to-amber-400"
+      title: "Utilities",
+      description: "Pay for services like mobile, electricity, and more",
+      icon: <CreditCard className="h-8 w-8" />,
+      path: "/utilities",
+      color: "from-teal-500 to-green-400"
+    },
+    {
+      title: "Crowdfunding",
+      description: "Support or create campaigns for community projects",
+      icon: <Building className="h-8 w-8" />,
+      path: "/crowdfunding",
+      color: "from-orange-500 to-red-400"
     },
     {
       title: "Ad Bazaar",
       description: "Post or browse local advertisements",
-      icon: <Store className="h-8 w-8" />,
+      icon: <Newspaper className="h-8 w-8" />,
       path: "/ad-bazaar",
-      color: "from-red-500 to-pink-400"
+      color: "from-pink-500 to-rose-400"
+    },
+    {
+      title: "Rewards",
+      description: "Earn rewards through referrals, cashback, and avatars",
+      icon: <Award className="h-8 w-8" />,
+      path: "/rewards",
+      color: "from-amber-500 to-yellow-400"
     },
     {
       title: "Buy Tokens",
       description: "Purchase NPT tokens with your credit card",
-      icon: <ArrowUpRight className="h-8 w-8" />,
+      icon: <Plus className="h-8 w-8" />,
       path: "/buy-tokens",
-      color: "from-indigo-500 to-blue-400",
+      color: "from-blue-600 to-indigo-500",
       featured: true
     }
   ];
