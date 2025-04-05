@@ -145,7 +145,7 @@ const SectionsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
+      {/* Header - Nepal Flag inspired */}
       <header className="glass sticky top-0 z-50 border-b border-gray-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
@@ -156,26 +156,41 @@ const SectionsPage: React.FC = () => {
             </div>
             
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6">
-              <div className="glass-card bg-gray-900/60 py-1.5 px-4 flex items-center">
+            <nav className="hidden md:flex items-center space-x-4">
+              {/* Balance Display */}
+              <div className="glass-card bg-gray-900/60 py-2 px-4 flex items-center">
                 <span className="text-gray-400 mr-2">Balance:</span>
                 <span className="font-bold text-white">{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</span>
+                <span className="text-xs text-gray-400 ml-1">(~{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPR)</span>
               </div>
               
               {isConnected ? (
-                <div className="flex items-center gap-4">
-                  <div className="glass-card bg-primary/10 py-1.5 px-4 flex items-center">
-                    <span className="text-primary font-medium">
-                      {username || "Unnamed User"}
-                    </span>
+                <div className="flex items-center gap-2">
+                  {/* Add Funds Button */}
+                  <Link href="/buy-tokens">
+                    <button className="modern-button bg-gradient-to-r from-green-600 to-green-500 flex items-center">
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add Funds
+                    </button>
+                  </Link>
+                  
+                  {/* Withdraw Button */}
+                  <Link href="/wallet">
+                    <button className="modern-button bg-gradient-to-r from-orange-600 to-orange-500 flex items-center">
+                      <ArrowDownCircle className="mr-1 h-4 w-4" />
+                      Withdraw
+                    </button>
+                  </Link>
+                  
+                  {/* Language Toggle */}
+                  <div className="glass-card bg-gray-900/70 p-1.5 rounded-full flex">
+                    <button className="px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                      English
+                    </button>
+                    <button className="px-2 py-1 rounded-full text-gray-400 text-xs font-medium">
+                      नेपाली
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => logout()}
-                    className="modern-button-outline flex items-center"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </button>
                 </div>
               ) : (
                 <button 
@@ -207,30 +222,47 @@ const SectionsPage: React.FC = () => {
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden glass border-t border-gray-800/60">
-            <div className="px-2 py-3 space-y-1 sm:px-3">
-              <div className="glass-card bg-gray-900/60 py-3 px-4 flex items-center justify-between">
-                <span className="text-gray-400">Balance:</span>
-                <span className="font-bold text-white">{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</span>
+            <div className="px-2 py-3 space-y-2 sm:px-3">
+              {/* Mobile Balance Display */}
+              <div className="glass-card bg-gray-900/60 py-3 px-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Balance:</span>
+                  <span className="font-bold text-white">{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</span>
+                </div>
+                <div className="text-right text-xs text-gray-400">
+                  (~{parseFloat(nptBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} NPR)
+                </div>
               </div>
               
               {isConnected ? (
                 <>
-                  <div className="glass-card bg-primary/10 py-3 px-4 flex items-center justify-between">
-                    <span className="text-primary font-medium">
-                      {username || "Unnamed User"}
-                    </span>
-                    <UserCircle className="h-5 w-5 text-primary" />
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Add Funds Button */}
+                    <Link href="/buy-tokens" className="w-full">
+                      <button className="modern-button bg-gradient-to-r from-green-600 to-green-500 w-full flex items-center justify-center">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add Funds
+                      </button>
+                    </Link>
+                    
+                    {/* Withdraw Button */}
+                    <Link href="/wallet" className="w-full">
+                      <button className="modern-button bg-gradient-to-r from-orange-600 to-orange-500 w-full flex items-center justify-center">
+                        <ArrowDownCircle className="mr-1 h-4 w-4" />
+                        Withdraw
+                      </button>
+                    </Link>
                   </div>
-                  <button 
-                    onClick={() => {
-                      logout();
-                      closeMobileMenu();
-                    }}
-                    className="modern-button w-full flex items-center justify-center"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </button>
+                  
+                  {/* Mobile Language Toggle */}
+                  <div className="glass-card bg-gray-900/70 p-1.5 rounded-full flex justify-center">
+                    <button className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                      English
+                    </button>
+                    <button className="px-3 py-1 rounded-full text-gray-400 text-xs font-medium">
+                      नेपाली
+                    </button>
+                  </div>
                 </>
               ) : (
                 <button 
@@ -398,7 +430,7 @@ const SectionsPage: React.FC = () => {
         </section>
       </main>
       
-      {/* Footer */}
+      {/* Footer with Need Help chat bubble */}
       <footer className="py-8 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
@@ -422,6 +454,14 @@ const SectionsPage: React.FC = () => {
               <ExternalLink className="ml-1 h-3 w-3" />
             </a>
           </div>
+        </div>
+
+        {/* Need Help Chat Bubble - Fixed position */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <Link href="/support" className="flex items-center glass-card bg-primary/10 py-3 px-5 rounded-full shadow-lg hover:scale-105 transition-transform">
+            <MessageSquare className="mr-2 h-5 w-5 text-primary" />
+            <span className="font-medium text-primary">Need Help?</span>
+          </Link>
         </div>
       </footer>
     </div>

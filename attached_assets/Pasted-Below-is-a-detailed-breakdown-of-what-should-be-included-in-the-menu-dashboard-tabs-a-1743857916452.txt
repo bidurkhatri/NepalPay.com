@@ -1,0 +1,210 @@
+Below is a detailed breakdown of what should be included in the **menu**, **dashboard**, **tabs**, and **sections** for each of the three NepaliPay portals: **nepalipay.com/sections** (User Interface), **admin.nepalipay.com** (Admin Interface), and **superadmin.nepalipay.com** (Owner Interface). This is crafted from an application perspective, focusing on user experience and functionality for users (e.g., vendors, students), admins, and the owner, while aligning with NepaliPay’s purpose of financial empowerment and local commerce. The structure uses clear, concise descriptions to define the content of each area, ensuring intuitive navigation and comprehensive coverage.
+
+---
+
+### 1. User Interface: nepalipay.com/sections
+**Purpose**: A mobile-first portal for everyday Nepalis to manage payments, loans, rewards, and commerce.
+
+#### Menu (Top Navigation Bar)
+- **Add Funds**: Opens a modal to deposit NPT or USDT (e.g., "7.5 USDT → 1,000 NPT").
+- **Withdraw**: Opens a modal to withdraw NPT to the user’s wallet (e.g., "500 NPT").
+- **Language Toggle**: Switch between "Nepali" (e.g., "पठाउनुहोस्") and "English".
+- **Profile Icon**: Dropdown with "Username" (e.g., "RajuKtm"), "Balance", "Sign Out".
+
+#### Dashboard (Homepage)
+- **Header**: 
+  - Balance Display: "Balance: 1,000 NPT (~1,000 NPR)" – Real-time NPT and NPR equivalent.
+  - Menu Items: Add Funds, Withdraw, Language Toggle, Profile Icon.
+- **Main Content (Grid Layout)**:
+  - **Send NPT**: Button with momo icon – Quick access to send money.
+  - **Borrow**: Button with rupee stack icon – Access loan options.
+  - **Rewards**: Button with gift icon – View and claim rewards.
+  - **Ad Bazaar**: Button with market stall icon – Post or browse ads.
+- **Footer**: 
+  - "Need Help?" Chat Bubble – Opens support chat in Nepali/English.
+
+#### Tabs and Sections
+- **Send NPT**
+  - **Section**: Single-page form.
+    - Recipient Field: Autocomplete username (e.g., "SitaPkr").
+    - Amount Slider: 1-50,000 NPT.
+    - Description Box: Text input (e.g., "For momos").
+    - Fee Preview: "Total: 505 NPT (~5 NPT fee)".
+    - Button: "Send" (blue).
+    - Success Popup: "Sent! +Yeti Avatar" animation.
+
+- **Borrow**
+  - **Tabs**:
+    - **Add Collateral**:
+      - Dropdown: BNB/ETH/BTC options.
+      - Amount Input: e.g., "1 BNB (~300 NPT)".
+      - Button: "Add" (green).
+    - **Take Loan**:
+      - Slider: 1-50,000 NPT (capped by collateral).
+      - Info: "5% interest, 30 days".
+      - Button: "Borrow" (blue).
+    - **Repay Loan**:
+      - Debt Display: "205 NPT due".
+      - Rebate Info: "~2.5 NPT rebate if early".
+      - Button: "Repay" (red).
+
+- **Rewards**
+  - **Sections**:
+    - **Referral**:
+      - Link: "nepalipay.com/ref/RajuKtm".
+      - Status: "10 NPT claimable".
+      - Button: "Claim" (green).
+    - **Cashback**:
+      - Progress: "7/10 transactions".
+      - Reward: "1 NPT at 10".
+      - Button: "Claim" (green, locked until 10).
+    - **Avatars**:
+      - Gallery: "Yeti", "Everest" (3/5 collected).
+      - Reward: "Claim 5 NPT" (at 5).
+      - Button: "Claim" (green).
+
+- **Ad Bazaar**
+  - **Tabs**:
+    - **Post Ad**:
+      - Form Fields: Heading ("Fresh Momos"), Description ("20 NPT, spicy"), Business ("Raju’s Stall"), Location ("Thamel, KTM"), Contact ("+977-..."), Tier (Base/Wings/Crest).
+      - Cost: "500 NPT" (Base).
+      - Button: "Post" (blue).
+      - Status: "Pending Approval".
+    - **Browse Ads**:
+      - Layout: Crest (top banner), Wings (side banners), Base (scrolling list).
+      - Example: "Fresh Momos - 20 NPT - Raju’s Stall".
+      - Action: Call button (phone link).
+
+---
+
+### 2. Admin Interface: admin.nepalipay.com
+**Purpose**: A dashboard for administrators to oversee users, loans, ads, and analytics.
+
+#### Menu (Top Navigation Bar)
+- **Dashboard**: Returns to main overview.
+- **Users**: Opens user management page.
+- **Loans**: Opens loan oversight page.
+- **Ad Bazaar**: Opens ad moderation page.
+- **Analytics**: Opens data insights page.
+- **Logout**: Signs out of admin session.
+
+#### Dashboard (Main Page)
+- **Header**: 
+  - Greeting: "Welcome, AnilKtm".
+  - Menu Items: Dashboard, Users, Loans, Ad Bazaar, Analytics, Logout.
+- **Main Content (Cards)**:
+  - "Active Users: 1,000" – Total registered users.
+  - "Active Loans: 50" – Current loans outstanding.
+  - "Pending Ads: 10" – Ads awaiting approval.
+- **Quick Links**: 
+  - Buttons to each tab (Users, Loans, Ad Bazaar, Analytics).
+
+#### Tabs and Sections
+- **Users**
+  - **Section**: Table-based management.
+    - Columns: Username, Role (NONE/USER/ADMIN), Balance, Debt.
+    - Row Example: "RajuKtm | NONE | 1,000 NPT | 205 NPT".
+    - Action: "Set Role" dropdown (e.g., USER), "Apply" (blue).
+    - Profile View: Click row → "Details: Balance, Transactions".
+
+- **Loans**
+  - **Section**: Table-based oversight.
+    - Columns: Username, Debt, Collateral, Due Date.
+    - Row Example: "SitaPkr | 205 NPT | 1 BNB | Overdue (35 days)".
+    - Action: "Liquidate" (red, for overdue loans).
+
+- **Ad Bazaar**
+  - **Tabs**:
+    - **Pending Ads**:
+      - Cards: "Fresh Momos - 20 NPT - 500 NPT".
+      - Buttons: "Approve" (green), "Reject" (red).
+    - **Active Ads**:
+      - List: Tiered (Crest/Wings/Base).
+      - Filter: By tier or date.
+
+- **Analytics**
+  - **Sections**:
+    - **Transactions**: Graph – "5,000 NPT/day".
+    - **Loans**: Graph – Active vs. repaid loans.
+    - **Ads**: Graph – Ad volume by tier.
+    - **Filters**: Date range, Admin (e.g., "AnilKtm").
+
+---
+
+### 3. Owner Interface: superadmin.nepalipay.com
+**Purpose**: A strategic control center for system stability, admins, and finances.
+
+#### Menu (Top Navigation Bar)
+- **Dashboard**: Returns to main overview.
+- **Control**: Opens system management page.
+- **Stability**: Opens peg and reserve management page.
+- **Admins**: Opens admin management page.
+- **Finance**: Opens financial oversight page.
+- **Analytics**: Opens data insights page.
+- **Logout**: Signs out of owner session.
+
+#### Dashboard (Main Page)
+- **Header**: 
+  - Title: "Owner Dashboard".
+  - Menu Items: Dashboard, Control, Stability, Admins, Finance, Analytics, Logout.
+- **Main Content (Cards)**:
+  - "Peg: $0.0075" – Current NPT/USD value.
+  - "Reserve: 7,500 USDT" – Backing reserve status.
+  - "Fees: 50,000 NPT" – Accumulated transaction/ad fees.
+- **Quick Links**: 
+  - Buttons to each tab (Control, Stability, Admins, Finance, Analytics).
+
+#### Tabs and Sections
+- **Control**
+  - **Section**: System management tools.
+    - Toggle: "Pause System" (red) – Halts operations.
+    - Form: "Update Addresses" – Fields for USDT, Feed, NepaliPay, NPT.
+    - Button: "Update" (blue).
+
+- **Stability**
+  - **Section**: Peg and supply management.
+    - Graph: Peg status ("$0.0075").
+    - Inputs: "Mint 50,000 NPT" (green), "Burn" (red).
+    - Fallback: "Set NPR/USD: $0.0075" (blue).
+
+- **Admins**
+  - **Section**: Admin management table.
+    - Columns: Username, Role.
+    - Row Example: "AnilKtm | ADMIN".
+    - Actions: "Add Admin" (form), "Remove" (red).
+    - Blacklist: Toggle per user (red).
+
+- **Finance**
+  - **Sections**:
+    - **Fees**:
+      - Display: "50,000 NPT".
+      - "Swap to Fiat" Form (blue).
+    - **Ember Pool**:
+      - Display: "2,500 NPT".
+      - Voting List: e.g., "Clinic Fund".
+      - Button: "Vote" (blue).
+
+- **Analytics**
+  - **Sections**:
+    - **Transactions**: Graph – "10,000 NPT/day".
+    - **Loans**: Graph – Loan trends.
+    - **Ads**: Graph – Ad performance.
+    - **Filters**: Date, Admin.
+
+---
+
+### Summary
+- **User Interface**: 
+  - **Menu**: Focuses on funding and profile actions.
+  - **Dashboard**: Central hub with quick access to core features.
+  - **Tabs/Sections**: Action-specific (Send, Borrow, Rewards, Ad Bazaar) with clear forms and feedback.
+- **Admin Interface**: 
+  - **Menu**: Navigation to oversight areas.
+  - **Dashboard**: Overview with key metrics.
+  - **Tabs/Sections**: Detailed management (Users, Loans, Ads, Analytics) with actionable controls.
+- **Owner Interface**: 
+  - **Menu**: Strategic navigation.
+  - **Dashboard**: High-level system status.
+  - **Tabs/Sections**: Control tools (Control, Stability, Finance, Analytics) for system-wide management.
+
+This structure ensures each portal serves its audience—users get simplicity, admins get oversight, and the owner gets control—reflecting NepaliPay’s mission.
