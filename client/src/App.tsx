@@ -56,9 +56,9 @@ const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRoutePr
   // If not authenticated, redirect to login
   if (!user) return <Redirect to="/login" />;
   
-  // If role is required and user doesn't have it, redirect to sections
+  // If role is required and user doesn't have it, redirect to dashboard
   if (requiredRole && userRole !== requiredRole) {
-    return <Redirect to="/sections" />;
+    return <Redirect to="/dashboard" />;
   }
   
   // If authenticated and role matches or no role required, render the component
@@ -87,7 +87,7 @@ const PublicRoute = ({ component: Component }: { component: React.ComponentType 
     } else if (portalType === 'superadmin' && userRole === 'OWNER') {
       return <Redirect to="/owner-dashboard" />;
     } else {
-      return <Redirect to="/sections" />;
+      return <Redirect to="/dashboard" />;
     }
   }
   
@@ -123,7 +123,7 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       
-      {/* User portal routes (nepalipay.com/sections) */}
+      {/* User portal routes */}
       <Route path="/sections" component={() => <ProtectedRoute component={SectionsPage} requiredRole="USER" />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} requiredRole="USER" />} />
       <Route path="/crypto" component={() => <ProtectedRoute component={CryptoFixedPage} requiredRole="USER" />} />

@@ -44,7 +44,7 @@ const TokenPurchaseForm = () => {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + '/sections',
+        return_url: window.location.origin + '/dashboard',
       },
     });
 
@@ -76,7 +76,7 @@ const TokenPurchaseForm = () => {
         <p className="text-gray-400 mb-8 max-w-md mx-auto">
           Your NPT tokens will be minted to your wallet shortly. It may take a few minutes for the transaction to be confirmed on the blockchain.
         </p>
-        <Link href="/sections">
+        <Link href="/dashboard">
           <a className="modern-button inline-flex items-center">
             Go to Dashboard
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -111,7 +111,7 @@ const TokenPurchaseForm = () => {
       </div>
       
       <div className="flex justify-between">
-        <Link href="/sections">
+        <Link href="/dashboard">
           <a className="modern-button-outline inline-flex items-center">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
@@ -170,7 +170,7 @@ const BuyTokensPage: React.FC = () => {
       {/* Header */}
       <header className="glass sticky top-0 z-50 border-b border-gray-800/60">
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/sections">
+          <Link href="/dashboard">
             <a className="flex items-center">
               <span className="text-xl font-bold gradient-text">NepaliPay</span>
             </a>
@@ -284,7 +284,7 @@ const BuyTokensPage: React.FC = () => {
               </div>
               
               <div className="flex justify-between">
-                <Link href="/sections">
+                <Link href="/dashboard">
                   <a className="modern-button-outline inline-flex items-center">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
