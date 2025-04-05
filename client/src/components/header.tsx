@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { useBlockchain } from '@/contexts/blockchain-context';
 import { SearchIcon, NotificationIcon } from '@/lib/icons';
 import { getInitials } from '@/lib/icons';
-import { Menu, X } from 'lucide-react'; 
+import { 
+  Menu, 
+  X, 
+  Coins, 
+  BarChart3, 
+  Receipt, 
+  DollarSign, 
+  PiggyBank, 
+  Gift, 
+  FileText, 
+  Mountain, 
+  ChevronRight,
+  ExternalLink 
+} from 'lucide-react'; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +26,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from 'wouter';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
+  const { nptBalance, userAddress } = useBlockchain();
   const [searchQuery, setSearchQuery] = useState('');
+  const [buyAmount, setBuyAmount] = useState('1000');
+  const [sellAmount, setSellAmount] = useState('1000');
 
   if (!user) return null;
 
@@ -135,6 +161,168 @@ const Header: React.FC = () => {
               <NotificationIcon className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse">3</span>
             </button>
+            
+            {/* NPT Token dropdown for desktop */}
+            <div className="hidden md:block relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 focus:outline-none group glass-card glow-amber">
+                  <Coins className="h-4 w-4 mr-1" />
+                  <span className="font-medium text-sm">{parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</span>
+                  <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 bg-black/90 border border-amber-500/30 text-white">
+                  {/* NPT Balance with value in NPR */}
+                  <div className="p-4 border-b border-amber-500/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium text-amber-400">Your NPT Balance</h3>
+                      <Link href="/nepalipaytoken">
+                        <button className="text-xs text-amber-400 flex items-center hover:underline">
+                          View Details
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </button>
+                      </Link>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xl font-bold gradient-text-amber">{parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                        <p className="text-xs text-white/60">≈ {parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })} NPR</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="bg-green-500/20 border-green-500/30 text-green-400 hover:bg-green-500/30">
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              Buy
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-black/95 border-amber-500/30 text-white">
+                            <DialogHeader>
+                              <DialogTitle className="text-amber-400">Buy NPT Tokens</DialogTitle>
+                              <DialogDescription>
+                                Purchase NPT tokens using NPR at a 1:1 ratio
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 pt-4">
+                              <div className="space-y-2">
+                                <label className="text-sm">Amount (NPR)</label>
+                                <input
+                                  type="text"
+                                  value={buyAmount}
+                                  onChange={(e) => setBuyAmount(e.target.value)}
+                                  className="w-full p-2 bg-black/60 border border-amber-500/30 rounded-md text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                />
+                                <p className="text-xs text-white/60">You will receive {buyAmount} NPT</p>
+                              </div>
+                              <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+                                Buy Now
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30">
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              Sell
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-black/95 border-amber-500/30 text-white">
+                            <DialogHeader>
+                              <DialogTitle className="text-amber-400">Sell NPT Tokens</DialogTitle>
+                              <DialogDescription>
+                                Sell your NPT tokens back to NPR at a 1:1 ratio
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 pt-4">
+                              <div className="space-y-2">
+                                <label className="text-sm">Amount (NPT)</label>
+                                <input
+                                  type="text"
+                                  value={sellAmount}
+                                  onChange={(e) => setSellAmount(e.target.value)}
+                                  max={nptBalance || '0'}
+                                  className="w-full p-2 bg-black/60 border border-amber-500/30 rounded-md text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                />
+                                <p className="text-xs text-white/60">You will receive {sellAmount} NPR</p>
+                              </div>
+                              <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+                                Sell Now
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Quick actions */}
+                  <div className="p-4 grid grid-cols-2 gap-2 border-b border-amber-500/20">
+                    <Link href="/nepalipaytoken?tab=statistics">
+                      <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-500/10 transition-colors">
+                        <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <BarChart3 className="h-4 w-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Analytics</p>
+                          <p className="text-xs text-white/60">Token statistics</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/nepalipaytoken?tab=transactions">
+                      <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-500/10 transition-colors">
+                        <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <Receipt className="h-4 w-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Transactions</p>
+                          <p className="text-xs text-white/60">Transaction history</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/nepalipaytoken?tab=collateral">
+                      <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-500/10 transition-colors">
+                        <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <PiggyBank className="h-4 w-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Collateral</p>
+                          <p className="text-xs text-white/60">Loan status</p>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link href="/nepalipaytoken?tab=rewards">
+                      <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-amber-500/10 transition-colors">
+                        <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                          <Gift className="h-4 w-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Rewards</p>
+                          <p className="text-xs text-white/60">Referral rewards</p>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                  
+                  {/* Export options */}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-amber-400">Export Data</h3>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors">
+                        <FileText className="h-3 w-3 mr-1" />
+                        CSV Export
+                      </button>
+                      <button className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors">
+                        <Mountain className="h-3 w-3 mr-1" />
+                        Blockchain Data
+                      </button>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             
             {/* Profile dropdown for desktop */}
             <div className="hidden md:block relative">

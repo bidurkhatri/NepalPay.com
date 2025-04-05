@@ -111,6 +111,22 @@
     background-image: linear-gradient(135deg, theme('colors.primary.DEFAULT'), theme('colors.blue.400'));
   }
   
+  /* Amber gradient text for NPT tokens */
+  .gradient-text-amber {
+    @apply font-semibold bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, theme('colors.amber.500'), theme('colors.amber.300'));
+  }
+  
+  /* Amber glow effect for NPT elements */
+  .glow-amber {
+    box-shadow: 0 0 5px theme('colors.amber.500'), 0 0 20px theme('colors.amber.500/50');
+    transition: all 0.3s ease;
+  }
+  
+  .glow-amber:hover {
+    box-shadow: 0 0 10px theme('colors.amber.500'), 0 0 30px theme('colors.amber.500/70');
+  }
+  
   /* Nepal flag inspired gradient text */
   .nepal-gradient-text {
     @apply font-semibold bg-clip-text text-transparent;
