@@ -38,7 +38,13 @@ import {
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
-  const { nptBalance, userAddress } = useBlockchain();
+  const { 
+    nptBalance, 
+    userAddress, 
+    mintTokens, 
+    withdrawTokens, 
+    sendTokens
+  } = useBlockchain();
   const [searchQuery, setSearchQuery] = useState('');
   const [buyAmount, setBuyAmount] = useState('1000');
   const [sellAmount, setSellAmount] = useState('1000');
@@ -174,9 +180,9 @@ const Header: React.FC = () => {
                   {/* NPT Balance with value in NPR */}
                   <div className="p-4 border-b border-amber-500/20">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium text-amber-400">Your NPT Balance</h3>
+                      <h3 className="text-sm font-medium text-white">Your NPT Balance</h3>
                       <Link href="/nepalipaytoken">
-                        <button className="text-xs text-amber-400 flex items-center hover:underline">
+                        <button className="text-xs text-white flex items-center hover:underline">
                           View Details
                           <ExternalLink className="h-3 w-3 ml-1" />
                         </button>
@@ -184,8 +190,7 @@ const Header: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xl font-bold gradient-text-amber">{parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                        <p className="text-xs text-white/60">≈ {parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })} NPR</p>
+                        <p className="text-xl font-bold text-white">{parseFloat(nptBalance || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })} NPT</p>
                       </div>
                       <div className="flex space-x-2">
                         <Dialog>
@@ -197,7 +202,7 @@ const Header: React.FC = () => {
                           </DialogTrigger>
                           <DialogContent className="bg-black/95 border-amber-500/30 text-white">
                             <DialogHeader>
-                              <DialogTitle className="text-amber-400">Buy NPT Tokens</DialogTitle>
+                              <DialogTitle className="text-white">Buy NPT Tokens</DialogTitle>
                               <DialogDescription>
                                 Purchase NPT tokens using NPR at a 1:1 ratio
                               </DialogDescription>
@@ -213,7 +218,15 @@ const Header: React.FC = () => {
                                 />
                                 <p className="text-xs text-white/60">You will receive {buyAmount} NPT</p>
                               </div>
-                              <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+                              <Button 
+                                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                                onClick={() => {
+                                  if (!buyAmount) return;
+                                  // Call mintTokens (this function connects to the mint() function in the smart contract)
+                                  // Use amount in NPR which is 1:1 to NPT
+                                  mintTokens(buyAmount);
+                                }}
+                              >
                                 Buy Now
                               </Button>
                             </div>
@@ -229,7 +242,7 @@ const Header: React.FC = () => {
                           </DialogTrigger>
                           <DialogContent className="bg-black/95 border-amber-500/30 text-white">
                             <DialogHeader>
-                              <DialogTitle className="text-amber-400">Sell NPT Tokens</DialogTitle>
+                              <DialogTitle className="text-white">Sell NPT Tokens</DialogTitle>
                               <DialogDescription>
                                 Sell your NPT tokens back to NPR at a 1:1 ratio
                               </DialogDescription>
@@ -246,7 +259,14 @@ const Header: React.FC = () => {
                                 />
                                 <p className="text-xs text-white/60">You will receive {sellAmount} NPR</p>
                               </div>
-                              <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+                              <Button 
+                                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                                onClick={() => {
+                                  if (!sellAmount) return;
+                                  // Call withdrawTokens (this connects to the withdraw() function in the smart contract)
+                                  withdrawTokens(sellAmount);
+                                }}
+                              >
                                 Sell Now
                               </Button>
                             </div>
@@ -264,7 +284,7 @@ const Header: React.FC = () => {
                           <BarChart3 className="h-4 w-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Analytics</p>
+                          <p className="text-sm font-medium text-white">Analytics</p>
                           <p className="text-xs text-white/60">Token statistics</p>
                         </div>
                       </div>
@@ -275,7 +295,7 @@ const Header: React.FC = () => {
                           <Receipt className="h-4 w-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Transactions</p>
+                          <p className="text-sm font-medium text-white">Transactions</p>
                           <p className="text-xs text-white/60">Transaction history</p>
                         </div>
                       </div>
@@ -286,7 +306,7 @@ const Header: React.FC = () => {
                           <PiggyBank className="h-4 w-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Collateral</p>
+                          <p className="text-sm font-medium text-white">Collateral</p>
                           <p className="text-xs text-white/60">Loan status</p>
                         </div>
                       </div>
@@ -297,7 +317,7 @@ const Header: React.FC = () => {
                           <Gift className="h-4 w-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Rewards</p>
+                          <p className="text-sm font-medium text-white">Rewards</p>
                           <p className="text-xs text-white/60">Referral rewards</p>
                         </div>
                       </div>
@@ -307,14 +327,32 @@ const Header: React.FC = () => {
                   {/* Export options */}
                   <div className="p-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-amber-400">Export Data</h3>
+                      <h3 className="text-sm font-medium text-white">Export Data</h3>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                      <button className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors">
+                      <button 
+                        className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors"
+                        onClick={() => {
+                          // This would typically connect to a function that generates a CSV file
+                          // Here we're just logging for now
+                          console.log('Exporting CSV data for user transactions');
+                          alert('Exporting NPT transaction data as CSV...');
+                        }}
+                      >
                         <FileText className="h-3 w-3 mr-1" />
                         CSV Export
                       </button>
-                      <button className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors">
+                      <button 
+                        className="flex items-center justify-center space-x-1 px-3 py-1.5 bg-black/40 border border-amber-500/20 rounded-md text-xs text-white hover:bg-amber-500/10 transition-colors"
+                        onClick={() => {
+                          // This would typically open the blockchain explorer link
+                          if (userAddress) {
+                            window.open(`https://bscscan.com/token/0x69d34B25809b346702C21EB0E22EAD8C1de58D66?a=${userAddress}`, '_blank');
+                          } else {
+                            alert('Please connect your wallet first');
+                          }
+                        }}
+                      >
                         <Mountain className="h-3 w-3 mr-1" />
                         Blockchain Data
                       </button>
