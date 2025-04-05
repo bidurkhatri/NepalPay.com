@@ -62,7 +62,7 @@ const RewardsPage: React.FC = () => {
     toast({
       title: "Copied to Clipboard",
       description: "Referral link copied! Share with friends to earn rewards.",
-      variant: "success",
+      variant: "default",
     });
   };
   
@@ -78,7 +78,7 @@ const RewardsPage: React.FC = () => {
       toast({
         title: "Reward Claimed",
         description: `You've successfully claimed ${referralReward} NPT in referral rewards!`,
-        variant: "success",
+        variant: "default",
       });
       
     } catch (error: any) {
@@ -104,7 +104,7 @@ const RewardsPage: React.FC = () => {
       toast({
         title: "Cashback Claimed",
         description: `You've successfully claimed ${cashbackReward} NPT in cashback rewards!`,
-        variant: "success",
+        variant: "default",
       });
       
     } catch (error: any) {
@@ -130,7 +130,7 @@ const RewardsPage: React.FC = () => {
       toast({
         title: "Avatar Reward Claimed",
         description: `You've successfully claimed ${avatarReward} NPT for completing your avatar collection!`,
-        variant: "success",
+        variant: "default",
       });
       
     } catch (error: any) {

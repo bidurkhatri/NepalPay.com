@@ -18,6 +18,8 @@ import AnalyticsPage from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
 import SectionsPage from "@/pages/sections-page";
 import BuyTokensPage from "@/pages/buy-tokens";
+import RewardsPage from "@/pages/rewards-page";
+import AdBazaarPage from "@/pages/ad-bazaar-page";
 
 // Superadmin Pages
 import SuperAdminIndex from "@/pages/superadmin";
@@ -177,6 +179,8 @@ function Router() {
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} requiredRole="USER" />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} requiredRole="USER" />} />
       <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} requiredRole="USER" />} />
+      <Route path="/rewards" component={() => <ProtectedRoute component={RewardsPage} requiredRole="USER" />} />
+      <Route path="/ad-bazaar" component={() => <ProtectedRoute component={AdBazaarPage} requiredRole="USER" />} />
       
       {/* Admin portal routes (admin.nepalipay.com) */}
       <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />

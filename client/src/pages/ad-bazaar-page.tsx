@@ -146,7 +146,7 @@ const AdBazaarPage: React.FC = () => {
       toast({
         title: "Ad Submitted",
         description: "Your ad has been submitted for approval!",
-        variant: "success",
+        variant: "default",
       });
       
       // Reset form

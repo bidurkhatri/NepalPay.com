@@ -1,0 +1,31 @@
+Here's a clear breakdown of each feature and button interaction that explicitly triggers methods within the deployed smart contracts, separated by roles (User, Admin, Owner).
+
+---
+
+## 🔵 **User Interface (nepalipay.com)**
+
+| Feature                 | UI Button Action                      | Smart Contract Method Triggered                  | Contract                                           |
+|-------------------------|---------------------------------------|---------------------------------------------------|----------------------------------------------------|
+| **Send NPT**            | [📤 Send]                             | `transfer(recipient, amount)`                    | [NepaliPay Token](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)      |
+| **Deposit NPT**         | [➕ Deposit]                           | `deposit(amount)`                                | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Withdraw NPT**        | [💳 Withdraw]                          | `withdraw(amount)`                               | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Add Collateral**      | [➕ Add Collateral]                    | `addCollateral(token, amount)`                   | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Borrow NPT**          | [💵 Borrow Now]                        | `borrow(amount)`                                 | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Repay Loan**          | [🔄 Repay Now]                         | `repayLoan()`                                    | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Claim Referral Rewards** | [🎉 Claim Rewards]                   | `claimRewards()`                                 | [FeeRelayer](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)   |
+| **Post Ad**             | [📢 Submit Ad]                         | `postAd(tier, details)`                          | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+
+---
+
+## 🛠️ **Admin Interface (admin.nepalipay.com)**
+
+| Feature                      | UI Button Action                           | Smart Contract Method Triggered                 | Contract                                           |
+|------------------------------|--------------------------------------------|--------------------------------------------------|----------------------------------------------------|
+| **Assign User Role**         | [💾 Apply Role Change]                     | `setRole(address user, role)`                    | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Blacklist Users**          | [🚫 Blacklist] / [✅ Unblacklist]            | `blacklistUser(address user)`                    | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Loan Liquidation**         | [⚠️ Liquidate Loan]                        | `liquidateLoan(address borrower)`                | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Approve Ads**              | [✅ Approve Ad]                             | `approveAd(uint256 adId)`                        | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Reject Ads**               | [❌ Reject Ad]                              | `rejectAd(uint256 adId)`                         | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Remove Active Ads**        | [❌ Remove Ad]                              | `removeAd(uint256 adId)`                         | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+
+---

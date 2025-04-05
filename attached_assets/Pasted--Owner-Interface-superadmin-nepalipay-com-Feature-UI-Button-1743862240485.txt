@@ -1,0 +1,34 @@
+## 🔐 **Owner Interface (superadmin.nepalipay.com)**
+
+| Feature                        | UI Button Action                         | Smart Contract Method Triggered                       | Contract                                           |
+|--------------------------------|------------------------------------------|--------------------------------------------------------|----------------------------------------------------|
+| **Pause/Resume System**        | [⏸️ Pause] / [▶️ Resume]                  | `pause()` / `unpause()`                               | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Update Contract Addresses**  | [🔄 Update Addresses]                    | `updateContractAddresses(usdt, feed, main, token)`    | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Mint Tokens**                | [➕ Mint Tokens]                          | `mint(uint256 amount)`                                | [NepaliPay Token](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code) |
+| **Burn Tokens**                | [🔥 Burn Tokens]                          | `burn(uint256 amount)`                                | [NepaliPay Token](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code) |
+| **Manual Peg Adjustment**      | [📌 Set Peg Manually]                    | `setPeg(uint256 newPeg)`                              | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Admin Role Management**      | [➕ Add Admin] / [❌ Remove Admin]          | `setAdmin(address admin)` / `removeAdmin(address)`    | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Blacklist Admin**            | [🚫 Blacklist Admin]                      | `blacklistUser(address admin)`                        | [NepaliPay Main](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code) |
+| **Fee Conversion (Swap Fees)** | [🔄 Swap Fees to Fiat/Crypto]              | Blockchain liquidity/exchange contracts (external call) | NepaliPay Main & external liquidity pools      |
+| **Ember Pool Management (Voting)** | [✅ Vote] / [❌ Reject Project]            | Blockchain-based voting method                        | NepaliPay Main contract governance module     |
+
+---
+
+## 🚩 **Quick Reference to Smart Contracts:**
+
+- **NepaliPay Token:**  
+[0x69d34B25809b346702C21EB0E22EAD8C1de58D66](https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66#code)
+
+- **NepaliPay Main:**  
+[0xe2d189f6696ee8b247ceae97fe3f1f2879054553](https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553#code)
+
+- **FeeRelayer:**  
+[0x7ff2271749409f9137dac1e082962e21cc99aee6](https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6#code)
+
+---
+
+### 🎯 **Summary:**
+- **Users** directly interact with wallet and payment methods.
+- **Admins** manage platform operations, user roles, loans, and advertisements.
+- **Owner** holds strategic system control, financial stability, and high-level administrative powers.
+

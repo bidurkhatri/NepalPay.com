@@ -148,7 +148,7 @@ const BorrowPage: React.FC = () => {
       toast({
         title: "Loan Successful",
         description: `You've successfully borrowed ${loanAmount} NPT!`,
-        variant: "success",
+        variant: "default",
       });
       
       // Reset form
@@ -185,7 +185,7 @@ const BorrowPage: React.FC = () => {
       toast({
         title: "Repayment Successful",
         description: `You've successfully repaid ${repayAmount} NPT!`,
-        variant: "success",
+        variant: "default",
       });
       
       // Reset form
