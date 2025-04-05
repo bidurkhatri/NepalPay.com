@@ -283,7 +283,7 @@ const NepaliPayTokenPage: React.FC = () => {
                   <CardFooter>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0">
+                        <Button className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0">
                           <SendHorizonal className="h-4 w-4 mr-2" />
                           Send Tokens
                         </Button>
@@ -340,7 +340,7 @@ const NepaliPayTokenPage: React.FC = () => {
                             </Button>
                           </DialogClose>
                           <Button 
-                            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0"
+                            className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
                             onClick={handleSendTokens}
                             disabled={sendingTokens}
                           >
@@ -416,13 +416,176 @@ const NepaliPayTokenPage: React.FC = () => {
               </div>
             </TabsContent>
             
-            {/* Loans Tab Content */}
-            <TabsContent value="loans" className="mt-6 space-y-6">
+            {/* Payments Tab Content */}
+            <TabsContent value="payments" className="mt-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Landmark className="mr-2 h-5 w-5 text-blue-400" />
+                      <SendHorizonal className="mr-2 h-5 w-5 text-amber-400" />
+                      Business Payment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Recipient Username</Label>
+                      <Input
+                        id="username"
+                        placeholder="Enter username"
+                        className="bg-[#0A1022] border-[#1E2A4A]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment-amount">Amount</Label>
+                      <div className="relative">
+                        <Input
+                          id="payment-amount"
+                          type="number"
+                          placeholder="0.0"
+                          className="bg-[#0A1022] border-[#1E2A4A] pr-16"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                          NPT
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment-description">Payment Description</Label>
+                      <Textarea
+                        id="payment-description"
+                        placeholder="What's this payment for?"
+                        className="bg-[#0A1022] border-[#1E2A4A]"
+                      />
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
+                      onClick={() => {
+                        toast({
+                          title: "Processing Payment",
+                          description: "Your business payment is being processed",
+                        });
+                      }}
+                    >
+                      Send Business Payment
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Calendar className="mr-2 h-5 w-5 text-amber-400" />
+                      Scheduled Payments
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduled-address">Recipient Address</Label>
+                      <Input
+                        id="scheduled-address"
+                        placeholder="0x..."
+                        className="bg-[#0A1022] border-[#1E2A4A]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduled-amount">Amount</Label>
+                      <div className="relative">
+                        <Input
+                          id="scheduled-amount"
+                          type="number"
+                          placeholder="0.0"
+                          className="bg-[#0A1022] border-[#1E2A4A] pr-16"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                          NPT
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduled-date">Payment Date</Label>
+                      <Input
+                        id="scheduled-date"
+                        type="date"
+                        className="bg-[#0A1022] border-[#1E2A4A]"
+                      />
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
+                      onClick={() => {
+                        toast({
+                          title: "Payment Scheduled",
+                          description: "Your payment has been scheduled successfully",
+                        });
+                      }}
+                    >
+                      Schedule Payment
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            {/* Collateral Tab Content */}
+            <TabsContent value="collateral" className="mt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Landmark className="mr-2 h-5 w-5 text-amber-400" />
+                      Add Collateral
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="collateral-amount">Amount to Add</Label>
+                      <div className="relative">
+                        <Input
+                          id="collateral-amount"
+                          type="number"
+                          placeholder="0.0"
+                          className="bg-[#0A1022] border-[#1E2A4A] pr-16"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                          NPT
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-[#0D1426] border border-[#1E2A4A] space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Current Collateral:</span>
+                        <span className="text-white">0.0 NPT</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Max Loan Available:</span>
+                        <span className="text-white">0.0 NPT</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Required Ratio:</span>
+                        <span className="text-white">150%</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
+                      onClick={() => {
+                        toast({
+                          title: "Collateral Added",
+                          description: "Your collateral has been added successfully",
+                        });
+                      }}
+                    >
+                      Add Collateral
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <CreditCard className="mr-2 h-5 w-5 text-amber-400" />
                       Take a Loan
                     </CardTitle>
                   </CardHeader>
@@ -449,7 +612,7 @@ const NepaliPayTokenPage: React.FC = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Required Collateral:</span>
-                        <span className="text-white">120%</span>
+                        <span className="text-white">150%</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Loan Term:</span>
@@ -466,11 +629,11 @@ const NepaliPayTokenPage: React.FC = () => {
                     </Alert>
                     
                     <Button 
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white border-0"
+                      className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white border-0"
                       onClick={() => {
                         toast({
-                          title: "Loan Feature Coming Soon",
-                          description: "This feature will be available in the next update",
+                          title: "Loan Request Submitted",
+                          description: "Your loan request has been submitted",
                         });
                       }}
                     >
@@ -478,38 +641,7 @@ const NepaliPayTokenPage: React.FC = () => {
                     </Button>
                   </CardContent>
                 </Card>
-                
-                <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <CreditCard className="mr-2 h-5 w-5 text-blue-400" />
-                      Your Active Loans
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-center h-48 text-gray-400">
-                      No active loans
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
-            </TabsContent>
-            
-            {/* Funding Tab Content */}
-            <TabsContent value="funding" className="mt-6">
-              <Card className="bg-[#0A1022]/80 border-[#1E2A4A] backdrop-blur-xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <PiggyBank className="mr-2 h-5 w-5 text-blue-400" />
-                    Crowdfunding Campaigns
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-48 text-gray-400">
-                    No active crowdfunding campaigns
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </div>
