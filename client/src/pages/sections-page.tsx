@@ -24,13 +24,13 @@ const SectionsPage: React.FC = () => {
     isConnected, 
     connectWallet, 
     username, 
-    nptBalance, 
-    tokenBalance, 
-    userDebt, 
-    userCollaterals, 
-    txCount, 
-    avatars, 
-    referralCount 
+    nptBalance = "0", 
+    tokenBalance = "0", 
+    userDebt = "0", 
+    userCollaterals = { bnb: "0", eth: "0", btc: "0", nptValue: "0" }, 
+    txCount = 0, 
+    avatars = [], 
+    referralCount = 0
   } = useBlockchain();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
