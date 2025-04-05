@@ -1,7 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'wouter';
-import { MoveRight, Shield, Globe, Rocket, CreditCard, Phone, ArrowUpRight } from 'lucide-react';
+import { 
+  MoveRight, Shield, Globe, Rocket, CreditCard, Phone, 
+  ArrowUpRight, Info, Wallet, Flag, Clock, DollarSign, Users, ArrowRight 
+} from 'lucide-react';
 import ContractLinks from '@/components/contract-links';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+
+// Animation counter component
+interface CounterProps {
+  end: number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+}
+
+const Counter = ({ end, duration = 2000, prefix = '', suffix = '' }: CounterProps) => {
+  const [count, setCount] = useState(0);
+  
+  React.useEffect(() => {
+    let startTime = 0;
+    const timer = requestAnimationFrame(function animate(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * end));
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [end, duration]);
+  
+  return (
+    <span>{prefix}{count.toLocaleString()}{suffix}</span>
+  );
+};
 
 const LandingPage: React.FC = () => {
   const contracts = [
@@ -22,130 +68,197 @@ const LandingPage: React.FC = () => {
     },
   ];
 
+  const faqs = [
+    {
+      question: "What is NepaliPay?",
+      answer: "NepaliPay is a secure digital wallet built on the Binance Smart Chain for everyday Nepalis. It allows you to send money, borrow securely, advertise your business, and earn rewards — all powered by blockchain technology."
+    },
+    {
+      question: "How do I send money?",
+      answer: "Just connect your wallet, enter an address, amount, and hit send. No banks, no middlemen. The transaction is processed instantly on the blockchain."
+    },
+    {
+      question: "What are collateralized loans?",
+      answer: "You deposit digital assets like BNB or ETH and borrow NPT instantly — no paperwork, no credit checks, and no lengthy approval processes."
+    },
+    {
+      question: "Is it safe?",
+      answer: "Yes. Your funds are held in audited smart contracts, secured by blockchain technology. All transactions are transparent and immutable."
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: "Rajesh Kumar",
+      role: "Small Business Owner",
+      initial: "RK",
+      quote: "NepaliPay helped me grow my shop faster. Instant pay = more customers."
+    },
+    {
+      name: "Sita KC",
+      role: "Freelance Designer",
+      initial: "SK",
+      quote: "I get paid from my clients overseas in minutes now, not days."
+    },
+    {
+      name: "Anish Maharjan",
+      role: "Tech Entrepreneur",
+      initial: "AM",
+      quote: "Borrowing without banks gave my startup the cash flow it needed."
+    },
+    {
+      name: "Pratik Rai",
+      role: "E-commerce Owner",
+      initial: "PR",
+      quote: "Ad Bazaar helped me reach more customers for my online store at half the cost."
+    }
+  ];
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="py-20 px-4 relative">
+      {/* Hero Section – Emotional + Localized Welcome */}
+      <section className="py-20 px-4 relative min-h-[80vh] flex items-center">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute w-[500px] h-[500px] blur-[100px] rounded-full -top-20 -right-20 bg-primary/20"></div>
           <div className="absolute w-[600px] h-[600px] blur-[120px] rounded-full -bottom-40 -left-40 bg-blue-600/10"></div>
         </div>
         
-        <div className="max-w-6xl mx-auto relative">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <h1 className="text-4xl md:text-5xl font-bold leading-tight gradient-text">
-                Revolutionizing Digital Finance in Nepal
-              </h1>
-              <p className="text-lg text-gray-300 leading-relaxed">
-                Experience the future of finance with NepaliPay - a cutting-edge blockchain solution designed for Nepal's unique financial landscape. 
-                Secure. Transparent. Innovative.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/login" className="modern-button flex items-center">
-                  Get Started
-                  <MoveRight className="ml-2 h-5 w-5" />
-                </Link>
-                <Link href="/register" className="modern-button-outline flex items-center">
-                  Create Account
-                  <ArrowUpRight className="ml-2 h-5 w-5" />
-                </Link>
-              </div>
+        <div className="max-w-6xl mx-auto relative w-full">
+          <div className="text-center space-y-8 max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight gradient-text">
+              Revolutionizing Finance for Every Nepali
+            </h1>
+            <p className="text-xl text-gray-300 leading-relaxed">
+              NepaliPay is your digital wallet to send money, borrow securely, advertise your business, and earn rewards — powered by blockchain, made for Nepal.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center pt-4">
+              <Link href="/login" className="modern-button flex items-center">
+                <Wallet className="mr-2 h-5 w-5" />
+                Connect Wallet
+              </Link>
+              <Link href="/login" className="modern-button-outline flex items-center">
+                <Rocket className="mr-2 h-5 w-5" />
+                Try Demo
+              </Link>
             </div>
-            
-            <div className="glass-card">
-              <div className="card-highlight"></div>
-              <div className="card-content relative">
-                <div className="absolute -top-8 -right-8 w-32 h-32 blur-[80px] bg-primary/30 rounded-full"></div>
-                <div 
-                  className="w-full aspect-video rounded-lg border border-gray-800/60 shadow-xl transform transition-all bg-gray-800/20 flex flex-col items-center justify-center p-4 text-center"
-                >
-                  <div className="text-primary text-3xl font-bold mb-2">NepaliPay</div>
-                  <div className="text-gray-400">Secure Blockchain Wallet for Nepal</div>
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <div className="bg-gray-800/60 rounded-lg p-3 text-center flex-1">
-                    <div className="text-2xl font-bold text-primary">13.3K+</div>
-                    <div className="text-xs text-gray-400 mt-1">Active Users</div>
-                  </div>
-                  <div className="bg-gray-800/60 rounded-lg p-3 text-center flex-1">
-                    <div className="text-2xl font-bold text-primary">120M+</div>
-                    <div className="text-xs text-gray-400 mt-1">Transactions</div>
-                  </div>
-                  <div className="bg-gray-800/60 rounded-lg p-3 text-center flex-1">
-                    <div className="text-2xl font-bold text-primary">$8.5M</div>
-                    <div className="text-xs text-gray-400 mt-1">Total Volume</div>
-                  </div>
-                </div>
+            <div className="flex items-center justify-center gap-6 text-sm text-gray-400 pt-2">
+              <div className="flex items-center">
+                <Flag className="h-4 w-4 mr-1 text-primary" />
+                Built for Nepal
+              </div>
+              <div className="flex items-center">
+                <Shield className="h-4 w-4 mr-1 text-primary" />
+                On Binance Smart Chain
               </div>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Features Section */}
-      <section className="py-16 px-4 bg-gray-900/30">
+      {/* Live Stats Cards (Row with Animations) */}
+      <section className="py-10 px-4 relative bg-gray-900/30">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold gradient-text mb-4">Revolutionary Features</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              NepaliPay combines cutting-edge blockchain technology with user-friendly interfaces 
-              to create a seamless financial experience.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="glass-card">
+              <div className="card-highlight"></div>
+              <div className="card-content flex flex-col items-center text-center">
+                <Users className="h-8 w-8 text-primary mb-2" />
+                <div className="text-3xl font-bold">
+                  <Counter end={13300} suffix="+" />
+                </div>
+                <p className="text-gray-400">Users</p>
+              </div>
+            </div>
+            
+            <div className="glass-card">
+              <div className="card-highlight"></div>
+              <div className="card-content flex flex-col items-center text-center">
+                <ArrowRight className="h-8 w-8 text-primary mb-2" />
+                <div className="text-3xl font-bold">
+                  <Counter end={120} suffix="M+" />
+                </div>
+                <p className="text-gray-400">Transactions</p>
+              </div>
+            </div>
+            
+            <div className="glass-card">
+              <div className="card-highlight"></div>
+              <div className="card-content flex flex-col items-center text-center">
+                <DollarSign className="h-8 w-8 text-primary mb-2" />
+                <div className="text-3xl font-bold">
+                  <Counter end={8.5} prefix="$" suffix="M+" />
+                </div>
+                <p className="text-gray-400">Volume</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Feature Highlights (Icon Cards Grid) */}
+      <section className="py-20 px-4 relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute w-[400px] h-[400px] blur-[120px] rounded-full top-40 -left-20 bg-primary/5"></div>
+          <div className="absolute w-[500px] h-[500px] blur-[100px] rounded-full -bottom-60 right-20 bg-blue-600/5"></div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold gradient-text mb-4">Feature Highlights</h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="cyber-card">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="glass-card">
               <div className="card-highlight"></div>
               <div className="card-content">
                 <Shield className="h-10 w-10 text-primary mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Secure Transactions</h3>
                 <p className="text-gray-400">
-                  All transactions are secured on the Binance Smart Chain, ensuring transparency and immutability.
+                  All transactions are secured by advanced blockchain technology, ensuring your funds are always safe.
                 </p>
               </div>
             </div>
             
-            <div className="cyber-card">
+            <div className="glass-card">
               <div className="card-highlight"></div>
               <div className="card-content">
                 <Globe className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Cross-Border Payments</h3>
+                <h3 className="text-xl font-semibold mb-2">Cross-Border Transfers</h3>
                 <p className="text-gray-400">
-                  Send money internationally without the high fees and delays of traditional banking systems.
+                  Skip remittance fees and send money internationally without excessive fees and long waiting times.
                 </p>
               </div>
             </div>
             
-            <div className="cyber-card">
+            <div className="glass-card">
               <div className="card-highlight"></div>
               <div className="card-content">
-                <Rocket className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Instant Settlements</h3>
+                <Clock className="h-10 w-10 text-primary mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Instant Settlement</h3>
                 <p className="text-gray-400">
-                  Experience near-instant transaction confirmations, putting an end to long waiting periods.
+                  No more waiting hours or days for transactions to clear. Experience near-instant confirmations.
                 </p>
               </div>
             </div>
             
-            <div className="cyber-card">
+            <div className="glass-card">
               <div className="card-highlight"></div>
               <div className="card-content">
                 <CreditCard className="h-10 w-10 text-primary mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Collateralized Loans</h3>
                 <p className="text-gray-400">
-                  Access liquidity by using your crypto assets as collateral, with competitive interest rates.
+                  Use your digital assets to unlock liquidity instantly, without credit checks or long approval processes.
                 </p>
               </div>
             </div>
             
-            <div className="cyber-card">
+            <div className="glass-card">
               <div className="card-highlight"></div>
               <div className="card-content">
                 <Phone className="h-10 w-10 text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Mobile-First Design</h3>
+                <h3 className="text-xl font-semibold mb-2">Mobile First</h3>
                 <p className="text-gray-400">
-                  Manage your finances on the go with our responsive, mobile-optimized interface.
+                  Pay, borrow, and earn from your phone with our responsive, mobile-optimized interface.
                 </p>
               </div>
             </div>
@@ -154,12 +267,12 @@ const LandingPage: React.FC = () => {
               <div className="card-highlight"></div>
               <div className="card-content">
                 <div className="absolute -bottom-6 -right-6 w-24 h-24 blur-[60px] bg-primary/40 rounded-full"></div>
-                <h3 className="text-xl font-semibold mb-2">Start Using NepaliPay Today</h3>
+                <h3 className="text-xl font-semibold mb-2">Ad Bazaar Platform</h3>
                 <p className="text-gray-400 mb-4">
-                  Join thousands of users already benefiting from the future of finance.
+                  Promote your business or earn by hosting advertisements using our decentralized ad marketplace.
                 </p>
-                <Link href="/register" className="modern-button w-full text-center block">
-                  Register Now
+                <Link href="/ad-bazaar" className="modern-button-outline w-full text-center block">
+                  Learn More
                 </Link>
               </div>
             </div>
@@ -167,179 +280,162 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
       
-      {/* Testimonials */}
-      <section className="py-16 px-4">
+      {/* Testimonials with avatars (Carousel) */}
+      <section className="py-16 px-4 bg-gray-950/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold gradient-text mb-4">What Our Users Say</h2>
             <p className="text-gray-400 max-w-2xl mx-auto">
-              Hear from the people who use NepaliPay to transform their financial lives.
+              Hear from people who use NepaliPay to transform their financial lives.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="glass-card">
-              <div className="card-highlight"></div>
-              <div className="card-content">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold mr-3">
-                    RK
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent>
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                  <div className="glass-card h-full">
+                    <div className="card-highlight"></div>
+                    <div className="card-content">
+                      <div className="flex items-center mb-4">
+                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold mr-3 text-primary">
+                          {testimonial.initial}
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{testimonial.name}</h4>
+                          <p className="text-sm text-gray-400">{testimonial.role}</p>
+                        </div>
+                      </div>
+                      <p className="italic text-gray-300">
+                        "{testimonial.quote}"
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium">Rajesh Kumar</h4>
-                    <p className="text-sm text-gray-400">Small Business Owner</p>
-                  </div>
-                </div>
-                <p className="italic text-gray-300">
-                  "NepaliPay has transformed how I run my business. The instant payments and low fees have increased my profit margins significantly."
-                </p>
-              </div>
-            </div>
-            
-            <div className="glass-card">
-              <div className="card-highlight"></div>
-              <div className="card-content">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold mr-3">
-                    SP
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Sita Pradhan</h4>
-                    <p className="text-sm text-gray-400">Freelance Designer</p>
-                  </div>
-                </div>
-                <p className="italic text-gray-300">
-                  "As a freelancer, getting paid by international clients was always a headache. With NepaliPay, I receive payments in minutes, not days."
-                </p>
-              </div>
-            </div>
-            
-            <div className="glass-card">
-              <div className="card-highlight"></div>
-              <div className="card-content">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold mr-3">
-                    AM
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Anish Maharjan</h4>
-                    <p className="text-sm text-gray-400">Tech Entrepreneur</p>
-                  </div>
-                </div>
-                <p className="italic text-gray-300">
-                  "The collateralized loan feature helped me expand my startup without giving away equity. NepaliPay is a game-changer for entrepreneurs."
-                </p>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
+        </div>
+      </section>
+      
+      {/* FAQ Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold gradient-text mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Get answers to common questions about NepaliPay.
+            </p>
+          </div>
+          
+          <div className="glass-card">
+            <div className="card-highlight"></div>
+            <div className="card-content">
+              <Accordion type="single" collapsible className="w-full">
+                {faqs.map((faq, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="text-left">
+                      <span className="flex items-center">
+                        <Info className="h-5 w-5 mr-2 text-primary" />
+                        {faq.question}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-gray-300 pl-7">{faq.answer}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+              
+              <div className="mt-6 text-center">
+                <p className="text-gray-400 mb-3">Want to explore more?</p>
+                <Link href="/help" className="text-primary hover:underline flex items-center justify-center">
+                  Check out our Knowledge Base
+                  <MoveRight className="ml-1 h-4 w-4" />
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Blockchain Integration */}
-      <section className="py-16 px-4 bg-gray-900/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold gradient-text mb-4">Powered by Blockchain</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              NepaliPay is built on secure, audited smart contracts deployed on the Binance Smart Chain.
-            </p>
-          </div>
-          
-          <ContractLinks contracts={contracts} />
-          
-          <div className="mt-12 text-center">
-            <p className="text-gray-400 mb-6">
-              Connect your wallet to interact directly with our smart contracts
-            </p>
-            <Link href="/login" className="modern-button inline-block">
+      {/* Final CTA */}
+      <section className="py-16 px-4 bg-gradient-to-r from-primary/20 to-blue-600/10">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold gradient-text mb-6">Ready to experience the financial future?</h2>
+          <p className="text-lg text-gray-300 mb-8">
+            Join thousands of users already using NepaliPay to save, send, borrow, and grow.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link href="/register" className="modern-button flex items-center">
+              <Rocket className="mr-2 h-5 w-5" />
+              Create Free Account
+            </Link>
+            <Link href="/login" className="modern-button-outline flex items-center">
+              <ArrowUpRight className="mr-2 h-5 w-5" />
+              Sign In
+            </Link>
+            <Link href="/login" className="modern-button-outline flex items-center">
+              <Globe className="mr-2 h-5 w-5" />
               Connect Wallet
             </Link>
           </div>
         </div>
       </section>
       
-      {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto glass p-10 rounded-2xl relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-64 h-64 blur-[100px] bg-primary/20 rounded-full"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 blur-[100px] bg-blue-600/10 rounded-full"></div>
-          
-          <div className="relative text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold gradient-text">
-              Ready to Join the Financial Revolution?
-            </h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">
-              Create your account today and experience the future of finance with NepaliPay. 
-              It only takes a few minutes to get started.
+      {/* Footer */}
+      <footer className="py-12 px-4 bg-gray-950/70">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <h3 className="text-xl font-semibold mb-4 gradient-text">NepaliPay</h3>
+            <p className="text-gray-400 mb-4">
+              Empowering Nepal's financial future through innovative blockchain technology.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <Link href="/register" className="modern-button px-8 py-3 inline-block">
-                Create Free Account
-              </Link>
-              <Link href="/login" className="modern-button-outline px-8 py-3 inline-block">
-                Sign In
-              </Link>
-            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-lg font-medium mb-4">Products</h4>
+            <ul className="space-y-2">
+              <li><Link href="/wallet" className="text-gray-400 hover:text-primary">Digital Wallet</Link></li>
+              <li><Link href="/nepalpaytoken" className="text-gray-400 hover:text-primary">NPT Token</Link></li>
+              <li><Link href="/borrow" className="text-gray-400 hover:text-primary">Collateralized Loans</Link></li>
+              <li><Link href="/ad-bazaar" className="text-gray-400 hover:text-primary">Ad Bazaar</Link></li>
+              <li><Link href="/rewards" className="text-gray-400 hover:text-primary">Reward System</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-lg font-medium mb-4">Resources</h4>
+            <ul className="space-y-2">
+              <li><Link href="/docs" className="text-gray-400 hover:text-primary">Documentation</Link></li>
+              <li><Link href="/api" className="text-gray-400 hover:text-primary">API Reference</Link></li>
+              <li><Link href="/faq" className="text-gray-400 hover:text-primary">FAQ</Link></li>
+              <li><Link href="/help" className="text-gray-400 hover:text-primary">Knowledge Base</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-lg font-medium mb-4">Blockchain</h4>
+            <ContractLinks contracts={contracts} />
           </div>
         </div>
-      </section>
-      
-      {/* Footer */}
-      <footer className="py-10 px-4 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">NepaliPay</h3>
-              <p className="text-gray-400">
-                Empowering Nepal's financial future through blockchain technology.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Products</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-primary">Digital Wallet</a></li>
-                <li><a href="#" className="hover:text-primary">Collateralized Loans</a></li>
-                <li><a href="#" className="hover:text-primary">Ad Bazaar</a></li>
-                <li><a href="#" className="hover:text-primary">Reward System</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-primary">Documentation</a></li>
-                <li><a href="#" className="hover:text-primary">Developers</a></li>
-                <li><a href="#" className="hover:text-primary">API Reference</a></li>
-                <li><a href="#" className="hover:text-primary">Smart Contracts</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-primary">About Us</a></li>
-                <li><a href="#" className="hover:text-primary">Careers</a></li>
-                <li><a href="#" className="hover:text-primary">Blog</a></li>
-                <li><a href="#" className="hover:text-primary">Contact</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="mt-10 pt-10 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-500 text-sm">
-              © 2025 NepaliPay. All rights reserved.
-            </p>
-            <div className="flex gap-4 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-primary">Terms</a>
-              <a href="#" className="text-gray-400 hover:text-primary">Privacy</a>
-              <a href="#" className="text-gray-400 hover:text-primary">Security</a>
-            </div>
-          </div>
+        
+        <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-gray-800 text-center">
+          <p className="text-gray-400">
+            &copy; {new Date().getFullYear()} NepaliPay. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
   );
-};
+}
 
 export default LandingPage;

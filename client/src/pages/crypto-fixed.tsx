@@ -939,7 +939,7 @@ const NepaliPayTokenPage: React.FC = () => {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 app-tabs">
-                <TabsList className="grid grid-cols-4 w-full md:w-auto">
+                <TabsList className="flex w-full md:w-auto overflow-x-auto">
                   <TabsTrigger value="wallet" className="app-tab">Wallet</TabsTrigger>
                   <TabsTrigger value="staking" className="app-tab">Staking</TabsTrigger>
                   <TabsTrigger value="loans" className="app-tab">Loans</TabsTrigger>
@@ -1405,9 +1405,9 @@ const NepaliPayTokenPage: React.FC = () => {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <Tabs defaultValue="stake" className="w-full">
-                          <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="stake">Stake Tokens</TabsTrigger>
-                            <TabsTrigger value="unstake" disabled={!isStaking}>Unstake Tokens</TabsTrigger>
+                          <TabsList className="flex w-full overflow-x-auto">
+                            <TabsTrigger value="stake" className="app-tab">Stake Tokens</TabsTrigger>
+                            <TabsTrigger value="unstake" className="app-tab" disabled={!isStaking}>Unstake Tokens</TabsTrigger>
                           </TabsList>
                           <TabsContent value="stake" className="space-y-4 p-4">
                             <div className="space-y-2">

@@ -582,7 +582,9 @@
   }
   
   .app-tab {
-    @apply px-3 py-1.5 rounded-md text-sm font-medium transition-all;
+    @apply px-3 py-1.5 rounded-md text-sm font-medium transition-all text-center whitespace-nowrap;
+    flex: 1;
+    min-width: fit-content;
     color: rgba(255, 255, 255, 0.5);
   }
   
