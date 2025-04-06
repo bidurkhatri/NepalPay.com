@@ -1,27 +1,28 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { users, wallets, transactions, activities } from '../shared/schema';
 import { eq, and, or } from 'drizzle-orm';
+import pg from 'pg';
 
-// Use dynamic import since ESM doesn't support require
-let pool: any;
-let db: any;
+// Initialize the pool directly for better type safety
+export const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Set up error handler for pool
+pool.on('error', (err: Error) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+// Initialize Drizzle ORM
+export const db = drizzle(pool);
 
 // Initialize database connection asynchronously
 export async function initializeDatabase() {
   try {
-    const pg = await import('pg');
-    pool = new pg.default.Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
-    
-    // Set up error handler for pool
-    pool.on('error', (err: Error) => {
-      console.error('Unexpected error on idle client', err);
-      process.exit(-1);
-    });
-    
-    // Initialize Drizzle
-    db = drizzle(pool);
+    // Verify the connection works
+    const client = await pool.connect();
+    client.release();
     
     console.log('Database initialized successfully');
     return true;
@@ -30,9 +31,6 @@ export async function initializeDatabase() {
     return false;
   }
 }
-
-// Export the database connection
-export { db };
 
 // Function to test the database connection
 export async function testConnection() {
@@ -68,6 +66,7 @@ export async function createTables() {
         email VARCHAR(255) UNIQUE NOT NULL,
         "phoneNumber" VARCHAR(255),
         password VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'USER',
         "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);

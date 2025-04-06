@@ -1,157 +1,45 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import session from "express-session";
 import { z } from "zod";
-import { insertUserSchema, insertTransactionSchema, insertActivitySchema } from "@shared/schema";
-import MemoryStore from "memorystore";
+import { insertUserSchema, insertTransactionSchema, insertActivitySchema, User } from "@shared/schema";
 import Stripe from "stripe";
+import { setupAuth } from "./auth";
 
-// Extend Express.Session to include userId
-declare module 'express-session' {
-  interface SessionData {
-    userId: number;
+// Type declaration for Express Request with User
+declare global {
+  namespace Express {
+    // Note: The User type is already declared in auth.ts
+    // We're just adding a reference here for clarity
   }
 }
 
-const SessionStore = MemoryStore(session);
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Configure session
-  app.use(
-    session({
-      store: new SessionStore({
-        checkPeriod: 86400000, // prune expired entries every 24h
-      }),
-      secret: process.env.SESSION_SECRET || "nepali-pay-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      },
-    })
-  );
+  // Set up authentication with Passport.js
+  setupAuth(app);
 
   // Authentication middleware
   const requireAuth = (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
+    if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     next();
   };
+  
+  // Type assertion for req.user is defined at the top of the file
 
-  // Auth routes
-  app.post("/api/register", async (req, res) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(validatedData.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      // Check if email already exists
-      const existingEmail = await storage.getUserByEmail(validatedData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      
-      // Create user
-      const user = await storage.createUser(validatedData);
-      
-      // Create wallet for user
-      await storage.createWallet({
-        userId: user.id,
-        balance: "0",
-        currency: "NPR"
-      });
-      
-      // Create activity log
-      await storage.createActivity({
-        userId: user.id,
-        action: "REGISTER",
-        details: "Account created",
-        ipAddress: req.ip
-      });
-      
-      // Set session
-      req.session.userId = user.id;
-      
-      // Return user data (excluding password)
-      const { password, ...userData } = user;
-      res.status(201).json(userData);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  app.post("/api/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        // Log failed login attempt
-        if (user) {
-          await storage.createActivity({
-            userId: user.id,
-            action: "FAILED_LOGIN",
-            details: "Failed login attempt",
-            ipAddress: req.ip
-          });
-        }
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Set session
-      req.session.userId = user.id;
-      
-      // Log successful login
-      await storage.createActivity({
-        userId: user.id,
-        action: "LOGIN",
-        details: "User logged in",
-        ipAddress: req.ip
-      });
-      
-      // Return user data (excluding password)
-      const { password: _, ...userData } = user;
-      res.json(userData);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  app.post("/api/logout", requireAuth, (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
+  // Auth routes are now handled by the auth.ts module
+  
+  // Additional user-related routes
   app.get("/api/user", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId!);
-      
-      if (!user) {
+      // With Passport.js, the user is already in req.user
+      // Return user data (without password)
+      if (!req.user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return user data (excluding password)
-      const { password, ...userData } = user;
+      const { password, ...userData } = req.user;
       res.json(userData);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -161,7 +49,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wallet routes
   app.get("/api/wallet", requireAuth, async (req, res) => {
     try {
-      const wallet = await storage.getWalletByUserId(req.session.userId!);
+      // After requireAuth middleware, req.user is guaranteed to exist
+      const userId = req.user!.id;
+      const wallet = await storage.getWalletByUserId(userId);
       
       if (!wallet) {
         return res.status(404).json({ message: "Wallet not found" });
@@ -175,8 +65,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/wallet", requireAuth, async (req, res) => {
     try {
+      const userId = req.user!.id;
+      
       // Check if a wallet already exists for this user
-      const existingWallet = await storage.getWalletByUserId(req.session.userId!);
+      const existingWallet = await storage.getWalletByUserId(userId);
       
       if (existingWallet) {
         return res.status(400).json({ message: "User already has a wallet" });
@@ -184,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create wallet
       const walletData = {
-        userId: req.session.userId!,
+        userId,
         balance: req.body.balance || "0",
         currency: req.body.currency || "NPR"
       };
@@ -193,10 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log activity
       await storage.createActivity({
-        userId: req.session.userId!,
+        userId,
         action: "WALLET_CREATED",
         details: "Wallet was initialized",
-        ipAddress: req.ip
+        ipAddress: req.ip || ""
       });
       
       res.status(201).json(wallet);
@@ -209,7 +101,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get("/api/transactions", requireAuth, async (req, res) => {
     try {
-      const transactions = await storage.getUserTransactions(req.session.userId!);
+      const userId = req.user!.id;
+      const transactions = await storage.getUserTransactions(userId);
       
       // Enrich transactions with user data
       const enrichedTransactions = await Promise.all(
@@ -249,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", requireAuth, async (req, res) => {
     try {
-      const userId = req.session.userId!;
+      const userId = req.user!.id;
       
       // Validate transaction data
       const transactionData = {
@@ -289,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         action: `TRANSACTION_${validatedData.type}`,
         details: `${validatedData.type} transaction of ${validatedData.amount} NPR`,
-        ipAddress: req.ip
+        ipAddress: req.ip || ""
       });
       
       res.status(201).json(transaction);
@@ -304,7 +197,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity routes
   app.get("/api/activities", requireAuth, async (req, res) => {
     try {
-      const activities = await storage.getUserActivities(req.session.userId!);
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      const activities = await storage.getUserActivities(req.user.id);
       res.json(activities);
     } catch (error) {
       res.status(500).json({ message: "Server error" });
@@ -314,11 +210,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes (for finding users to send money to)
   app.get("/api/users", requireAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       const users = Array.from(await (async () => {
         const allUsers = [];
         for (let i = 1; i < 100; i++) {
           const user = await storage.getUser(i);
-          if (user && user.id !== req.session.userId) {
+          if (user && user.id !== req.user.id) {
             allUsers.push(user);
           }
         }
@@ -339,6 +239,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       const { amount } = req.body;
       
       if (!amount || amount < 1) {
@@ -354,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amountInCents,
         currency: 'usd',
         metadata: {
-          userId: req.session.userId!.toString(),
+          userId: req.user.id.toString(),
           tokenAmount: amount.toString(), // 1:1 NPR to NPT
           walletAddress: req.body.walletAddress || ""
         },
@@ -362,10 +266,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log the payment intent creation
       await storage.createActivity({
-        userId: req.session.userId!,
+        userId: req.user.id,
         action: "PAYMENT_INTENT_CREATED",
         details: `Created payment intent for NPR ${amount} (${amount} NPT tokens)`,
-        ipAddress: req.ip
+        ipAddress: req.ip || ""
       });
       
       res.json({

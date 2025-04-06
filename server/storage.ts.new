@@ -79,7 +79,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const now = new Date();
+    const now = new Date().toISOString();
     
     const user: User = { 
       id, 
@@ -112,7 +112,7 @@ export class MemStorage implements IStorage {
 
   async createWallet(insertWallet: InsertWallet): Promise<Wallet> {
     const id = this.walletIdCounter++;
-    const now = new Date();
+    const now = new Date().toISOString();
     
     const wallet: Wallet = { 
       id, 
@@ -128,7 +128,7 @@ export class MemStorage implements IStorage {
     const wallet = this.wallets.get(id);
     if (!wallet) return undefined;
     
-    const now = new Date();
+    const now = new Date().toISOString();
     const updatedWallet = { 
       ...wallet, 
       ...walletData,
@@ -163,7 +163,7 @@ export class MemStorage implements IStorage {
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = this.transactionIdCounter++;
-    const now = new Date();
+    const now = new Date().toISOString();
     
     const transaction: Transaction = { 
       id, 
@@ -187,7 +187,7 @@ export class MemStorage implements IStorage {
 
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
-    const now = new Date();
+    const now = new Date().toISOString();
     
     const activity: Activity = { 
       id, 
@@ -214,7 +214,7 @@ export class MemStorage implements IStorage {
     // Create wallet for demo user
     const demoWallet = await this.createWallet({
       userId: demoUser.id,
-      balance: "5000",
+      balance: 5000,
       currency: "NPT"
     });
 
@@ -222,7 +222,7 @@ export class MemStorage implements IStorage {
     await this.createTransaction({
       senderId: demoUser.id,
       receiverId: null,
-      amount: "500",
+      amount: 500,
       type: "MOBILE_TOPUP",
       status: "COMPLETED",
       note: "Mobile recharge"
@@ -231,7 +231,7 @@ export class MemStorage implements IStorage {
     await this.createTransaction({
       senderId: demoUser.id,
       receiverId: null,
-      amount: "1000",
+      amount: 1000,
       type: "UTILITY_PAYMENT",
       status: "COMPLETED",
       note: "Electricity bill"

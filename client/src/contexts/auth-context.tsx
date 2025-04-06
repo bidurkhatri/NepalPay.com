@@ -16,13 +16,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function useAuth() {
+// Direct named export for the hook to resolve fast refresh compatibility issues
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
@@ -44,8 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           firstName: 'Demo',
           lastName: 'User',
           role: 'USER',
+          phoneNumber: '+9779876543210',
           createdAt: new Date().toISOString()
-        });
+        } as User);
         return;
       }
 
@@ -89,8 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName: 'Demo',
       lastName: 'User',
       role: 'USER',
+      phoneNumber: '+9779876543210',
       createdAt: new Date().toISOString()
-    });
+    } as User);
     
     toast({
       title: "Demo Mode Activated",
@@ -109,14 +112,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const res = await apiRequest('POST', '/api/login', credentials);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+      
       const userData = await res.json();
       setUser(userData);
       localStorage.setItem('demo_mode', 'false');
       setIsDemoMode(false);
-      // Success notification is handled in the login component
-    } catch (error) {
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${userData.firstName}!`,
+      });
+    } catch (error: any) {
       console.error('Login error:', error);
-      // Error notification is handled in the login component
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -127,14 +144,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const res = await apiRequest('POST', '/api/register', data);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+      
       const userData = await res.json();
       setUser(userData);
       localStorage.setItem('demo_mode', 'false');
       setIsDemoMode(false);
-      // Success notification is handled in the registration component
-    } catch (error) {
+      
+      toast({
+        title: "Registration Successful",
+        description: `Welcome to NepaliPay, ${userData.firstName}!`,
+      });
+    } catch (error: any) {
       console.error('Registration error:', error);
-      // Error notification is handled in the registration component
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Could not create account. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setLoading(false);
@@ -151,13 +182,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('demo_credentials');
         setIsDemoMode(false);
         setUser(null);
+        
+        toast({
+          title: "Demo Mode Deactivated",
+          description: "You've been logged out of demo mode.",
+        });
         return;
       }
       
       // Otherwise call the logout API
       await apiRequest('POST', '/api/logout');
       setUser(null);
-      // Success notification is handled in the logout component
+      
+      toast({
+        title: "Logout Successful",
+        description: "You've been logged out successfully.",
+      });
     } catch (error) {
       console.error('Logout error:', error);
       // In case of error, force logout anyway
@@ -165,6 +205,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('demo_credentials');
       setIsDemoMode(false);
       setUser(null);
+      
+      toast({
+        title: "Logout Completed",
+        description: "You've been logged out.",
+      });
     } finally {
       setLoading(false);
     }

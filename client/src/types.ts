@@ -6,9 +6,9 @@ export interface User {
   firstName: string;
   lastName: string;
   password?: string;
-  role: string;
+  role: string; // USER, ADMIN, OWNER
+  phoneNumber?: string;
   createdAt: string;
-  updatedAt?: string;
 }
 
 export interface LoginCredentials {
@@ -22,6 +22,8 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
+  role?: string; // Optional, defaults to USER
 }
 
 // Wallet Types

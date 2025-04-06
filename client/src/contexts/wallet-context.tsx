@@ -30,13 +30,14 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export function useWallet() {
+// Using a direct named export for the hook to resolve fast refresh compatibility issues
+export const useWallet = (): WalletContextType => {
   const context = useContext(WalletContext);
   if (context === undefined) {
     throw new Error('useWallet must be used within a WalletProvider');
   }
   return context;
-}
+};
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
