@@ -93,22 +93,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
           <ul className="space-y-1 px-2">
             {navItems.map((item) => (
               <li key={item.href}>
-                <Link href={item.href}>
-                  <a
-                    className={`sidebar-item ${
-                      location === item.href ? 'active' : ''
-                    } flex items-center`}
+                <Link 
+                  href={item.href}
+                  className={`sidebar-item ${
+                    location === item.href ? 'active' : ''
+                  } flex items-center`}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  <motion.span
+                    className="ml-3 whitespace-nowrap"
+                    variants={itemTextVariants}
+                    animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+                    initial={false}
                   >
-                    <span className="flex-shrink-0">{item.icon}</span>
-                    <motion.span
-                      className="ml-3 whitespace-nowrap"
-                      variants={itemTextVariants}
-                      animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
-                      initial={false}
-                    >
-                      {item.label}
-                    </motion.span>
-                  </a>
+                    {item.label}
+                  </motion.span>
                 </Link>
               </li>
             ))}
@@ -117,18 +116,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
 
         {/* Sidebar footer */}
         <div className="mt-auto pt-4 px-2 border-t border-white/5">
-          <Link href="/superadmin/settings">
-            <a className="sidebar-item flex items-center mb-2">
-              <Settings size={20} />
-              <motion.span
-                className="ml-3"
-                variants={itemTextVariants}
-                animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
-                initial={false}
-              >
-                Settings
-              </motion.span>
-            </a>
+          <Link 
+            href="/superadmin/settings"
+            className="sidebar-item flex items-center mb-2"
+          >
+            <Settings size={20} />
+            <motion.span
+              className="ml-3"
+              variants={itemTextVariants}
+              animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+              initial={false}
+            >
+              Settings
+            </motion.span>
           </Link>
           <button
             onClick={handleLogout}
