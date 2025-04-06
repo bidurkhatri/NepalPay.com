@@ -4,6 +4,7 @@ import { registerRoutes } from './routes';
 import { initializeDatabase } from './db';
 import { storage } from './storage';
 import bodyParser from 'body-parser';
+import { setupVite } from './vite';
 
 /**
  * Main server initialization and startup
@@ -34,6 +35,9 @@ async function main() {
   
   // Register routes
   const server = await registerRoutes(app);
+  
+  // Set up Vite dev server
+  await setupVite(app, server);
   
   // Global error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

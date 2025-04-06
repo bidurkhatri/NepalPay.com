@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, Express } from 'express';
 import { createServer, type Server } from 'http';
 import Stripe from 'stripe';
 import { ethers } from 'ethers';
+import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from './storage';
 import { setupAuth } from './auth';
 import { Transaction } from '@shared/schema';
@@ -11,27 +12,41 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.warn('Missing STRIPE_SECRET_KEY environment variable');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-03-31.basil',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 // Authentication middleware
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: 'Authentication required' });
   }
+  // Ensure TypeScript knows req.user is defined after this middleware
+  if (!req.user) {
+    return res.status(401).json({ message: 'User not found in session' });
+  }
   next();
 };
 
 const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.role !== 'admin') {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  if (!req.user) {
+    return res.status(401).json({ message: 'User not found in session' });
+  }
+  if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin privileges required' });
   }
   next();
 };
 
 const requireSuperadmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated() || req.user.role !== 'superadmin') {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  if (!req.user) {
+    return res.status(401).json({ message: 'User not found in session' });
+  }
+  if (req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'Superadmin privileges required' });
   }
   next();
@@ -235,6 +250,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent') || ''
       });
       
+      // Notify via WebSocket
+      broadcastTransaction(transaction);
+      
       res.status(201).json({
         transaction,
         message: 'Transfer initiated. Please complete the transaction in your Web3 wallet.'
@@ -279,6 +297,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `Created ${amount} ${type} collateral with ${ltv}% LTV`,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent') || ''
+      });
+      
+      // Notify via WebSocket
+      broadcastToUser(req.user.id, {
+        type: 'collateral',
+        collateral,
+        action: 'created'
       });
       
       res.status(201).json({
@@ -350,6 +375,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent') || ''
       });
       
+      // Notify via WebSocket
+      broadcastToUser(req.user.id, {
+        type: 'loan',
+        loan,
+        action: 'created'
+      });
+      
       res.status(201).json({
         loan,
         message: 'Loan created. Waiting for approval.'
@@ -398,6 +430,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: `Created ad: ${title}`,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent') || ''
+      });
+      
+      // Notify via WebSocket
+      broadcastToUser(req.user.id, {
+        type: 'ad',
+        ad,
+        action: 'created'
       });
       
       res.status(201).json({
@@ -508,6 +547,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userAgent: 'Stripe'
         });
         
+        // Notify user via WebSocket
+        broadcastTransaction(transaction);
+        broadcastWalletUpdate(userId);
+        
         // Transfer tokens from admin wallet to user wallet
         if (adminWallet && wallet.address) {
           // This would normally call a contract method to transfer tokens
@@ -574,6 +617,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create an HTTP server
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store client connections by user ID
+  const clients = new Map<number, WebSocket[]>();
+  
+  // WebSocket connection handler
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    let userId: number | null = null;
+    
+    // Handle messages from clients
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Handle authentication message to associate the connection with a user
+        if (data.type === 'auth' && data.userId) {
+          userId = parseInt(data.userId);
+          
+          // Add this connection to the user's connections list
+          if (!clients.has(userId)) {
+            clients.set(userId, []);
+          }
+          clients.get(userId)?.push(ws);
+          
+          console.log(`WebSocket client authenticated for user ${userId}`);
+          
+          // Send initial data (wallet balance, etc.)
+          sendUserData(userId, ws);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    // Handle disconnection
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      if (userId) {
+        // Remove this connection from the user's connections list
+        const userConnections = clients.get(userId);
+        if (userConnections) {
+          const index = userConnections.indexOf(ws);
+          if (index !== -1) {
+            userConnections.splice(index, 1);
+          }
+          if (userConnections.length === 0) {
+            clients.delete(userId);
+          }
+        }
+      }
+    });
+    
+    // Send initial connection confirmation
+    ws.send(JSON.stringify({ type: 'connected' }));
+  });
+  
+  // Function to send updates to a specific user's connections
+  async function sendUserData(userId: number, ws: WebSocket) {
+    try {
+      // Only send if the connection is open
+      if (ws.readyState === WebSocket.OPEN) {
+        // Get user's wallet, transactions, collaterals and loans
+        const wallet = await storage.getWalletByUserId(userId);
+        const transactions = await storage.getUserTransactions(userId);
+        const collaterals = await storage.getUserCollaterals(userId);
+        const loans = await storage.getUserLoans(userId);
+        const activities = await storage.getUserActivities(userId);
+        
+        // Send wallet and financial data
+        ws.send(JSON.stringify({
+          type: 'userData',
+          wallet,
+          recentTransactions: transactions.slice(0, 5), // Send only the 5 most recent transactions
+          collaterals,
+          loans,
+          recentActivities: activities.slice(0, 10) // Send only the 10 most recent activities
+        }));
+      }
+    } catch (error) {
+      console.error('Error sending user data via WebSocket:', error);
+    }
+  }
+  
+  // Function to broadcast updates to all connections for a user
+  async function broadcastToUser(userId: number, data: any) {
+    const userConnections = clients.get(userId);
+    if (userConnections && userConnections.length > 0) {
+      const message = JSON.stringify(data);
+      
+      userConnections.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    }
+  }
+  
+  // Function to broadcast transaction updates
+  async function broadcastTransaction(transaction: Transaction) {
+    // Notify sender
+    if (transaction.senderId) {
+      broadcastToUser(transaction.senderId, {
+        type: 'transaction',
+        transaction,
+        action: 'sent'
+      });
+    }
+    
+    // Notify receiver
+    if (transaction.receiverId) {
+      broadcastToUser(transaction.receiverId, {
+        type: 'transaction',
+        transaction,
+        action: 'received'
+      });
+    }
+  }
+  
+  // Function to broadcast wallet updates
+  async function broadcastWalletUpdate(userId: number) {
+    try {
+      const wallet = await storage.getWalletByUserId(userId);
+      if (wallet) {
+        broadcastToUser(userId, {
+          type: 'walletUpdate',
+          wallet
+        });
+      }
+    } catch (error) {
+      console.error('Error broadcasting wallet update:', error);
+    }
+  }
+
+  // Function to broadcast collateral updates
+  async function broadcastCollateralUpdate(userId: number, collateralId: number) {
+    try {
+      const collateral = await storage.getCollateral(collateralId);
+      if (collateral && collateral.userId === userId) {
+        broadcastToUser(userId, {
+          type: 'collateralUpdate',
+          collateral
+        });
+      }
+    } catch (error) {
+      console.error('Error broadcasting collateral update:', error);
+    }
+  }
+
+  // Function to broadcast loan updates
+  async function broadcastLoanUpdate(userId: number, loanId: number) {
+    try {
+      const loan = await storage.getLoan(loanId);
+      if (loan && loan.userId === userId) {
+        broadcastToUser(userId, {
+          type: 'loanUpdate',
+          loan
+        });
+      }
+    } catch (error) {
+      console.error('Error broadcasting loan update:', error);
+    }
+  }
+
+  // Function to broadcast activity updates
+  async function broadcastActivityUpdate(userId: number) {
+    try {
+      const activities = await storage.getUserActivities(userId);
+      if (activities.length > 0) {
+        broadcastToUser(userId, {
+          type: 'activityUpdate',
+          recentActivities: activities.slice(0, 10) // Send only the 10 most recent activities
+        });
+      }
+    } catch (error) {
+      console.error('Error broadcasting activity update:', error);
+    }
+  }
+  
+  // Export the broadcast functions for use in other routes
+  app.locals.broadcastTransaction = broadcastTransaction;
+  app.locals.broadcastWalletUpdate = broadcastWalletUpdate;
+  app.locals.broadcastCollateralUpdate = broadcastCollateralUpdate;
+  app.locals.broadcastLoanUpdate = broadcastLoanUpdate;
+  app.locals.broadcastActivityUpdate = broadcastActivityUpdate;
   
   return httpServer;
 }
