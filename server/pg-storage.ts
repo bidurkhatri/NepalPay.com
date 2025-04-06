@@ -1,8 +1,9 @@
 import { db, pool, initializeDatabase } from './db';
 import { 
-  users, wallets, transactions, activities,
+  users, wallets, transactions, activities, collaterals, loans, ads,
   InsertUser, User, InsertWallet, Wallet, 
-  InsertTransaction, Transaction, InsertActivity, Activity
+  InsertTransaction, Transaction, InsertActivity, Activity,
+  InsertCollateral, Collateral, InsertLoan, Loan, InsertAd, Ad
 } from '../shared/schema';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { IStorage } from './storage';
@@ -90,7 +91,7 @@ export class PgStorage implements IStorage {
     // Set lastUpdated to current time
     const dataWithTimestamp = {
       ...walletData,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date()
     };
     const result = await db.update(wallets).set(dataWithTimestamp).where(eq(wallets.id, id)).returning();
     return result[0];
@@ -144,6 +145,105 @@ export class PgStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     await this.ensureDbInitialized();
     const result = await db.insert(activities).values(activity).returning();
+    return result[0];
+  }
+  
+  // Collateral methods
+  async getCollateral(id: number): Promise<Collateral | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(collaterals).where(eq(collaterals.id, id));
+    return result[0];
+  }
+
+  async getUserCollaterals(userId: number): Promise<Collateral[]> {
+    await this.ensureDbInitialized();
+    return db.select().from(collaterals).where(eq(collaterals.userId, userId));
+  }
+
+  async createCollateral(collateral: InsertCollateral): Promise<Collateral> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(collaterals).values(collateral).returning();
+    return result[0];
+  }
+
+  async updateCollateral(id: number, collateralData: Partial<Collateral>): Promise<Collateral | undefined> {
+    await this.ensureDbInitialized();
+    // Set updatedAt to current time
+    const dataWithTimestamp = {
+      ...collateralData,
+      updatedAt: new Date()
+    };
+    const result = await db.update(collaterals).set(dataWithTimestamp).where(eq(collaterals.id, id)).returning();
+    return result[0];
+  }
+
+  // Loan methods
+  async getLoan(id: number): Promise<Loan | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(loans).where(eq(loans.id, id));
+    return result[0];
+  }
+
+  async getUserLoans(userId: number): Promise<Loan[]> {
+    await this.ensureDbInitialized();
+    return db.select().from(loans).where(eq(loans.userId, userId));
+  }
+
+  async getActiveLoans(): Promise<Loan[]> {
+    await this.ensureDbInitialized();
+    return db.select().from(loans).where(eq(loans.status, "ACTIVE"));
+  }
+
+  async createLoan(loan: InsertLoan): Promise<Loan> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(loans).values(loan).returning();
+    return result[0];
+  }
+
+  async updateLoan(id: number, loanData: Partial<Loan>): Promise<Loan | undefined> {
+    await this.ensureDbInitialized();
+    // Set updatedAt to current time
+    const dataWithTimestamp = {
+      ...loanData,
+      updatedAt: new Date()
+    };
+    const result = await db.update(loans).set(dataWithTimestamp).where(eq(loans.id, id)).returning();
+    return result[0];
+  }
+
+  // Ad methods
+  async getAd(id: number): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(ads).where(eq(ads.id, id));
+    return result[0];
+  }
+
+  async getUserAds(userId: number): Promise<Ad[]> {
+    await this.ensureDbInitialized();
+    return db.select().from(ads).where(eq(ads.userId, userId));
+  }
+
+  async getActiveAds(): Promise<Ad[]> {
+    await this.ensureDbInitialized();
+    const now = new Date();
+    // Use a simpler query that avoids direct comparison operators
+    return db.select().from(ads).where(eq(ads.status, "ACTIVE"));
+  }
+
+  async createAd(ad: InsertAd): Promise<Ad> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(ads).values(ad).returning();
+    return result[0];
+  }
+
+  async updateAd(id: number, adData: Partial<Ad>): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    // Set updatedAt to current time
+    const dataWithTimestamp = {
+      ...adData,
+      updatedAt: new Date()
+    };
+    const result = await db.update(ads).set(dataWithTimestamp).where(eq(ads.id, id)).returning();
     return result[0];
   }
   
@@ -209,6 +309,37 @@ export class PgStorage implements IStorage {
         action: "FAILED_LOGIN",
         details: "Failed login attempt",
         ipAddress: "192.168.1.2"
+      });
+      
+      // Create a demo collateral
+      const demoCollateral = await this.createCollateral({
+        userId: demoUser.id,
+        type: "BNB",
+        amount: "10",
+        valueInNPT: "15000" // Assuming 1 BNB = 1500 NPT
+      });
+      
+      // Create a demo loan based on the collateral
+      await this.createLoan({
+        userId: demoUser.id,
+        amount: "10000",
+        collateralId: demoCollateral.id,
+        interestRate: "12.5",
+        startDate: new Date(),
+        endDate: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        status: "ACTIVE"
+      });
+      
+      // Create a demo ad
+      await this.createAd({
+        userId: demoUser.id,
+        title: "Premium Crypto Exchange Services",
+        description: "Trade BNB, ETH and BTC at competitive rates. Sign up today!",
+        bidAmount: "500",
+        tier: "GOLD",
+        startDate: new Date(),
+        endDate: new Date(new Date().getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
+        status: "ACTIVE"
       });
       
       console.log('Demo data initialized successfully');

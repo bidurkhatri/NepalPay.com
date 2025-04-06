@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { users, wallets, transactions, activities } from '../shared/schema';
+import { users, wallets, transactions, activities, collaterals, loans, ads } from '../shared/schema';
 import { eq, and, or } from 'drizzle-orm';
 import pg from 'pg';
 
@@ -106,6 +106,52 @@ export async function createTables() {
         details TEXT,
         "ipAddress" VARCHAR(50),
         "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Create the collaterals table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS collaterals (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES users(id),
+        type VARCHAR(20) NOT NULL,
+        amount DECIMAL(18, 8) NOT NULL,
+        "valueInNPT" DECIMAL(18, 2) NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Create the loans table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS loans (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES users(id),
+        amount DECIMAL(18, 2) NOT NULL,
+        "collateralId" INTEGER NOT NULL REFERENCES collaterals(id),
+        "interestRate" DECIMAL(5, 2) NOT NULL,
+        "startDate" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "endDate" TIMESTAMP,
+        status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Create the ads table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ads (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        "bidAmount" DECIMAL(18, 2) NOT NULL,
+        tier VARCHAR(20) NOT NULL,
+        "startDate" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "endDate" TIMESTAMP NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
