@@ -40,17 +40,27 @@ import AdminSettingsPage from "@/pages/admin/settings";
 import { Loader2 } from "lucide-react";
 import { useBlockchain } from "@/contexts/blockchain-context";
 
-// Detect which portal we're on based on hostname
+// Detect which portal we're on based on path in Replit environment, or hostname in production
 const getPortalType = (): 'user' | 'admin' | 'superadmin' | 'public' => {
   const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
   
+  // In Replit environment, use path-based portal detection
+  if (pathname.startsWith('/admin')) {
+    return 'admin';
+  } else if (pathname.startsWith('/superadmin')) {
+    return 'superadmin';
+  } 
+  
+  // In production environment, also check hostname (supporting both methods)
   if (hostname.startsWith('admin.')) {
     return 'admin';
   } else if (hostname.startsWith('superadmin.')) {
     return 'superadmin';
-  } else {
-    return 'user';
-  }
+  } 
+  
+  // Default to user portal
+  return 'user';
 };
 
 // Protected route component that redirects to login if not authenticated or if role doesn't match
@@ -121,7 +131,7 @@ const PublicRoute = ({ component: Component }: { component: React.ComponentType 
   // If authenticated, redirect to appropriate dashboard based on portal and role
   if (user) {
     if (portalType === 'admin' && userRole === 'ADMIN') {
-      return <Redirect to="/admin-dashboard" />;
+      return <Redirect to="/admin/dashboard" />;
     } else if (portalType === 'superadmin' && userRole === 'OWNER') {
       return <Redirect to="/superadmin/dashboard" />;
     } else {
@@ -147,7 +157,7 @@ function Router() {
   if (location === "/") {
     if (portalType === 'admin') {
       if (user) {
-        return <Redirect to="/admin-dashboard" />; 
+        return <Redirect to="/admin/dashboard" />; 
       } else {
         return <Redirect to="/admin" />;
       }
@@ -183,7 +193,8 @@ function Router() {
       
       {/* Admin portal routes (admin.nepalipay.com) */}
       <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />
-      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} requiredRole="ADMIN" />} />
+      <Route path="/admin-dashboard" component={() => <Redirect to="/admin/dashboard" />} />
+      <Route path="/admin/dashboard" component={() => <ProtectedRoute component={AdminDashboard} requiredRole="ADMIN" />} />
       <Route path="/admin/users" component={() => <ProtectedRoute component={UserManagementPage} requiredRole="ADMIN" />} />
       <Route path="/admin/loans" component={() => <ProtectedRoute component={LoanManagementPage} requiredRole="ADMIN" />} />
       <Route path="/admin/ads" component={() => <ProtectedRoute component={AdManagementPage} requiredRole="ADMIN" />} />

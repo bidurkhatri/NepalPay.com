@@ -29,7 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const navigationItems = [
-    { icon: <Home size={20} />, label: 'Dashboard', path: '/admin-dashboard' },
+    { icon: <Home size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: <Users size={20} />, label: 'Users', path: '/admin/users' },
     { icon: <CreditCard size={20} />, label: 'Loans', path: '/admin/loans' },
     { icon: <Store size={20} />, label: 'Ad Bazaar', path: '/admin/ads' },
