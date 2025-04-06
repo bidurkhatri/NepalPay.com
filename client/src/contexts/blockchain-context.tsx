@@ -118,6 +118,20 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Initialize provider on component mount
   useEffect(() => {
     const init = async () => {
+      // Check if demo mode is activated
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+      if (isDemoMode) {
+        // In demo mode, we don't need to connect to the blockchain
+        // The app will use the loadUserData function with demo data
+        // Set some basic values to avoid UI errors
+        setUserAddress('0xdemo');
+        setIsConnected(true);
+        
+        // Load demo data
+        loadUserData('0xdemo', null, null);
+        return;
+      }
+      
       // Check if MetaMask is installed
       if (typeof window.ethereum !== 'undefined') {
         try {
@@ -136,6 +150,16 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         }
       } else {
         console.log("Please install MetaMask to use this application");
+        
+        // If MetaMask isn't installed and we're not in demo mode,
+        // we should activate demo mode automatically
+        if (!isDemoMode) {
+          localStorage.setItem('demo_mode', 'true');
+          localStorage.setItem('demo_credentials', 'true');
+          
+          // Reload the page to apply demo mode
+          window.location.reload();
+        }
       }
     };
 
@@ -173,7 +197,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   // Load user data from contracts
-  const loadUserData = async (address: string, nepaliPay: Contract, nepaliPayToken: Contract) => {
+  const loadUserData = async (address: string, nepaliPay: Contract | null, nepaliPayToken: Contract | null) => {
     try {
       // When using the demo account or when blockchain isn't connected properly
       // Default to a demo experience with pre-set values

@@ -63,6 +63,23 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(prev => ({ ...prev, wallet: true }));
       
+      // Check for demo mode
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+      if (isDemoMode) {
+        // Create a demo wallet
+        const demoWallet: Wallet = {
+          id: 999,
+          userId: user.id,
+          balance: "5000",
+          currency: "NPT",
+          lastUpdated: new Date().toISOString()
+        };
+        setWallet(demoWallet);
+        
+        // Demo mode should return without trying to fetch from API
+        return;
+      }
+      
       try {
         const res = await apiRequest('GET', '/api/wallet');
         const walletData = await res.json();
@@ -80,7 +97,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             const initWallet = {
               userId: user.id,
               balance: "0",
-              currency: "NPR"
+              currency: "NPT"
             };
             
             // Create wallet
@@ -124,6 +141,59 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(prev => ({ ...prev, transactions: true }));
       
+      // Check for demo mode
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+      if (isDemoMode) {
+        // Generate mock transactions for demo mode
+        const demoTransactions: Transaction[] = [
+          {
+            id: 1001,
+            senderId: user.id,
+            receiverId: 1002,
+            amount: "150",
+            type: "TRANSFER",
+            status: "COMPLETED",
+            note: "Payment for lunch",
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+          },
+          {
+            id: 1002,
+            senderId: 1003,
+            receiverId: user.id, 
+            amount: "300",
+            type: "TRANSFER",
+            status: "COMPLETED",
+            note: "Repayment of loan",
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+          },
+          {
+            id: 1003,
+            senderId: user.id,
+            receiverId: null,
+            amount: "200",
+            type: "MOBILE_TOPUP",
+            status: "COMPLETED",
+            note: "Mobile recharge",
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+          },
+          {
+            id: 1004,
+            senderId: user.id,
+            receiverId: null,
+            amount: "500",
+            type: "UTILITY_PAYMENT",
+            status: "COMPLETED",
+            note: "Electricity bill",
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
+          }
+        ];
+        
+        setTransactions(demoTransactions);
+        // Calculate stats with demo transactions
+        calculateStats(demoTransactions);
+        return;
+      }
+      
       const res = await apiRequest('GET', '/api/transactions');
       const transactionsData = await res.json();
       setTransactions(transactionsData);
@@ -147,6 +217,49 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setLoading(prev => ({ ...prev, activities: true }));
+      
+      // Check for demo mode
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+      if (isDemoMode) {
+        // Generate mock activities for demo mode
+        const demoActivities: Activity[] = [
+          {
+            id: 2001,
+            userId: user.id,
+            action: "LOGIN",
+            details: "User logged in",
+            ipAddress: "192.168.1.1",
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          },
+          {
+            id: 2002,
+            userId: user.id,
+            action: "TRANSFER",
+            details: "Sent NPT 150 to user1234",
+            ipAddress: "192.168.1.1",
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+          },
+          {
+            id: 2003,
+            userId: user.id,
+            action: "MOBILE_TOPUP",
+            details: "Mobile recharge of NPT 200",
+            ipAddress: "192.168.1.1",
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+          },
+          {
+            id: 2004,
+            userId: user.id,
+            action: "WALLET_CREATE",
+            details: "Wallet initialized",
+            ipAddress: "192.168.1.1",
+            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+          }
+        ];
+        
+        setActivities(demoActivities);
+        return;
+      }
       
       const res = await apiRequest('GET', '/api/activities');
       const activitiesData = await res.json();
@@ -200,6 +313,46 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const transferMoney = async (data: TransferFormData) => {
     if (!user) return;
 
+    // Check for demo mode
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      // Simulated delay to mimic transaction processing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Add a new transaction to the existing transactions
+      const newTransaction: Transaction = {
+        id: Date.now(), // Use timestamp as temporary ID
+        senderId: user.id,
+        receiverId: data.receiverId,
+        amount: data.amount,
+        type: "TRANSFER",
+        status: "COMPLETED",
+        note: data.note || 'Money transfer',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update transactions
+      setTransactions(prev => [newTransaction, ...prev]);
+      
+      // Update wallet balance (subtract amount)
+      if (wallet) {
+        const newBalance = (parseFloat(wallet.balance) - parseFloat(data.amount)).toString();
+        setWallet({
+          ...wallet,
+          balance: newBalance
+        });
+      }
+      
+      // Recalculate stats
+      calculateStats([...transactions, newTransaction]);
+      
+      toast({
+        title: 'Transfer Successful',
+        description: `NPT ${data.amount} has been sent successfully`,
+      });
+      return;
+    }
+    
     try {
       const res = await apiRequest('POST', '/api/transactions', {
         receiverId: data.receiverId,
@@ -210,7 +363,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Transfer Successful',
-        description: `NPR ${data.amount} has been sent successfully`,
+        description: `NPT ${data.amount} has been sent successfully`,
       });
 
       // Invalidate and refetch data
@@ -231,6 +384,46 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const mobileTopup = async (amount: string, note?: string) => {
     if (!user) return;
+    
+    // Check for demo mode
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      // Simulated delay to mimic transaction processing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Add a new transaction to the existing transactions
+      const newTransaction: Transaction = {
+        id: Date.now(), // Use timestamp as temporary ID
+        senderId: user.id,
+        receiverId: null,
+        amount: amount,
+        type: "TOPUP",
+        status: "COMPLETED",
+        note: note || 'Mobile top-up',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update transactions
+      setTransactions(prev => [newTransaction, ...prev]);
+      
+      // Update wallet balance (subtract amount)
+      if (wallet) {
+        const newBalance = (parseFloat(wallet.balance) - parseFloat(amount)).toString();
+        setWallet({
+          ...wallet,
+          balance: newBalance
+        });
+      }
+      
+      // Recalculate stats
+      calculateStats([...transactions, newTransaction]);
+      
+      toast({
+        title: 'Top-up Successful',
+        description: `Mobile top-up of NPT ${amount} completed`,
+      });
+      return;
+    }
 
     try {
       const res = await apiRequest('POST', '/api/transactions', {
@@ -241,7 +434,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Top-up Successful',
-        description: `Mobile top-up of NPR ${amount} completed`,
+        description: `Mobile top-up of NPT ${amount} completed`,
       });
 
       // Invalidate and refetch data
@@ -262,6 +455,46 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const utilityPayment = async (amount: string, note?: string) => {
     if (!user) return;
+    
+    // Check for demo mode
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      // Simulated delay to mimic transaction processing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Add a new transaction to the existing transactions
+      const newTransaction: Transaction = {
+        id: Date.now(), // Use timestamp as temporary ID
+        senderId: user.id,
+        receiverId: null,
+        amount: amount,
+        type: "UTILITY",
+        status: "COMPLETED",
+        note: note || 'Utility payment',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update transactions
+      setTransactions(prev => [newTransaction, ...prev]);
+      
+      // Update wallet balance (subtract amount)
+      if (wallet) {
+        const newBalance = (parseFloat(wallet.balance) - parseFloat(amount)).toString();
+        setWallet({
+          ...wallet,
+          balance: newBalance
+        });
+      }
+      
+      // Recalculate stats
+      calculateStats([...transactions, newTransaction]);
+      
+      toast({
+        title: 'Payment Successful',
+        description: `Utility payment of NPT ${amount} completed`,
+      });
+      return;
+    }
 
     try {
       const res = await apiRequest('POST', '/api/transactions', {
@@ -272,7 +505,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: 'Payment Successful',
-        description: `Utility payment of NPR ${amount} completed`,
+        description: `Utility payment of NPT ${amount} completed`,
       });
 
       // Invalidate and refetch data
