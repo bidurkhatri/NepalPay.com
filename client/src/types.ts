@@ -1,110 +1,106 @@
-// User Types
-export interface User {
+// User
+export interface UserProfile {
   id: number;
   username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  password?: string;
-  role: string; // USER, ADMIN, OWNER
-  phoneNumber?: string;
-  createdAt: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  walletAddress?: string;
+  balance?: string;
+  role: 'user' | 'admin' | 'superadmin';
+  joinedAt: string;
+  avatar?: string;
 }
 
-export interface LoginCredentials {
-  username: string;
-  password: string;
+// Wallet
+export interface WalletBalance {
+  bnb: string;
+  npt: string;
 }
-
-export interface RegisterData {
-  username: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-  role?: string; // Optional, defaults to USER
-}
-
-// Wallet Types
-export interface Wallet {
-  id: number;
-  userId: number;
-  balance: string | number;
-  currency: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Transaction Types
-export type TransactionType = 'TRANSFER' | 'TOPUP' | 'UTILITY' | 'DEPOSIT' | 'WITHDRAWAL' | 'MOBILE_TOPUP' | 'UTILITY_PAYMENT';
 
 export interface Transaction {
   id: number;
-  senderId?: number | null;
-  receiverId?: number | null;
-  amount: string | number;
-  type: TransactionType;
-  note?: string | null;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
-  createdAt: string;
-  updatedAt?: string;
-  sender?: Omit<User, 'password'>;
-  receiver?: Omit<User, 'password'>;
-}
-
-export interface TransferFormData {
-  receiverId: number | string;
+  hash: string;
+  from: string;
+  to: string;
   amount: string;
-  note?: string;
+  token: string;
+  fee: string;
+  status: 'pending' | 'completed' | 'failed';
+  timestamp: string;
+  type: 'send' | 'receive' | 'deposit' | 'withdraw' | 'loan' | 'repayment' | 'collateral' | 'purchase';
+  description?: string;
 }
 
-// Activity Types
-export interface Activity {
-  id: number;
-  userId: number;
-  action: string;
-  details: string;
-  ipAddress?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-// Blockchain Types
+// Collateral and Loans
 export interface Collateral {
-  id?: number;
+  id: number;
   userId: number;
   type: 'BNB' | 'ETH' | 'BTC';
   amount: string;
-  valueInNPT: string;
-  createdAt?: string;
-  updatedAt?: string;
+  value: string;
+  locked: boolean;
+  createdAt: string;
 }
 
 export interface Loan {
-  id?: number;
+  id: number;
   userId: number;
-  amount: string;
   collateralId: number;
-  interestRate: string;
-  startDate: string;
-  endDate?: string;
-  status: 'ACTIVE' | 'REPAID' | 'DEFAULTED';
-  createdAt?: string;
-  updatedAt?: string;
+  amount: string;
+  interest: string;
+  dueDate: string;
+  repaid: boolean;
+  createdAt: string;
 }
 
-// Ad Types
-export interface Ad {
-  id?: number;
+// Stats
+export interface TokenPriceData {
+  timestamp: string;
+  price: number;
+}
+
+export interface DashboardStats {
+  totalUsers: number;
+  totalTransactions: number;
+  totalTokensInCirculation: string;
+  averageDailyTransactions: number;
+}
+
+// Stripe
+export interface StripePaymentIntent {
+  clientSecret: string;
+  amount: string;
+  currency: string;
+  status: string;
+}
+
+export interface TokenPurchase {
+  id: number;
+  userId: number;
+  amount: string;
+  pricePerToken: string;
+  totalAmount: string;
+  paymentId: string;
+  walletAddress: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: string;
+}
+
+// System
+export interface Notification {
+  id: number;
   userId: number;
   title: string;
-  description: string;
-  bidAmount: string;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
-  startDate: string;
-  endDate: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING';
-  createdAt?: string;
-  updatedAt?: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  createdAt: string;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  success: boolean;
+  message?: string;
+  error?: string;
 }

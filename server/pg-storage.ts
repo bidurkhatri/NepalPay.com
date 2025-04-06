@@ -180,6 +180,11 @@ export class PgStorage implements IStorage {
     return result[0];
   }
   
+  async getAllTransactions(): Promise<Transaction[]> {
+    await this.ensureDbInitialized();
+    return await db.select().from(transactions);
+  }
+  
   // ====== Activity Methods ======
   
   async getActivity(id: number): Promise<Activity | undefined> {
@@ -283,7 +288,7 @@ export class PgStorage implements IStorage {
   
   async getActiveAds(): Promise<Ad[]> {
     await this.ensureDbInitialized();
-    return await db.select().from(ads).where(eq(ads.status, 'approved'));
+    return await db.select().from(ads).where(eq(ads.status, 'active'));
   }
   
   async createAd(adData: InsertAd): Promise<Ad> {
@@ -362,25 +367,22 @@ export class PgStorage implements IStorage {
     const demoWallet = await this.createWallet({
       userId: demoUser.id,
       address: demoUser.walletAddress!,
-      balance: '1000',
-      tokenBalance: '5000',
-      currency: 'NPR'
+      nptBalance: '5000',
+      bnbBalance: '1000'
     });
     
     const adminWallet = await this.createWallet({
       userId: adminUser.id,
       address: adminUser.walletAddress!,
-      balance: '5000',
-      tokenBalance: '10000',
-      currency: 'NPR'
+      nptBalance: '10000',
+      bnbBalance: '5000'
     });
     
     const superadminWallet = await this.createWallet({
       userId: superadminUser.id,
       address: superadminUser.walletAddress!,
-      balance: '10000',
-      tokenBalance: '100000',
-      currency: 'NPR'
+      nptBalance: '100000',
+      bnbBalance: '10000'
     });
     
     // Create demo transactions
@@ -388,7 +390,6 @@ export class PgStorage implements IStorage {
       senderId: superadminUser.id,
       receiverId: demoUser.id,
       amount: '1000',
-      fee: '10',
       status: 'completed',
       type: 'transfer',
       currency: 'NPT',
@@ -399,7 +400,6 @@ export class PgStorage implements IStorage {
       senderId: demoUser.id,
       receiverId: adminUser.id,
       amount: '500',
-      fee: '5',
       status: 'completed',
       type: 'payment',
       currency: 'NPT',
@@ -409,14 +409,14 @@ export class PgStorage implements IStorage {
     // Create demo activities
     await this.createActivity({
       userId: demoUser.id,
-      type: 'login',
-      details: 'User logged in from web app'
+      action: 'login',
+      description: 'User logged in from web app'
     });
     
     await this.createActivity({
       userId: demoUser.id,
-      type: 'transaction',
-      details: 'Sent 500 NPT to admin'
+      action: 'transaction',
+      description: 'Sent 500 NPT to admin'
     });
     
     // Create demo collateral
@@ -424,7 +424,7 @@ export class PgStorage implements IStorage {
       userId: demoUser.id,
       type: 'BNB',
       amount: '2',
-      value: '600',
+      ltv: 75,
       status: 'active'
     });
     
@@ -433,10 +433,9 @@ export class PgStorage implements IStorage {
       userId: demoUser.id,
       collateralId: 1,
       amount: '450',
-      interestRate: '5',
+      interest: '5',
       term: 30,
       status: 'active',
-      remainingAmount: '450',
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
     });
     
@@ -444,12 +443,11 @@ export class PgStorage implements IStorage {
     await this.createAd({
       userId: adminUser.id,
       title: 'Premium NPT Exchange',
-      content: 'Get the best rates when exchanging NPT for other cryptocurrencies!',
-      status: 'approved',
+      description: 'Get the best rates when exchanging NPT for other cryptocurrencies!',
+      status: 'active',
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      type: 'banner',
-      imageUrl: 'https://example.com/ad-image.jpg'
+      budget: '500'
     });
     
     console.log('Demo data initialization complete');

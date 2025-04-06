@@ -33,6 +33,7 @@ export interface IStorage {
   getTransactionsBySenderId(senderId: number): Promise<Transaction[]>;
   getTransactionsByReceiverId(receiverId: number): Promise<Transaction[]>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
+  getAllTransactions(): Promise<Transaction[]>;
   createTransaction(transactionData: InsertTransaction): Promise<Transaction>;
   updateTransaction?(id: number, transactionData: Partial<Transaction>): Promise<Transaction | undefined>;
   
@@ -67,4 +68,5 @@ export interface IStorage {
 
 // Export the main storage implementation (PgStorage)
 // We import this way to avoid circular dependencies
-export const storage = await import('./pg-storage').then(module => module.storage);
+import * as pgStorage from './pg-storage';
+export const storage = pgStorage.storage;

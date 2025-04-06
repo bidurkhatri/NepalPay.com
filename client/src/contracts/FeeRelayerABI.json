@@ -3,7 +3,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_nepaliPayAddress",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "nepaliPayAddress",
         "type": "address"
       }
     ],
@@ -33,28 +38,21 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
-        "name": "account",
+        "name": "signer",
         "type": "address"
-      }
-    ],
-    "name": "Paused",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
+      },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "from",
+        "name": "relayer",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "value",
+        "name": "fee",
         "type": "uint256"
       }
     ],
@@ -62,21 +60,8 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "Unpaused",
-    "type": "event"
-  },
-  {
     "inputs": [],
-    "name": "getDynamicGasFee",
+    "name": "MIN_GAS_PRICE",
     "outputs": [
       {
         "internalType": "uint256",
@@ -89,7 +74,7 @@
   },
   {
     "inputs": [],
-    "name": "maxNptFee",
+    "name": "feePercentage",
     "outputs": [
       {
         "internalType": "uint256",
@@ -102,10 +87,23 @@
   },
   {
     "inputs": [],
-    "name": "nepaliPayAddress",
+    "name": "minFee",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nepaliPay",
+    "outputs": [
+      {
+        "internalType": "contract INepaliPay",
         "name": "",
         "type": "address"
       }
@@ -127,40 +125,26 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "pause",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "paused",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
       },
       {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
+        "internalType": "bytes",
+        "name": "signature",
+        "type": "bytes"
       }
     ],
     "name": "relayTransaction",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -175,11 +159,11 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_maxNptFee",
+        "name": "_feePercentage",
         "type": "uint256"
       }
     ],
-    "name": "setMaxNptFee",
+    "name": "setFeePercentage",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -187,14 +171,27 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_nepaliPayAddress",
+        "internalType": "uint256",
+        "name": "_minFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMinFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
         "type": "address"
       }
     ],
-    "name": "setNepaliPayAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -212,7 +209,20 @@
   },
   {
     "inputs": [],
-    "name": "unpause",
+    "name": "withdrawFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      }
+    ],
+    "name": "withdrawToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

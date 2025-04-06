@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { ethers } from 'ethers';
 import { storage } from './storage';
 import { setupAuth } from './auth';
+import { Transaction } from '@shared/schema';
 
 // Initialize Stripe client
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -11,7 +12,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-03-31.basil',
 });
 
 // Authentication middleware
@@ -208,8 +209,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if sender has enough balance (this is a simple check, the actual transfer happens on blockchain)
-      const senderBalance = parseFloat(senderWallet.nptBalance);
-      const transferAmount = parseFloat(amount);
+      const senderBalance = parseFloat(senderWallet.nptBalance || '0');
+      const transferAmount = parseFloat(amount || '0');
       if (senderBalance < transferAmount) {
         return res.status(400).json({ message: 'Insufficient balance' });
       }
@@ -491,8 +492,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // Update wallet balance (optimistic update, actual tokens will be transferred by the admin wallet)
-        const currentBalance = parseFloat(wallet.nptBalance);
-        const newBalance = currentBalance + parseFloat(tokenAmount);
+        const currentBalance = parseFloat(wallet.nptBalance || '0');
+        const newBalance = currentBalance + parseFloat(tokenAmount || '0');
         
         await storage.updateWallet(wallet.id, {
           nptBalance: newBalance.toString()
@@ -548,8 +549,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not authorized to view this payment' });
       }
       
-      // Fetch transaction from our database
-      const transaction = await storage.getTransaction(paymentId);
+      // Get all transactions and find by Stripe payment ID
+      const transactions = await storage.getUserTransactions(req.user.id);
+      const transaction = transactions.find((t: Transaction) => t.stripePaymentId === paymentId);
       
       res.json({
         paymentStatus: paymentIntent.status,
@@ -561,6 +563,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Serve the React frontend in development via Vite
+  // This endpoint helps frontend get the current backend URL
+  app.get('/api/app-url', (req, res) => {
+    const protocol = req.protocol;
+    const host = req.get('host') || '';
+    const url = `${protocol}://${host}`;
+    res.json({ url });
+  });
+
   // Create an HTTP server
   const httpServer = createServer(app);
   

@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_tokenAddress",
+        "name": "tokenAddress",
         "type": "address"
       }
     ],
@@ -20,86 +20,10 @@
         "type": "address"
       },
       {
-        "indexed": false,
-        "internalType": "string",
-        "name": "adData",
-        "type": "string"
-      },
-      {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
-        "name": "flameId",
+        "name": "collateralId",
         "type": "uint256"
-      }
-    ],
-    "name": "AdApproved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "adData",
-        "type": "string"
-      }
-    ],
-    "name": "AdRejected",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "avatarId",
-        "type": "string"
-      }
-    ],
-    "name": "AvatarBonus",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Cashback",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
       },
       {
         "indexed": false,
@@ -127,13 +51,19 @@
         "type": "address"
       },
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "collateralId",
+        "type": "uint256"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
       }
     ],
-    "name": "DepositTokens",
+    "name": "CollateralRemoved",
     "type": "event"
   },
   {
@@ -144,27 +74,15 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "adData",
-        "type": "string"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "bid",
+        "name": "amount",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "tier",
-        "type": "string"
       }
     ],
-    "name": "FlamePosted",
+    "name": "Deposit",
     "type": "event"
   },
   {
@@ -175,6 +93,43 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "loanId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "collateralId",
+        "type": "uint256"
+      }
+    ],
+    "name": "LoanCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "loanId",
+        "type": "uint256"
       },
       {
         "indexed": false,
@@ -184,25 +139,6 @@
       }
     ],
     "name": "LoanRepaid",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "LoanTaken",
     "type": "event"
   },
   {
@@ -228,23 +164,16 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "Paused",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "referralCode",
+        "type": "string"
       },
       {
         "indexed": false,
@@ -253,39 +182,7 @@
         "type": "uint256"
       }
     ],
-    "name": "ReferralClaimed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "TokensSent",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "Unpaused",
+    "name": "ReferralRewardClaimed",
     "type": "event"
   },
   {
@@ -323,7 +220,7 @@
         "type": "uint256"
       }
     ],
-    "name": "WithdrawTokens",
+    "name": "Withdrawal",
     "type": "event"
   },
   {
@@ -340,76 +237,44 @@
       }
     ],
     "name": "addCollateral",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "txId",
+        "type": "string"
+      }
+    ],
+    "name": "claimCashback",
+    "outputs": [
+      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
       }
     ],
-    "name": "adFlames",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "adFields",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "tier",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "adOwner",
-        "type": "address"
-      }
-    ],
-    "name": "approveFlame",
-    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
+        "internalType": "string",
+        "name": "referralCode",
+        "type": "string"
       }
     ],
-    "name": "avatarCount",
+    "name": "claimReferralReward",
     "outputs": [
       {
         "internalType": "uint256",
@@ -417,99 +282,38 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "adData",
-        "type": "string"
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "collaterals",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
         "internalType": "string",
-        "name": "tier",
+        "name": "collateralType",
         "type": "string"
       },
       {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      }
-    ],
-    "name": "bidForFlame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "blacklistThreshold",
-    "outputs": [
+      },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "cashbackAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "claimAvatarBonus",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "claimCashback",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "claimReferralReward",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "collateralValue",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "internalType": "bool",
+        "name": "locked",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -529,21 +333,14 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "emberPool",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "feeReserve",
+    "name": "getBalance",
     "outputs": [
       {
         "internalType": "uint256",
@@ -557,12 +354,118 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "tier",
-        "type": "string"
+        "internalType": "uint256",
+        "name": "collateralId",
+        "type": "uint256"
       }
     ],
-    "name": "getActiveAds",
+    "name": "getCollateral",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "collateralType",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "locked",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct NepaliPay.Collateral",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getCollateralsByUser",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "loanId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getLoan",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "borrower",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dueDate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "repaid",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct NepaliPay.Loan",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      }
+    ],
+    "name": "getLoansByBorrower",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -581,99 +484,11 @@
         "type": "address"
       }
     ],
-    "name": "getUserAvatars",
+    "name": "getUsername",
     "outputs": [
       {
-        "internalType": "string[]",
+        "internalType": "string",
         "name": "",
-        "type": "string[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getUserCollaterals",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "bnb",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "eth",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "btc",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "nptValue",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "getUserData",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "username",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "balance",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "debt",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "txCount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "loanStart",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "isStaking",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "stakingRewards",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "userRole",
         "type": "string"
       }
     ],
@@ -683,16 +498,36 @@
   {
     "inputs": [
       {
-        "internalType": "address",
+        "internalType": "uint256",
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
-    "name": "isUserBlacklisted",
+    "name": "loans",
     "outputs": [
       {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collateralId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dueDate",
+        "type": "uint256"
+      },
+      {
         "internalType": "bool",
-        "name": "",
+        "name": "repaid",
         "type": "bool"
       }
     ],
@@ -700,27 +535,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "liquidate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "loanStartTimestamps",
+    "inputs": [],
+    "name": "nextCollateralId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -733,33 +549,7 @@
   },
   {
     "inputs": [],
-    "name": "maxLoanAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "maxLoanDays",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "nextFlameId",
+    "name": "nextLoanId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -784,92 +574,12 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "pause",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "paused",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pendingFlamesCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rebatePercentage",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "referralCount",
-    "outputs": [
-      {
         "internalType": "uint256",
-        "name": "",
+        "name": "loanId",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "adOwner",
-        "type": "address"
-      }
-    ],
-    "name": "rejectFlame",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
+      },
       {
         "internalType": "uint256",
         "name": "amount",
@@ -885,79 +595,7 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "recipient",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "description",
-        "type": "string"
-      }
-    ],
-    "name": "sendTokens",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "relay",
-        "type": "address"
-      }
-    ],
-    "name": "setFeeRelayerAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "percentage",
-        "type": "uint256"
-      }
-    ],
-    "name": "setRebatePercentage",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "role",
-        "type": "string"
-      }
-    ],
-    "name": "setRole",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
         "name": "username",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "referrer",
         "type": "string"
       }
     ],
@@ -972,19 +610,30 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collateralId",
+        "type": "uint256"
       }
     ],
     "name": "takeLoan",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "tokenAddress",
+    "name": "token",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "contract IERC20",
         "name": "",
         "type": "address"
       }
@@ -1001,32 +650,6 @@
       }
     ],
     "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "txCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unpause",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1058,12 +681,12 @@
         "type": "address"
       }
     ],
-    "name": "userDebts",
+    "name": "userCollateralIds",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint256[]",
         "name": "",
-        "type": "uint256"
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -1077,12 +700,12 @@
         "type": "address"
       }
     ],
-    "name": "userNames",
+    "name": "userLoanIds",
     "outputs": [
       {
-        "internalType": "string",
+        "internalType": "uint256[]",
         "name": "",
-        "type": "string"
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -1096,7 +719,7 @@
         "type": "address"
       }
     ],
-    "name": "userRoles",
+    "name": "usernames",
     "outputs": [
       {
         "internalType": "string",
@@ -1105,19 +728,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "cause",
-        "type": "string"
-      }
-    ],
-    "name": "voteEmberPool",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
