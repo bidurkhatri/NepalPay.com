@@ -1,190 +1,161 @@
-import React, { useState, ReactNode } from 'react';
-import { useBlockchain } from '@/contexts/blockchain-context';
-import { useCustomToast } from '@/lib/toast-wrapper';
-import { 
-  Settings, 
-  TrendingDown, 
-  Users, 
-  BarChart3, 
-  Wallet, 
-  LogOut, 
-  Activity,
-  ChevronDown,
-  AlertCircle
-} from 'lucide-react';
+import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  ShieldAlert,
+  BarChart3,
+  Users,
+  Banknote,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  TriangleAlert,
+} from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  title: string;
+  title?: string;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) => {
-  const { userAddress, disconnectWallet, nepaliPayContract, tokenContract, feeRelayerContract } = useBlockchain();
   const [location] = useLocation();
-  const toast = useCustomToast();
-  const [contractsExpanded, setContractsExpanded] = useState(false);
+  const { logout } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 
-  const handleLogout = () => {
-    disconnectWallet();
-    window.location.href = "/superadmin";
-  };
-
-  // Truncate address for display
-  const truncateAddress = (address: string | null) => {
-    if (!address) return '';
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-
+  // Sidebar navigation items
   const navItems = [
-    { path: '/superadmin/dashboard', label: 'Control Panel', icon: <Settings className="h-5 w-5" /> },
-    { path: '/superadmin/stability', label: 'Stability', icon: <TrendingDown className="h-5 w-5" /> },
-    { path: '/superadmin/admins', label: 'Admin Management', icon: <Users className="h-5 w-5" /> },
-    { path: '/superadmin/finance', label: 'Finance', icon: <Wallet className="h-5 w-5" /> },
-    { path: '/superadmin/analytics', label: 'Analytics', icon: <BarChart3 className="h-5 w-5" /> },
+    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', href: '/superadmin/dashboard' },
+    { icon: <ShieldAlert size={20} />, label: 'Stability', href: '/superadmin/stability' },
+    { icon: <Users size={20} />, label: 'Admins', href: '/superadmin/admins' },
+    { icon: <Banknote size={20} />, label: 'Finance', href: '/superadmin/finance' },
+    { icon: <BarChart3 size={20} />, label: 'Analytics', href: '/superadmin/analytics' },
+    { icon: <Cpu size={20} />, label: 'Performance', href: '/superadmin/performance' },
   ];
 
-  const isActiveRoute = (path: string) => {
-    return location === path;
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
+
+  // Animation variants
+  const sidebarVariants = {
+    expanded: { width: 'auto', minWidth: '240px', transition: { duration: 0.3 } },
+    collapsed: { width: 'auto', minWidth: '76px', transition: { duration: 0.3 } },
+  };
+
+  const itemTextVariants = {
+    expanded: { opacity: 1, display: 'block', transition: { duration: 0.2, delay: 0.1 } },
+    collapsed: { opacity: 0, display: 'none', transition: { duration: 0.2 } },
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="flex h-screen bg-transparent">
       {/* Sidebar */}
-      <motion.aside 
-        className="sidebar-nav w-full lg:w-64 lg:h-screen lg:fixed"
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
+      <motion.div
+        className="sidebar-nav relative h-full flex flex-col shadow-xl"
+        variants={sidebarVariants}
+        animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+        initial={false}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo and header */}
-          <div className="mb-8 px-2">
-            <h1 className="text-xl font-bold nepal-gradient-text">NepaliPay Owner</h1>
-            <div className="flex items-center mt-2 text-xs text-gray-400">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-              <span className="truncate">{truncateAddress(userAddress)}</span>
+        {/* Logo and collapse button */}
+        <div className="flex items-center justify-between mb-8 pl-2 pr-2">
+          <div className="flex items-center py-2">
+            <div className="rounded-full bg-primary/10 p-1 mr-3">
+              <TriangleAlert size={24} className="text-primary" />
             </div>
-          </div>
-          
-          {/* Navigation */}
-          <nav className="flex-grow">
-            <ul className="space-y-1">
-              {navItems.map((item) => (
-                <li key={item.path}>
-                  <Link href={item.path}>
-                    <a className={`sidebar-item ${isActiveRoute(item.path) ? 'active' : ''}`}>
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </a>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          
-          {/* Contract Info Accordion */}
-          <div className="mt-4 mb-3 px-3">
-            <button 
-              onClick={() => setContractsExpanded(!contractsExpanded)}
-              className="flex items-center justify-between w-full text-left py-2 text-sm text-gray-300 hover:text-white transition-colors"
+            <motion.div
+              className="font-semibold text-lg"
+              variants={itemTextVariants}
+              animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+              initial={false}
             >
-              <span className="font-medium">Smart Contracts</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${contractsExpanded ? 'transform rotate-180' : ''}`} />
-            </button>
-            
-            {contractsExpanded && (
-              <div className="mt-2 space-y-2 pl-2 text-xs text-gray-400">
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-300">NepaliPay Token</span>
-                  <a 
-                    href="https://bscscan.com/address/0x69d34B25809b346702C21EB0E22EAD8C1de58D66" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary/80 hover:text-primary truncate"
-                  >
-                    0x69d34B25809b346702C21EB0E22EAD8C1de58D66
-                  </a>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-300">NepaliPay Main</span>
-                  <a 
-                    href="https://bscscan.com/address/0xe2d189f6696ee8b247ceae97fe3f1f2879054553" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary/80 hover:text-primary truncate"
-                  >
-                    0xe2d189f6696ee8b247ceae97fe3f1f2879054553
-                  </a>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-300">FeeRelayer</span>
-                  <a 
-                    href="https://bscscan.com/address/0x7ff2271749409f9137dac1e082962e21cc99aee6" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary/80 hover:text-primary truncate"
-                  >
-                    0x7ff2271749409f9137dac1e082962e21cc99aee6
-                  </a>
-                </div>
-              </div>
-            )}
+              Admin Portal
+            </motion.div>
           </div>
-          
-          {/* Logout button */}
-          <div className="mt-auto px-3 mb-5">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center text-gray-400 hover:text-white transition-colors w-full py-2 px-3 rounded-lg hover:bg-white/5"
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1">
+          <ul className="space-y-1 px-2">
+            {navItems.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}>
+                  <a
+                    className={`sidebar-item ${
+                      location === item.href ? 'active' : ''
+                    } flex items-center`}
+                  >
+                    <span className="flex-shrink-0">{item.icon}</span>
+                    <motion.span
+                      className="ml-3 whitespace-nowrap"
+                      variants={itemTextVariants}
+                      animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+                      initial={false}
+                    >
+                      {item.label}
+                    </motion.span>
+                  </a>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className="mt-auto pt-4 px-2 border-t border-white/5">
+          <Link href="/superadmin/settings">
+            <a className="sidebar-item flex items-center mb-2">
+              <Settings size={20} />
+              <motion.span
+                className="ml-3"
+                variants={itemTextVariants}
+                animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+                initial={false}
+              >
+                Settings
+              </motion.span>
+            </a>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="sidebar-item w-full text-left flex items-center"
+          >
+            <LogOut size={20} />
+            <motion.span
+              className="ml-3"
+              variants={itemTextVariants}
+              animate={sidebarCollapsed ? 'collapsed' : 'expanded'}
+              initial={false}
             >
-              <LogOut className="h-5 w-5 mr-2" />
-              <span>Disconnect</span>
-            </button>
-          </div>
+              Logout
+            </motion.span>
+          </button>
         </div>
-      </motion.aside>
-      
-      {/* Main Content */}
-      <main className="flex-grow lg:ml-64">
-        {/* Top Header */}
-        <div className="glass border-0 border-b border-white/5 mb-6">
-          <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 className="text-xl font-bold">{title}</h1>
-            <div className="flex items-center">
-              <div className="bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs flex items-center mr-3">
-                <Activity className="h-3 w-3 mr-1" />
-                <span>Mainnet</span>
-              </div>
-              <div className="bg-green-500/10 text-green-400 px-3 py-1 rounded-full text-xs flex items-center">
-                <span className="mr-1">•</span>
-                <span>Connected</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Alerts for missing contracts */}
-        {(!nepaliPayContract || !tokenContract || !feeRelayerContract) && (
-          <div className="container mx-auto px-4 mb-6">
-            <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-4 flex items-start">
-              <AlertCircle className="text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium text-red-200">Connection Error</h3>
-                <p className="text-red-300 text-sm">
-                  One or more smart contracts are not properly connected. Please check your network connection and wallet configuration.
-                </p>
-              </div>
-            </div>
+      </motion.div>
+
+      {/* Main content */}
+      <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+        {title && (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">{title}</h1>
           </div>
         )}
-        
-        {/* Page Content */}
-        <div className="container mx-auto px-4 pb-10">
-          {children}
-        </div>
-      </main>
+        {children}
+      </div>
     </div>
   );
 };

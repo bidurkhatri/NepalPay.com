@@ -31,6 +31,7 @@ import SuperAdminStabilityPage from "@/pages/superadmin/stability";
 import SuperAdminAdminsPage from "@/pages/superadmin/admins";
 import SuperAdminFinancePage from "@/pages/superadmin/finance";
 import SuperAdminAnalyticsPage from "@/pages/superadmin/analytics";
+import SmartContractPerformanceDashboard from "@/pages/superadmin/performance-dashboard";
 
 // Admin Pages (Admin Portal - admin.nepalipay.com)
 import AdminLoginPage from "@/pages/admin/login-page";
@@ -217,6 +218,7 @@ function Router() {
       <Route path="/superadmin/admins" component={() => <ProtectedRoute component={SuperAdminAdminsPage} requiredRole="OWNER" />} />
       <Route path="/superadmin/finance" component={() => <ProtectedRoute component={SuperAdminFinancePage} requiredRole="OWNER" />} />
       <Route path="/superadmin/analytics" component={() => <ProtectedRoute component={SuperAdminAnalyticsPage} requiredRole="OWNER" />} />
+      <Route path="/superadmin/performance" component={() => <ProtectedRoute component={SmartContractPerformanceDashboard} requiredRole="OWNER" />} />
       
       {/* 404 route */}
       <Route component={NotFound} />

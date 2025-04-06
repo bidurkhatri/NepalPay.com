@@ -256,8 +256,8 @@
   /* Futuristic glass-morphic card */
   .cyber-card {
     background: rgba(10, 18, 35, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--blur-amount));
+    -webkit-backdrop-filter: blur(var(--blur-amount));
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -267,6 +267,7 @@
     position: relative;
     overflow: hidden;
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 1; /* Ensure content is above pseudo-elements */
   }
   
   .cyber-card:hover {
@@ -289,7 +290,7 @@
       transparent 60%, 
       rgba(var(--primary-rgb), 0.03) 85%, 
       rgba(var(--primary-rgb), 0.05));
-    z-index: 0;
+    z-index: -1;
     pointer-events: none;
     border-radius: inherit;
   }
@@ -307,6 +308,35 @@
       transparent 95%);
     opacity: 0.4;
     transition: opacity 0.3s ease;
+  }
+  
+  /* Dashboard-specific cyber card enhancements */
+  .dashboard .cyber-card {
+    background: rgba(8, 15, 30, 0.75);
+    border: 1px solid rgba(var(--primary-rgb), 0.08);
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.3),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  
+  .dashboard .cyber-card:hover {
+    box-shadow: 
+      0 15px 40px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(var(--primary-rgb), 0.15),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Add subtle grid pattern to dashboard cards */
+  .dashboard .cyber-card::before {
+    background: 
+      linear-gradient(45deg, 
+        transparent 60%, 
+        rgba(var(--primary-rgb), 0.03) 85%, 
+        rgba(var(--primary-rgb), 0.05)),
+      linear-gradient(rgba(var(--primary-rgb), 0.01) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--primary-rgb), 0.01) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px, 20px 20px;
+    opacity: 0.5;
   }
   
   /* Card highlight effect */
