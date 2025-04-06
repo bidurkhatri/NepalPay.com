@@ -46,7 +46,7 @@ export const transactions = pgTable("transactions", {
   senderId: integer("senderId").references(() => users.id),
   receiverId: integer("receiverId").references(() => users.id),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  type: text("type").notNull(), // TRANSFER, TOPUP, UTILITY, DEPOSIT, WITHDRAWAL
+  type: text("type").notNull(), // TRANSFER, TOPUP, UTILITY, DEPOSIT, WITHDRAWAL, MOBILE_TOPUP, UTILITY_PAYMENT
   status: text("status").default("COMPLETED").notNull(),
   note: text("note"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -139,3 +139,32 @@ export type InsertCollateral = z.infer<typeof insertCollateralSchema>;
 
 export type Loan = typeof loans.$inferSelect;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
+
+// Ad schema
+export const ads = pgTable("ads", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  bidAmount: numeric("bidAmount", { precision: 18, scale: 2 }).notNull(),
+  tier: text("tier").notNull(), // BRONZE, SILVER, GOLD, PLATINUM
+  startDate: timestamp("startDate").defaultNow().notNull(),
+  endDate: timestamp("endDate").notNull(),
+  status: text("status").default("PENDING").notNull(), // ACTIVE, EXPIRED, PENDING
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const insertAdSchema = createInsertSchema(ads).pick({
+  userId: true,
+  title: true,
+  description: true,
+  bidAmount: true,
+  tier: true,
+  startDate: true,
+  endDate: true,
+  status: true,
+});
+
+export type Ad = typeof ads.$inferSelect;
+export type InsertAd = z.infer<typeof insertAdSchema>;

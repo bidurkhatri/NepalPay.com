@@ -37,13 +37,15 @@ export interface Wallet {
 }
 
 // Transaction Types
+export type TransactionType = 'TRANSFER' | 'TOPUP' | 'UTILITY' | 'DEPOSIT' | 'WITHDRAWAL' | 'MOBILE_TOPUP' | 'UTILITY_PAYMENT';
+
 export interface Transaction {
   id: number;
-  senderId?: number;
-  receiverId?: number;
+  senderId?: number | null;
+  receiverId?: number | null;
   amount: string | number;
-  type: 'TRANSFER' | 'TOPUP' | 'UTILITY' | 'DEPOSIT' | 'WITHDRAWAL';
-  note?: string;
+  type: TransactionType;
+  note?: string | null;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   createdAt: string;
   updatedAt?: string;
@@ -52,7 +54,7 @@ export interface Transaction {
 }
 
 export interface TransferFormData {
-  receiverId: number;
+  receiverId: number | string;
   amount: string;
   note?: string;
 }

@@ -35,7 +35,8 @@ interface BlockchainContextType {
   nptBalance: string;
   username: string | null;
   userRole: string;
-  // Remove staking properties as they're not needed
+  
+  // Collateral and loan properties
   userCollaterals: {
     bnb: string;
     eth: string;
@@ -44,9 +45,18 @@ interface BlockchainContextType {
   };
   userDebt: string;
   loanStartTimestamp: number;
+  
+  // Staking properties
+  isStaking: boolean;
+  stakedAmount: string;
+  stakingRewards: string;
+  
+  // User stats
   avatars: string[];
   txCount: number;
   referralCount: number;
+  
+  // Core actions
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   
@@ -76,6 +86,16 @@ interface BlockchainContextType {
   // Fee relayer functions
   relayTransaction: (from: string, value: string) => Promise<any>;
   getDynamicGasFee: () => Promise<string>;
+  
+  // Staking functions
+  stakeTokens: (amount: string) => Promise<any>;
+  unstakeTokens: (amount: string) => Promise<any>;
+  
+  // Additional functions
+  contributeToFund: (amount: string) => Promise<any>;
+  startCrowdfundingCampaign: (params: any) => Promise<any>;
+  setUserProfile: (params: any) => Promise<any>;
+  payBusinessAccount: (params: any) => Promise<any>;
 }
 
 export interface AdData {
@@ -102,7 +122,13 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [nptBalance, setNptBalance] = useState<string>("0");
   const [username, setUsernameState] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("NONE"); // NONE, USER, ADMIN
-  // Removed staking state variables as they're not required
+  
+  // Staking state variables
+  const [isStaking, setIsStaking] = useState<boolean>(false);
+  const [stakedAmount, setStakedAmount] = useState<string>("0");
+  const [stakingRewards, setStakingRewards] = useState<string>("0");
+  
+  // Collaterals
   const [userCollaterals, setUserCollaterals] = useState({
     bnb: "0",
     eth: "0",
@@ -169,6 +195,16 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   // Connect to blockchain and load contracts
   const connectToBlockchain = async (provider: BrowserProvider) => {
     try {
+      // Check if we're in demo mode
+      const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+      if (isDemoMode) {
+        setIsConnected(true);
+        setUserAddress('0xdemo');
+        // Load demo data
+        await loadUserData('0xdemo', null, null);
+        return true;
+      }
+      
       const signer = await provider.getSigner();
       setSigner(signer);
       
@@ -192,6 +228,17 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (error) {
       console.error("Error connecting to blockchain:", error);
       setIsConnected(false);
+      
+      // If connecting to blockchain fails, but we're supposed to be in demo mode
+      if (localStorage.getItem('demo_credentials') === 'true') {
+        localStorage.setItem('demo_mode', 'true');
+        setIsConnected(true);
+        setUserAddress('0xdemo');
+        // Load demo data
+        await loadUserData('0xdemo', null, null);
+        return true;
+      }
+      
       return false;
     }
   };
@@ -223,6 +270,11 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         setTxCount(3);
         setReferralCount(1);
         setAvatars(["Yeti", "Everest", "Buddha"]);
+        
+        // Set default staking values
+        setIsStaking(true);
+        setStakedAmount("0.5");
+        setStakingRewards("0.025");
         return;
       }
       
@@ -425,6 +477,19 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
 
   // Deposit tokens
   const depositTokens = async (amount: string) => {
+    // Check for demo mode first
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      
+      // Update state with mock values for demo
+      const currentBalance = parseFloat(nptBalance);
+      const depositAmount = parseFloat(amount);
+      setNptBalance((currentBalance + depositAmount).toString());
+      
+      return { success: true, message: "Tokens deposited successfully (Demo Mode)" };
+    }
+    
     if (!tokenContract || !nepaliPayContract || !signer) throw new Error("Not connected");
     
     try {
@@ -769,6 +834,60 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, [provider, userAddress]);
 
+  // Staking functions - stub implementations 
+  const stakeTokens = async (amount: string) => {
+    // Demo implementation
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      
+      // Update state with mock values for demo
+      const stakeAmount = parseFloat(amount);
+      setStakedAmount((parseFloat(stakedAmount) + stakeAmount).toString());
+      setIsStaking(true);
+      
+      return { success: true, message: "Tokens staked successfully (Demo Mode)" };
+    }
+    
+    throw new Error("Staking not implemented in this version");
+  };
+  
+  const unstakeTokens = async (amount: string) => {
+    // Demo implementation
+    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
+    if (isDemoMode) {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      
+      // Update state with mock values for demo
+      const unstakeAmount = parseFloat(amount);
+      setStakedAmount((parseFloat(stakedAmount) - unstakeAmount).toString());
+      if (parseFloat(stakedAmount) - unstakeAmount <= 0) {
+        setIsStaking(false);
+      }
+      
+      return { success: true, message: "Tokens unstaked successfully (Demo Mode)" };
+    }
+    
+    throw new Error("Unstaking not implemented in this version");
+  };
+  
+  // Additional placeholder functions to match the interface
+  const contributeToFund = async (amount: string) => {
+    throw new Error("Contribute to fund not implemented in this version");
+  };
+  
+  const startCrowdfundingCampaign = async (params: any) => {
+    throw new Error("Crowdfunding campaigns not implemented in this version");
+  };
+  
+  const setUserProfile = async (params: any) => {
+    throw new Error("User profile settings not implemented in this version");
+  };
+  
+  const payBusinessAccount = async (params: any) => {
+    throw new Error("Business payments not implemented in this version");
+  };
+
   return (
     <BlockchainContext.Provider
       value={{
@@ -787,6 +906,9 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         userCollaterals,
         userDebt,
         loanStartTimestamp,
+        isStaking,
+        stakedAmount,
+        stakingRewards,
         avatars,
         txCount,
         referralCount,
@@ -806,7 +928,14 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         bidForFlame,
         getActiveAds,
         relayTransaction,
-        getDynamicGasFee
+        getDynamicGasFee,
+        // Add the new functions
+        stakeTokens,
+        unstakeTokens,
+        contributeToFund,
+        startCrowdfundingCampaign,
+        setUserProfile,
+        payBusinessAccount
       }}
     >
       {children}
