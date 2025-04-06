@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useBlockchain } from '@/contexts/blockchain-context';
+import { ethers } from 'ethers';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -23,6 +24,7 @@ interface CollateralOption {
   description: string;
   rate: number;
   icon: React.ReactNode;
+  exchangeRate: number; // NPT value per unit (e.g., 1 BNB = 1250 NPT)
 }
 
 const BorrowPage: React.FC = () => {
@@ -34,11 +36,43 @@ const BorrowPage: React.FC = () => {
     loanStartTimestamp,
     addCollateral,
     takeLoan,
-    repayLoan 
+    repayLoan,
+    nepaliPayContract
   } = useBlockchain();
   
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  
+  // Exchange rates from blockchain
+  const [exchangeRates, setExchangeRates] = useState({
+    bnb: 1250, // Default fallback values
+    eth: 1800,
+    btc: 25000
+  });
+  
+  // Fetch exchange rates from blockchain on load
+  useEffect(() => {
+    const fetchExchangeRates = async () => {
+      try {
+        if (nepaliPayContract) {
+          const bnbRate = await nepaliPayContract.exchangeRates("BNB");
+          const ethRate = await nepaliPayContract.exchangeRates("ETH");
+          const btcRate = await nepaliPayContract.exchangeRates("BTC");
+          
+          setExchangeRates({
+            bnb: parseFloat(ethers.formatEther(bnbRate)) || 1250,
+            eth: parseFloat(ethers.formatEther(ethRate)) || 1800,
+            btc: parseFloat(ethers.formatEther(btcRate)) || 25000
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch exchange rates:", error);
+        // Keep default rates if fetch fails
+      }
+    };
+    
+    fetchExchangeRates();
+  }, [nepaliPayContract]);
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'borrow' | 'repay'>('borrow');
@@ -66,6 +100,7 @@ const BorrowPage: React.FC = () => {
       description: 'Binance Coin',
       rate: 0.75, // Can borrow up to 75% of collateral value
       icon: <div className="bg-amber-500 rounded-full h-8 w-8 flex items-center justify-center font-bold text-white">B</div>,
+      exchangeRate: exchangeRates.bnb
     },
     {
       type: 'eth',
@@ -73,22 +108,25 @@ const BorrowPage: React.FC = () => {
       description: 'Ethereum',
       rate: 0.7, // Can borrow up to 70% of collateral value
       icon: <div className="bg-blue-500 rounded-full h-8 w-8 flex items-center justify-center font-bold text-white">E</div>,
+      exchangeRate: exchangeRates.eth
     },
     {
       type: 'btc',
       name: 'BTC',
       description: 'Bitcoin',
-      rate: 0.8, // Can borrow up to 80% of collateral value
+      rate: 0.65, // Updated from 0.8 to match the specification (65% LTV)
       icon: <div className="bg-orange-500 rounded-full h-8 w-8 flex items-center justify-center font-bold text-white">₿</div>,
+      exchangeRate: exchangeRates.btc
     },
   ];
   
   // Get selected collateral option
   const selectedCollateralOption = collateralOptions.find(option => option.type === selectedCollateral) || collateralOptions[0];
   
-  // Calculate loan values
-  const maxLoanAmount = collateralAmountNumber * selectedCollateralOption.rate * 100; // Example conversion rate
-  const interestRate = 0.12; // 12% annual interest rate
+  // Calculate loan values based on real exchange rates
+  const collateralValueInNPT = collateralAmountNumber * selectedCollateralOption.exchangeRate;
+  const maxLoanAmount = collateralValueInNPT * selectedCollateralOption.rate;
+  const interestRate = 0.05; // 5% interest rate for 30 days as per specifications
   
   // Calculate repayment values
   const hasActiveLoan = parseFloat(userDebt) > 0;
@@ -324,7 +362,7 @@ const BorrowPage: React.FC = () => {
                         onChange={(e) => setCollateralAmount(e.target.value)}
                         min="0.01"
                         step="0.01"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary"
+                        className="w-full bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/50 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary shadow-md"
                         placeholder={`Enter amount (${selectedCollateralOption.name})`}
                         required
                       />
@@ -338,7 +376,7 @@ const BorrowPage: React.FC = () => {
                         selectedCollateral === 'eth' ? userCollaterals.eth :
                         userCollaterals.btc
                       } {selectedCollateralOption.name}</div>
-                      <div>1 {selectedCollateralOption.name} ≈ 100 NPT</div>
+                      <div>1 {selectedCollateralOption.name} ≈ {selectedCollateralOption.exchangeRate.toLocaleString()} NPT</div>
                     </div>
                   </div>
                   
@@ -356,7 +394,7 @@ const BorrowPage: React.FC = () => {
                         min="1"
                         max={maxLoanAmount}
                         step="1"
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary"
+                        className="w-full bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/50 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary shadow-md"
                         placeholder="Enter loan amount (NPT)"
                         required
                       />
@@ -377,7 +415,7 @@ const BorrowPage: React.FC = () => {
                   </div>
                   
                   {/* Loan terms */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/30 rounded-lg p-4 shadow-lg">
                     <div className="flex justify-between items-center">
                       <div className="text-gray-400">Collateral:</div>
                       <div className="text-white">{collateralAmountNumber.toLocaleString()} {selectedCollateralOption.name}</div>
@@ -400,7 +438,7 @@ const BorrowPage: React.FC = () => {
                       <div className="text-gray-400">LTV Ratio:</div>
                       <div className="text-gray-300">
                         {collateralAmountNumber > 0 && loanAmountNumber > 0
-                          ? `${((loanAmountNumber / (collateralAmountNumber * 100)) * 100).toFixed(2)}%`
+                          ? `${((loanAmountNumber / collateralValueInNPT) * 100).toFixed(2)}%`
                           : '0%'}
                       </div>
                     </div>
@@ -446,7 +484,7 @@ const BorrowPage: React.FC = () => {
               <div className="card-content p-8">
                 {!hasActiveLoan ? (
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 rounded-full bg-gray-800/50 backdrop-blur-[20px] border border-gray-700/30 flex items-center justify-center mx-auto mb-4 shadow-lg">
                       <Check className="h-8 w-8 text-green-500" />
                     </div>
                     <h3 className="text-xl font-medium text-white mb-2">No Active Loans</h3>
@@ -461,7 +499,7 @@ const BorrowPage: React.FC = () => {
                 ) : (
                   <form onSubmit={handleRepay} className="space-y-6">
                     {/* Active Loan Details */}
-                    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 mb-6">
+                    <div className="bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/30 rounded-lg p-4 mb-6 shadow-lg">
                       <div className="text-sm font-medium text-gray-300 mb-3">Active Loan Details</div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
@@ -487,7 +525,7 @@ const BorrowPage: React.FC = () => {
                       </div>
                       
                       {/* Collateral to be released */}
-                      <div className="mt-4 p-3 bg-gray-900/70 rounded border border-gray-700/50">
+                      <div className="mt-4 p-3 bg-gray-900/50 backdrop-blur-[20px] rounded-lg border border-gray-700/50 shadow-inner">
                         <div className="text-xs text-gray-400 mb-2">Collateral to be released upon full repayment:</div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -527,7 +565,7 @@ const BorrowPage: React.FC = () => {
                           min="1"
                           max={Math.min(parseFloat(nptBalance), totalRepayment)}
                           step="1"
-                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary"
+                          className="w-full bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/50 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-primary focus:border-primary shadow-md"
                           placeholder="Enter repayment amount"
                           required
                         />
@@ -547,7 +585,7 @@ const BorrowPage: React.FC = () => {
                     </div>
                     
                     {/* Repayment Breakdown */}
-                    <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="bg-gray-800/30 backdrop-blur-[20px] border border-gray-700/30 rounded-lg p-4 shadow-lg">
                       <div className="flex justify-between items-center">
                         <div className="text-gray-400">Your Repayment:</div>
                         <div className="text-white">{repayAmountNumber.toLocaleString()} NPT</div>
@@ -627,8 +665,8 @@ const BorrowPage: React.FC = () => {
       
       {/* Processing animation */}
       {(processingBorrow || processingRepay) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-lg p-8 max-w-md w-full text-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-900/80 backdrop-blur-[20px] border border-gray-700/50 rounded-lg p-8 max-w-md w-full text-center shadow-xl">
             <Loader2 className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
             <h3 className="text-xl font-bold text-white mb-2">Processing transaction...</h3>
             <p className="text-gray-400">Please wait while your transaction is being confirmed on the blockchain.</p>
