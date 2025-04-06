@@ -105,6 +105,15 @@ const BuyTokensPage: React.FC = () => {
     });
   };
   
+  // Fee breakdown state
+  const [feeBreakdown, setFeeBreakdown] = useState<{
+    tokenAmount: number;
+    tokenPriceUSD: string;
+    gasFeeUSD: string;
+    serviceFeeUSD: string;
+    totalUSD: string;
+  } | null>(null);
+
   // Initiate Stripe payment process
   const handlePurchase = async () => {
     if (tokenAmount <= 0) {
@@ -131,6 +140,7 @@ const BuyTokensPage: React.FC = () => {
     setIsProcessing(true);
     setPaymentStatus('processing');
     setPaymentError('');
+    setFeeBreakdown(null);
     
     try {
       // Create payment intent on the server
@@ -145,6 +155,11 @@ const BuyTokensPage: React.FC = () => {
       }
       
       const data = await response.json();
+      
+      // Store fee breakdown for display
+      if (data.breakdown) {
+        setFeeBreakdown(data.breakdown);
+      }
       
       // Load Stripe and redirect to checkout
       const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -325,12 +340,42 @@ const BuyTokensPage: React.FC = () => {
             </CardContent>
             
             <CardFooter className="flex flex-col">
-              <div className="flex items-center justify-between w-full border-t border-gray-800 pt-4 mb-4">
-                <div className="text-gray-300">Total to Pay:</div>
-                <div className="text-2xl font-bold text-white">
-                  {formatNPR(calculatePrice(tokenAmount))}
+              {/* Fee Breakdown Section */}
+              {feeBreakdown ? (
+                <div className="w-full border-t border-gray-800 pt-4 mb-4">
+                  <h3 className="text-white font-medium mb-2">Payment Details</h3>
+                  <div className="glass-card bg-gray-900/30 p-4 rounded-lg mb-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-400">Token Cost:</span>
+                      <span className="text-white">${parseFloat(feeBreakdown.tokenPriceUSD).toFixed(2)} USD</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-400">Network Fee:</span>
+                      <span className="text-white">${parseFloat(feeBreakdown.gasFeeUSD).toFixed(2)} USD</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-400">Service Fee:</span>
+                      <span className="text-white">${parseFloat(feeBreakdown.serviceFeeUSD).toFixed(2)} USD</span>
+                    </div>
+                    <div className="border-t border-gray-700 my-2"></div>
+                    <div className="flex justify-between font-medium">
+                      <span className="text-gray-300">Total:</span>
+                      <span className="text-primary text-lg">${parseFloat(feeBreakdown.totalUSD).toFixed(2)} USD</span>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500">
+                      Network fee covers the cost of processing your transaction on the blockchain.
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-between w-full border-t border-gray-800 pt-4 mb-4">
+                  <div className="text-gray-300">Approximate Cost:</div>
+                  <div className="text-2xl font-bold text-white">
+                    {formatNPR(calculatePrice(tokenAmount))}
+                  </div>
+                  <div className="text-xs text-gray-500 ml-2">(plus network fees)</div>
+                </div>
+              )}
               
               <Button
                 className="w-full py-6 text-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400"

@@ -243,37 +243,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
       
-      const { amount } = req.body;
+      const { tokenAmount, walletAddress } = req.body;
       
-      if (!amount || amount < 1) {
+      if (!tokenAmount || tokenAmount < 1) {
         return res.status(400).json({ message: "Invalid amount" });
       }
 
-      // Amount in cents - 1 NPT = 1 NPR = ~$0.0075 USD
-      // Convert NPR to USD at roughly 1:0.0075 rate
-      const amountInUsd = amount * 0.0075;
-      const amountInCents = Math.round(amountInUsd * 100);
+      if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        return res.status(400).json({ message: "Invalid wallet address" });
+      }
+
+      // Get current BSC gas price
+      const { ethers } = require("ethers");
+      const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
+      
+      // Calculate gas fee for a token transfer
+      const gasPrice = await provider.getFeeData();
+      const gasLimit = 65000; // Standard gas limit for ERC20 transfers
+      const gasFeeBNB = gasPrice.gasPrice * BigInt(gasLimit);
+      
+      // Get BNB/USD price
+      // In production, you should use a reliable price oracle API
+      // For simplicity, we'll use a hardcoded rate here (1 BNB = $250 USD example)
+      const bnbUsdRate = 250;
+      
+      // Calculate gas fee in USD
+      const gasFeeUSD = Number(ethers.formatEther(gasFeeBNB)) * bnbUsdRate;
+      
+      // Add a 10% buffer to account for price fluctuations
+      const gasFeeWithBuffer = gasFeeUSD * 1.1;
+      
+      // Calculate token price (1 NPT = 1 NPR = ~$0.0075 USD)
+      const tokenPriceUSD = tokenAmount * 0.0075;
+      
+      // Service fee (2% of token price)
+      const serviceFeeUSD = tokenPriceUSD * 0.02;
+      
+      // Total amount in USD
+      const totalAmountUSD = tokenPriceUSD + gasFeeWithBuffer + serviceFeeUSD;
+      
+      // Convert to cents for Stripe
+      const amountInCents = Math.round(totalAmountUSD * 100);
       
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountInCents,
         currency: 'usd',
         metadata: {
           userId: req.user.id.toString(),
-          tokenAmount: amount.toString(), // 1:1 NPR to NPT
-          walletAddress: req.body.walletAddress || ""
+          tokenAmount: tokenAmount.toString(),
+          walletAddress: walletAddress,
+          gasFeeUSD: gasFeeWithBuffer.toFixed(4),
+          serviceFeeUSD: serviceFeeUSD.toFixed(4),
+          tokenPriceUSD: tokenPriceUSD.toFixed(4)
         },
       });
 
-      // Log the payment intent creation
+      // Log the payment intent creation with detailed breakdown
       await storage.createActivity({
         userId: req.user.id,
         action: "PAYMENT_INTENT_CREATED",
-        details: `Created payment intent for NPR ${amount} (${amount} NPT tokens)`,
+        details: `Created payment intent for ${tokenAmount} NPT tokens ($$${tokenPriceUSD.toFixed(2)}), gas fee: $${gasFeeWithBuffer.toFixed(2)}, service fee: $${serviceFeeUSD.toFixed(2)}`,
         ipAddress: req.ip || ""
       });
       
       res.json({
         clientSecret: paymentIntent.client_secret,
+        breakdown: {
+          tokenAmount,
+          tokenPriceUSD: tokenPriceUSD.toFixed(4),
+          gasFeeUSD: gasFeeWithBuffer.toFixed(4),
+          serviceFeeUSD: serviceFeeUSD.toFixed(4),
+          totalUSD: totalAmountUSD.toFixed(4)
+        }
       });
     } catch (error: any) {
       console.error("Stripe error:", error);
@@ -305,6 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = parseInt(paymentIntent.metadata.userId);
         const tokenAmount = parseInt(paymentIntent.metadata.tokenAmount);
         const walletAddress = paymentIntent.metadata.walletAddress;
+        const gasFeeUSD = parseFloat(paymentIntent.metadata.gasFeeUSD || "0");
+        const serviceFeeUSD = parseFloat(paymentIntent.metadata.serviceFeeUSD || "0");
         
         if (userId && tokenAmount && walletAddress) {
           try {
@@ -317,25 +360,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Create a Binance Smart Chain provider
             const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
-            
-            // Load the admin wallet (this should use secure environment variables for private key)
+
+            // Hot wallet configuration (used for regular transfers)
+            // This is the wallet that will interact with users directly
             // IMPORTANT: In production, you should NEVER hardcode private keys
             // The private key should be in an environment variable and properly secured
-            const adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY || "", provider);
+            const hotWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY || "", provider);
             
-            // Create a contract instance
+            // Create a contract instance connected to the hot wallet
             const tokenContract = new ethers.Contract(
               NEPALIPAY_TOKEN_ADDRESS,
               NepaliPayTokenABI,
-              adminWallet
+              hotWallet
             );
             
             // Parse the amount to wei (1 NPT = 10^18 wei)
             const amountWei = ethers.parseEther(tokenAmount.toString());
             
-            // Mint or transfer tokens to the user's wallet
-            // The exact function depends on the contract: transfer, mint, or another method
-            // Check the specific method available in your contract
+            // Check hot wallet balance first
+            const hotWalletBalance = await tokenContract.balanceOf(hotWallet.address);
+            
+            // If hot wallet balance is insufficient, record for manual processing
+            if (hotWalletBalance < amountWei) {
+              throw new Error(`Hot wallet balance insufficient. Has: ${ethers.formatEther(hotWalletBalance)} NPT, Needs: ${tokenAmount} NPT`);
+            }
+            
+            // Transfer tokens from hot wallet to user's wallet
+            // Using the transfer method as we determined the contract has this function
             const tx = await tokenContract.transfer(walletAddress, amountWei);
             
             // Wait for transaction confirmation
@@ -345,19 +396,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createActivity({
               userId,
               action: "TOKEN_PURCHASE_SUCCESS",
-              details: `Successfully minted ${tokenAmount} NPT tokens to wallet ${walletAddress}. Transaction hash: ${receipt.hash}`,
+              details: `Successfully transferred ${tokenAmount} NPT tokens from treasury to wallet ${walletAddress}. Transaction hash: ${receipt.hash}`,
               ipAddress: req.ip || "webhook"
             });
             
-            console.log(`[SUCCESS] User ${userId} purchased ${tokenAmount} NPT tokens. Tokens minted to wallet ${walletAddress}. Tx hash: ${receipt.hash}`);
+            console.log(`[SUCCESS] User ${userId} purchased ${tokenAmount} NPT tokens. Tokens transferred to wallet ${walletAddress}. Gas fee: $${gasFeeUSD}, Service fee: $${serviceFeeUSD}. Tx hash: ${receipt.hash}`);
           } catch (error: any) {
-            console.error("Error minting tokens:", error);
+            console.error("Error transferring tokens:", error);
             
             // Log the failure
             await storage.createActivity({
               userId,
               action: "TOKEN_PURCHASE_FAILED",
-              details: `Failed to mint ${tokenAmount} NPT tokens to wallet ${walletAddress}. Error: ${error.message}`,
+              details: `Failed to transfer ${tokenAmount} NPT tokens to wallet ${walletAddress}. Error: ${error.message}`,
               ipAddress: req.ip || "webhook"
             });
             
