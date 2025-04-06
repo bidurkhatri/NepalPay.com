@@ -415,10 +415,10 @@ const LandingPage: React.FC = () => {
           <div>
             <h4 className="text-lg font-medium mb-4">Resources</h4>
             <ul className="space-y-2">
-              <li><Link href="/docs" className="text-gray-400 hover:text-primary">Documentation</Link></li>
-              <li><Link href="/api" className="text-gray-400 hover:text-primary">API Reference</Link></li>
               <li><Link href="/faq" className="text-gray-400 hover:text-primary">FAQ</Link></li>
-              <li><Link href="/help" className="text-gray-400 hover:text-primary">Knowledge Base</Link></li>
+              <li><Link href="/knowledge" className="text-gray-400 hover:text-primary">Knowledge Base</Link></li>
+              <li><Link href="/support" className="text-gray-400 hover:text-primary">Support</Link></li>
+              <li><Link href="/contact" className="text-gray-400 hover:text-primary">Contact Us</Link></li>
             </ul>
           </div>
           

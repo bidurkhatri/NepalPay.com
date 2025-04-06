@@ -18,6 +18,10 @@ import SectionsPage from "@/pages/sections-page";
 import RewardsPage from "@/pages/rewards-page";
 import AdBazaarPage from "@/pages/ad-bazaar-page";
 import BorrowPage from "@/pages/borrow-page";
+import SupportPage from "@/pages/support-page";
+import FAQPage from "@/pages/faq-page";
+import KnowledgePage from "@/pages/knowledge-page";
+import ContactPage from "@/pages/contact-page";
 // Remove staking page which isn't in the smart contract
 
 // Superadmin Pages (Owner Portal - superadmin.nepalipay.com)
@@ -190,6 +194,12 @@ function Router() {
       <Route path="/rewards" component={() => <ProtectedRoute component={RewardsPage} requiredRole="USER" />} />
       <Route path="/ad-bazaar" component={() => <ProtectedRoute component={AdBazaarPage} requiredRole="USER" />} />
       <Route path="/borrow" component={() => <ProtectedRoute component={BorrowPage} requiredRole="USER" />} />
+      
+      {/* Support and Knowledge routes */}
+      <Route path="/support" component={() => <ProtectedRoute component={SupportPage} />} />
+      <Route path="/faq" component={() => <LandingRoute component={FAQPage} />} />
+      <Route path="/knowledge" component={() => <LandingRoute component={KnowledgePage} />} />
+      <Route path="/contact" component={() => <LandingRoute component={ContactPage} />} />
       
       {/* Admin portal routes (admin.nepalipay.com) */}
       <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />

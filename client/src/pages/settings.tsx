@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { Link, useLocation } from 'wouter';
 import { useSettings, ThemeType, DisplayMode, AccentColor, Language, CurrencyFormat, DateFormat } from '@/contexts/settings-context';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Paintbrush, Globe, Moon, Sun, Languages, Shield, Bell, Volume2, Check, AlertCircle } from 'lucide-react';
+import { Paintbrush, Globe, Moon, Sun, Languages, Shield, Bell, Volume2, Check, AlertCircle, HelpCircle, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SettingsPage: React.FC = () => {
@@ -50,7 +51,7 @@ const SettingsPage: React.FC = () => {
             </div>
 
             <Tabs defaultValue="appearance" className="w-full">
-              <TabsList className="grid grid-cols-4 w-full bg-black/50 border border-primary/30 text-white">
+              <TabsList className="grid grid-cols-5 w-full bg-black/50 border border-primary/30 text-white">
                 <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Paintbrush className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Appearance</span>
@@ -66,6 +67,10 @@ const SettingsPage: React.FC = () => {
                 <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
                   <Shield className="h-4 w-4 mr-1 inline" />
                   <span className="hidden sm:inline">Privacy</span>
+                </TabsTrigger>
+                <TabsTrigger value="support" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
+                  <HelpCircle className="h-4 w-4 mr-1 inline" />
+                  <span className="hidden sm:inline">Help</span>
                 </TabsTrigger>
               </TabsList>
               
@@ -609,6 +614,88 @@ const SettingsPage: React.FC = () => {
                       )}
                     </Button>
                   </CardFooter>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="support" className="mt-4">
+                <Card className="bg-black/40 border-primary/20 text-white">
+                  <CardHeader>
+                    <CardTitle>Help & Support</CardTitle>
+                    <CardDescription className="text-white/70">
+                      Get help and access support resources
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                        <div className="flex items-center mb-4">
+                          <HelpCircle className="h-6 w-6 text-primary mr-2" />
+                          <h3 className="text-lg font-semibold">Support Center</h3>
+                        </div>
+                        <p className="text-sm text-white/70 mb-4">
+                          Get personalized help from our support team. We're here to assist you with any issues you encounter.
+                        </p>
+                        <Link href="/support">
+                          <Button 
+                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
+                          >
+                            Contact Support
+                          </Button>
+                        </Link>
+                      </div>
+                      
+                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                        <div className="flex items-center mb-4">
+                          <AlertCircle className="h-6 w-6 text-primary mr-2" />
+                          <h3 className="text-lg font-semibold">Frequently Asked Questions</h3>
+                        </div>
+                        <p className="text-sm text-white/70 mb-4">
+                          Find answers to common questions about NepaliPay and its features.
+                        </p>
+                        <Link href="/faq">
+                          <Button 
+                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
+                          >
+                            View FAQ
+                          </Button>
+                        </Link>
+                      </div>
+                      
+                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                        <div className="flex items-center mb-4">
+                          <Globe className="h-6 w-6 text-primary mr-2" />
+                          <h3 className="text-lg font-semibold">Knowledge Base</h3>
+                        </div>
+                        <p className="text-sm text-white/70 mb-4">
+                          Explore our comprehensive guides and tutorials to learn more about NepaliPay.
+                        </p>
+                        <Link href="/knowledge">
+                          <Button 
+                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
+                          >
+                            Browse Articles
+                          </Button>
+                        </Link>
+                      </div>
+                      
+                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
+                        <div className="flex items-center mb-4">
+                          <Mail className="h-6 w-6 text-primary mr-2" />
+                          <h3 className="text-lg font-semibold">Contact Us</h3>
+                        </div>
+                        <p className="text-sm text-white/70 mb-4">
+                          Reach out to us with questions, feedback, or partnership inquiries.
+                        </p>
+                        <Link href="/contact">
+                          <Button 
+                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
+                          >
+                            Contact Form
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
