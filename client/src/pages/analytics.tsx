@@ -64,7 +64,7 @@ const tokenPriceData = [
 
 export default function AnalyticsPage() {
   const { wallet, stats } = useWallet();
-  const { tokenBalance, nptBalance, stakedAmount } = useBlockchain();
+  const { tokenBalance, nptBalance } = useBlockchain();
   const [activeSection, setActiveSection] = useState('financial');
 
   return (
@@ -270,7 +270,6 @@ export default function AnalyticsPage() {
                           <Pie
                             data={[
                               { name: 'NPT Balance', value: parseFloat(nptBalance) || 0 },
-                              { name: 'Staked NPT', value: parseFloat(stakedAmount) || 0 },
                               { name: 'Other Tokens', value: parseFloat(tokenBalance) || 0 },
                             ]}
                             cx="50%"
@@ -282,7 +281,6 @@ export default function AnalyticsPage() {
                             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                           >
                             <Cell fill="#0088FE" />
-                            <Cell fill="#00C49F" />
                             <Cell fill="#FFBB28" />
                           </Pie>
                           <Tooltip contentStyle={{ backgroundColor: '#111', borderColor: '#333' }} />

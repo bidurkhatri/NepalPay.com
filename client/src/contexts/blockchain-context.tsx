@@ -46,11 +46,6 @@ interface BlockchainContextType {
   userDebt: string;
   loanStartTimestamp: number;
   
-  // Staking properties
-  isStaking: boolean;
-  stakedAmount: string;
-  stakingRewards: string;
-  
   // User stats
   avatars: string[];
   txCount: number;
@@ -87,14 +82,7 @@ interface BlockchainContextType {
   relayTransaction: (from: string, value: string) => Promise<any>;
   getDynamicGasFee: () => Promise<string>;
   
-  // Staking functions
-  stakeTokens: (amount: string) => Promise<any>;
-  unstakeTokens: (amount: string) => Promise<any>;
-  
-  // Additional functions
-  contributeToFund: (amount: string) => Promise<any>;
-  startCrowdfundingCampaign: (params: any) => Promise<any>;
-  setUserProfile: (params: any) => Promise<any>;
+  // Business payment function
   payBusinessAccount: (params: any) => Promise<any>;
 }
 
@@ -123,10 +111,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [username, setUsernameState] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("NONE"); // NONE, USER, ADMIN
   
-  // Staking state variables
-  const [isStaking, setIsStaking] = useState<boolean>(false);
-  const [stakedAmount, setStakedAmount] = useState<string>("0");
-  const [stakingRewards, setStakingRewards] = useState<string>("0");
+  // Remove staking variables as they're not in the smart contract
   
   // Collaterals
   const [userCollaterals, setUserCollaterals] = useState({
@@ -259,22 +244,28 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         setNptBalance("1.23");
         setUsernameState("demo_user");
         setUserRole("USER");
+        // Calculate NPT value based on current exchange rates
+        // BNB = 1250 NPT, ETH = 1800 NPT, BTC = 25000 NPT
+        const bnbAmount = "0.5";
+        const ethAmount = "0.1";
+        const btcAmount = "0.01";
+        
+        const bnbValue = parseFloat(bnbAmount) * 1250;
+        const ethValue = parseFloat(ethAmount) * 1800;
+        const btcValue = parseFloat(btcAmount) * 25000;
+        const totalValue = bnbValue + ethValue + btcValue;
+        
         setUserCollaterals({
-          bnb: "0.5",
-          eth: "0.1",
-          btc: "0.01",
-          nptValue: "300"
+          bnb: bnbAmount,
+          eth: ethAmount,
+          btc: btcAmount,
+          nptValue: totalValue.toString()
         });
         setUserDebt("0");
         setLoanStartTimestamp(0);
         setTxCount(3);
         setReferralCount(1);
         setAvatars(["Yeti", "Everest", "Buddha"]);
-        
-        // Set default staking values
-        setIsStaking(true);
-        setStakedAmount("0.5");
-        setStakingRewards("0.025");
         return;
       }
       
@@ -321,14 +312,34 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         setUserRole("USER"); // Default to USER role for better experience
       }
       
-      // Get collaterals
+      // Get collaterals with accurate exchange rates from the contract
       try {
+        // Get collaterals
         const collaterals = await nepaliPay.userCollaterals(address);
+        
+        // Get exchange rates from the contract
+        const bnbRate = await nepaliPay.exchangeRates("BNB");
+        const ethRate = await nepaliPay.exchangeRates("ETH");
+        const btcRate = await nepaliPay.exchangeRates("BTC");
+        
+        // Parse collateral values
+        const bnbAmount = ethers.formatEther(collaterals.bnb || 0);
+        const ethAmount = ethers.formatEther(collaterals.eth || 0);
+        const btcAmount = ethers.formatEther(collaterals.btc || 0);
+        
+        // Calculate NPT value based on contract exchange rates
+        const bnbValueInNPT = parseFloat(bnbAmount) * parseFloat(ethers.formatEther(bnbRate));
+        const ethValueInNPT = parseFloat(ethAmount) * parseFloat(ethers.formatEther(ethRate));
+        const btcValueInNPT = parseFloat(btcAmount) * parseFloat(ethers.formatEther(btcRate));
+        
+        // Total NPT value is the sum of all collateral values
+        const totalNPTValue = bnbValueInNPT + ethValueInNPT + btcValueInNPT;
+        
         setUserCollaterals({
-          bnb: ethers.formatEther(collaterals.bnb || 0),
-          eth: ethers.formatEther(collaterals.eth || 0),
-          btc: ethers.formatEther(collaterals.btc || 0),
-          nptValue: ethers.formatEther(collaterals.nptValue || 0)
+          bnb: bnbAmount,
+          eth: ethAmount,
+          btc: btcAmount,
+          nptValue: totalNPTValue.toString()
         });
       } catch (error) {
         console.error("Error getting collaterals:", error);
@@ -834,58 +845,24 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   }, [provider, userAddress]);
 
-  // Staking functions - stub implementations 
-  const stakeTokens = async (amount: string) => {
-    // Demo implementation
-    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
-    if (isDemoMode) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
-      
-      // Update state with mock values for demo
-      const stakeAmount = parseFloat(amount);
-      setStakedAmount((parseFloat(stakedAmount) + stakeAmount).toString());
-      setIsStaking(true);
-      
-      return { success: true, message: "Tokens staked successfully (Demo Mode)" };
-    }
-    
-    throw new Error("Staking not implemented in this version");
-  };
-  
-  const unstakeTokens = async (amount: string) => {
-    // Demo implementation
-    const isDemoMode = localStorage.getItem('demo_mode') === 'true';
-    if (isDemoMode) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
-      
-      // Update state with mock values for demo
-      const unstakeAmount = parseFloat(amount);
-      setStakedAmount((parseFloat(stakedAmount) - unstakeAmount).toString());
-      if (parseFloat(stakedAmount) - unstakeAmount <= 0) {
-        setIsStaking(false);
-      }
-      
-      return { success: true, message: "Tokens unstaked successfully (Demo Mode)" };
-    }
-    
-    throw new Error("Unstaking not implemented in this version");
-  };
-  
-  // Additional placeholder functions to match the interface
-  const contributeToFund = async (amount: string) => {
-    throw new Error("Contribute to fund not implemented in this version");
-  };
-  
-  const startCrowdfundingCampaign = async (params: any) => {
-    throw new Error("Crowdfunding campaigns not implemented in this version");
-  };
-  
-  const setUserProfile = async (params: any) => {
-    throw new Error("User profile settings not implemented in this version");
-  };
-  
+  // Business account payment function
   const payBusinessAccount = async (params: any) => {
-    throw new Error("Business payments not implemented in this version");
+    if (!nepaliPayContract || !signer) throw new Error("Not connected");
+    
+    try {
+      // This is a simplified implementation
+      const { businessId, amount, description } = params;
+      const amountWei = ethers.parseEther(amount.toString());
+      
+      // Use the sendTokens method to pay a business account
+      const tx = await nepaliPayContract.sendTokens(businessId, amountWei, description || "Business payment");
+      await tx.wait();
+      
+      return { success: true, message: "Business payment sent successfully" };
+    } catch (error: any) {
+      console.error("Error paying business account:", error);
+      throw new Error(error.message || "Failed to pay business account");
+    }
   };
 
   return (
@@ -906,9 +883,6 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         userCollaterals,
         userDebt,
         loanStartTimestamp,
-        isStaking,
-        stakedAmount,
-        stakingRewards,
         avatars,
         txCount,
         referralCount,
@@ -929,12 +903,6 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         getActiveAds,
         relayTransaction,
         getDynamicGasFee,
-        // Add the new functions
-        stakeTokens,
-        unstakeTokens,
-        contributeToFund,
-        startCrowdfundingCampaign,
-        setUserProfile,
         payBusinessAccount
       }}
     >

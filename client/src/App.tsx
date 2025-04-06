@@ -18,9 +18,9 @@ import SectionsPage from "@/pages/sections-page";
 import RewardsPage from "@/pages/rewards-page";
 import AdBazaarPage from "@/pages/ad-bazaar-page";
 import BorrowPage from "@/pages/borrow-page";
-// Removed BuyTokensPage as it's not needed anymore
+// Remove staking page which isn't in the smart contract
 
-// Superadmin Pages
+// Superadmin Pages (Owner Portal - superadmin.nepalipay.com)
 import SuperAdminIndex from "@/pages/superadmin";
 import SuperAdminDashboardPage from "@/pages/superadmin/dashboard";
 import SuperAdminStabilityPage from "@/pages/superadmin/stability";
@@ -28,7 +28,7 @@ import SuperAdminAdminsPage from "@/pages/superadmin/admins";
 import SuperAdminFinancePage from "@/pages/superadmin/finance";
 import SuperAdminAnalyticsPage from "@/pages/superadmin/analytics";
 
-// Admin Pages
+// Admin Pages (Admin Portal - admin.nepalipay.com)
 import AdminLoginPage from "@/pages/admin/login-page";
 import AdminDashboard from "@/pages/admin/dashboard";
 import UserManagementPage from "@/pages/admin/users";
@@ -193,7 +193,6 @@ function Router() {
       
       {/* Admin portal routes (admin.nepalipay.com) */}
       <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />
-      <Route path="/admin-dashboard" component={() => <Redirect to="/admin/dashboard" />} />
       <Route path="/admin/dashboard" component={() => <ProtectedRoute component={AdminDashboard} requiredRole="ADMIN" />} />
       <Route path="/admin/users" component={() => <ProtectedRoute component={UserManagementPage} requiredRole="ADMIN" />} />
       <Route path="/admin/loans" component={() => <ProtectedRoute component={LoanManagementPage} requiredRole="ADMIN" />} />
@@ -208,15 +207,6 @@ function Router() {
       <Route path="/superadmin/admins" component={() => <ProtectedRoute component={SuperAdminAdminsPage} requiredRole="OWNER" />} />
       <Route path="/superadmin/finance" component={() => <ProtectedRoute component={SuperAdminFinancePage} requiredRole="OWNER" />} />
       <Route path="/superadmin/analytics" component={() => <ProtectedRoute component={SuperAdminAnalyticsPage} requiredRole="OWNER" />} />
-      
-      {/* Legacy owner routes - redirect to new superadmin routes */}
-      <Route path="/owner-dashboard" component={() => <Redirect to="/superadmin/dashboard" />} />
-      <Route path="/system-control" component={() => <Redirect to="/superadmin/dashboard" />} />
-      <Route path="/npt-stability" component={() => <Redirect to="/superadmin/stability" />} />
-      <Route path="/admin-management" component={() => <Redirect to="/superadmin/admins" />} />
-      <Route path="/financial-oversight" component={() => <Redirect to="/superadmin/finance" />} />
-      
-      {/* No legacy routes needed */}
       
       {/* 404 route */}
       <Route component={NotFound} />

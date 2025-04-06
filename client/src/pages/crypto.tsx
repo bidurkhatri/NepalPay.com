@@ -33,16 +33,10 @@ const CryptoPage: React.FC = () => {
     nptBalance,
     userAddress,
     isConnected,
-    isStaking,
-    stakedAmount,
-    stakingRewards,
     sendTokens,
-    stakeTokens,
-    unstakeTokens,
     takeLoan,
     repayLoan,
-    connectWallet,
-    contributeToFund
+    connectWallet
   } = useBlockchain();
   
   const [activeTab, setActiveTab] = useState('wallet');
@@ -64,32 +58,11 @@ const CryptoPage: React.FC = () => {
   const [sendAddress, setSendAddress] = useState('');
   const [sendDescription, setSendDescription] = useState('');
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
-  const [stakeAmount, setStakeAmount] = useState('');
+  // Removed staking functionality as it's not in the smart contract
   const [activeLoans, setActiveLoans] = useState([
     { id: 1, amount: 5.0, interest: 0.25, dueDate: '2025-06-01' }
   ]);
-  const [activeCampaigns, setActiveCampaigns] = useState([
-    { 
-      id: 1, 
-      title: 'Community Education Project', 
-      creator: 'education_ngo',
-      description: 'Funding educational resources for rural communities',
-      target: 500, 
-      raised: 320, 
-      contributors: 28,
-      deadline: '2025-05-15'
-    },
-    { 
-      id: 2, 
-      title: 'Tech Startup Accelerator', 
-      creator: 'tech_hub',
-      description: 'Supporting innovative tech startups in Nepal',
-      target: 1000, 
-      raised: 650, 
-      contributors: 42,
-      deadline: '2025-06-10'
-    }
-  ]);
+  // Removed activeCampaigns state as the crowdfunding functionality is not in the smart contract
 
   const walletAddress = userAddress || 'Not connected'; // Only show address when connected
   
@@ -166,35 +139,7 @@ const CryptoPage: React.FC = () => {
     });
   };
 
-  // Handle campaign contribution with blockchain
-  const handleContribute = async (campaignId: number) => {
-    try {
-      const campaignIdHex = `0x${campaignId.toString(16).padStart(64, '0')}`;
-      const contributionAmount = "1"; // For demo, use a fixed amount
-      
-      const result = await contributeToFund(campaignIdHex, contributionAmount);
-      
-      if (result.success) {
-        toast({
-          title: 'Contribution Successful',
-          description: `Successfully contributed ${contributionAmount} NPT to campaign #${campaignId}`,
-        });
-      } else {
-        toast({
-          title: 'Contribution Failed',
-          description: result.message || 'There was an error with your contribution. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to contribute to campaign', error);
-      toast({
-        title: 'Contribution Failed',
-        description: 'There was an error processing your contribution. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Removed campaign contribution function as crowdfunding is not in the smart contract
 
   // Handle loan taking with blockchain
   const handleTakeLoan = async () => {
@@ -366,7 +311,7 @@ const CryptoPage: React.FC = () => {
                 </h2>
                 <p className="text-gray-500 max-w-md mx-auto mb-6">
                   {isWalletAvailable 
-                    ? "Connect your cryptocurrency wallet to access all blockchain features, including token transfers, loans, and crowdfunding." 
+                    ? "Connect your cryptocurrency wallet to access all blockchain features, including token transfers and loans." 
                     : "To use the blockchain features of NepaliPay, you need a Web3 wallet like MetaMask installed in your browser."
                   }
                 </p>
@@ -394,10 +339,9 @@ const CryptoPage: React.FC = () => {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                <TabsList className="grid grid-cols-4 w-full md:w-auto">
+                <TabsList className="grid grid-cols-3 w-full md:w-auto">
                   <TabsTrigger value="wallet">Wallet</TabsTrigger>
                   <TabsTrigger value="loans">Loans</TabsTrigger>
-                  <TabsTrigger value="crowdfunding">Crowdfunding</TabsTrigger>
                   <TabsTrigger value="history">History</TabsTrigger>
                 </TabsList>
 
@@ -509,97 +453,7 @@ const CryptoPage: React.FC = () => {
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline">
-                            {isStaking ? "Manage Staking" : "Stake NPT Tokens"}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>NPT Token Staking</DialogTitle>
-                            <DialogDescription>
-                              Stake your NPT tokens to earn rewards at 10% APY
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            {isStaking && (
-                              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm font-medium">Currently Staked:</span>
-                                  <span className="font-bold">{stakedAmount} NPT</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-medium">Rewards Earned:</span>
-                                  <span className="font-bold text-green-600">{stakingRewards} NPT</span>
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div className="space-y-2">
-                              <Label>Amount to Stake</Label>
-                              <Input
-                                type="text"
-                                inputMode="decimal"
-                                placeholder="Enter amount to stake"
-                                value={stakeAmount}
-                                onChange={(e) => setStakeAmount(e.target.value)}
-                              />
-                              <p className="text-xs text-gray-500">
-                                Available balance: {nptBalance} NPT
-                              </p>
-                            </div>
-                          </div>
-                          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                            {isStaking && (
-                              <Button 
-                                variant="outline" 
-                                className="gap-2"
-                                onClick={async () => {
-                                  if (parseFloat(stakingRewards) > 0) {
-                                    await unstakeTokens(stakingRewards);
-                                    toast({
-                                      title: "Rewards Claimed",
-                                      description: `Successfully claimed ${stakingRewards} NPT in rewards`,
-                                    });
-                                  }
-                                }}
-                              >
-                                Claim Rewards
-                              </Button>
-                            )}
-                            <Button 
-                              onClick={async () => {
-                                if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
-                                  toast({
-                                    title: "Invalid Amount",
-                                    description: "Please enter a valid amount to stake",
-                                    variant: "destructive",
-                                  });
-                                  return;
-                                }
-                                
-                                const result = await stakeTokens(stakeAmount);
-                                if (result.success) {
-                                  toast({
-                                    title: "Tokens Staked",
-                                    description: `Successfully staked ${stakeAmount} NPT tokens`,
-                                  });
-                                  setStakeAmount("");
-                                } else {
-                                  toast({
-                                    title: "Staking Failed",
-                                    description: result.message || "Failed to stake tokens. Please try again.",
-                                    variant: "destructive",
-                                  });
-                                }
-                              }}
-                            >
-                              Stake Tokens
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      {/* Staking has been removed as it's not in the smart contract */}
                     </CardFooter>
                   </Card>
                 </TabsContent>
@@ -695,70 +549,7 @@ const CryptoPage: React.FC = () => {
                   </Card>
                 </TabsContent>
 
-                {/* Crowdfunding Tab */}
-                <TabsContent value="crowdfunding" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Crowdfunding Campaigns</CardTitle>
-                      <CardDescription>
-                        Contribute to campaigns or start your own fundraising project
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {activeCampaigns.map(campaign => (
-                          <div key={campaign.id} className="border rounded-lg overflow-hidden">
-                            <div className="p-4 bg-white">
-                              <div className="flex items-start justify-between mb-3">
-                                <h3 className="font-medium text-lg">{campaign.title}</h3>
-                                <Badge variant="secondary" className="ml-2">Active</Badge>
-                              </div>
-                              
-                              <div className="mb-4">
-                                <div className="flex items-center mb-2">
-                                  <Avatar className="h-6 w-6 mr-2">
-                                    <AvatarFallback>{campaign.creator.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm text-gray-600">@{campaign.creator}</span>
-                                </div>
-                                <p className="text-sm text-gray-600">{campaign.description}</p>
-                              </div>
-                              
-                              <div className="mb-4">
-                                <div className="flex justify-between text-sm mb-1">
-                                  <span>Progress</span>
-                                  <span>{Math.round(campaign.raised / campaign.target * 100)}%</span>
-                                </div>
-                                <Progress value={campaign.raised / campaign.target * 100} className="h-2" />
-                                <div className="flex justify-between text-sm mt-1">
-                                  <span>{campaign.raised} NPT raised</span>
-                                  <span>Target: {campaign.target} NPT</span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex justify-between items-center text-xs text-gray-500 mb-4">
-                                <span>{campaign.contributors} contributors</span>
-                                <span>Deadline: {campaign.deadline}</span>
-                              </div>
-                              
-                              <Button 
-                                className="w-full" 
-                                onClick={() => handleContribute(campaign.id)}
-                              >
-                                Contribute
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button variant="outline" className="w-full">
-                        Create New Campaign
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </TabsContent>
+                {/* Crowdfunding Tab has been removed as it's not in the smart contract */}
 
                 {/* History Tab */}
                 <TabsContent value="history" className="space-y-6">
