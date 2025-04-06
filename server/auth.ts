@@ -1,212 +1,200 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request } from "express";
-import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { storage } from "./storage";
-import type { User as UserType } from "@shared/schema";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Express } from 'express';
+import session from 'express-session';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+import { storage } from './storage';
+import { User as SelectUser } from '@shared/schema';
 
 declare global {
   namespace Express {
-    interface User {
-      id: number;
-      username: string;
-      email: string;
-      firstName: string;
-      lastName: string;
-      password?: string;
-      role: string;
-      phoneNumber?: string;
-      createdAt: Date;
-    }
+    interface User extends SelectUser {}
   }
 }
 
-const PostgresSessionStore = connectPg(session);
 const scryptAsync = promisify(scrypt);
 
-export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
+/**
+ * Hash a password using scrypt with a random salt
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  return `${buf.toString('hex')}.${salt}`;
 }
 
-export async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
+/**
+ * Compare a password against a stored hash
+ */
+export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  const [hashed, salt] = stored.split('.');
+  const hashedBuf = Buffer.from(hashed, 'hex');
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-export function setupAuth(app: Express) {
+/**
+ * Set up authentication routes and passport configuration
+ */
+export function setupAuth(app: Express): void {
+  // Configure session middleware
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "nepali-pay-secret",
+    secret: process.env.SESSION_SECRET || 'nepalipay-session-secret',
     resave: false,
     saveUninitialized: false,
+    store: storage.sessionStore,
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-    },
-    store: storage.sessionStore
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
   };
 
-  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Configure passport to use local strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user) {
-          return done(null, false, { message: "Incorrect username or password" });
+          return done(null, false, { message: 'Invalid username or password' });
         }
         
-        // For demo account, use direct password comparison
-        if (username === 'demouser' && password === 'password123') {
-          return done(null, user);
-        }
-        
-        // For real accounts, use secure comparison
-        const passwordValid = await comparePasswords(password, user.password!);
-        if (!passwordValid) {
-          return done(null, false, { message: "Incorrect username or password" });
+        const isPasswordValid = await comparePasswords(password, user.password);
+        if (!isPasswordValid) {
+          return done(null, false, { message: 'Invalid username or password' });
         }
         
         return done(null, user);
-      } catch (err) {
-        return done(err);
+      } catch (error) {
+        return done(error);
       }
     })
   );
 
-  passport.serializeUser((user: Express.User, done) => {
+  // Configure serialization and deserialization of users
+  passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-
-  // Register route (already defined in auth.ts from blueprint but we are overriding)
-  app.post("/api/register", async (req, res, next) => {
-    try {
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      // Check if email already exists
-      const existingEmail = await storage.getUserByEmail(req.body.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-
-      // Hash password
-      const hashedPassword = await hashPassword(req.body.password);
-
-      // Create new user
-      const user = await storage.createUser({
-        ...req.body,
-        password: hashedPassword,
-        role: req.body.role || "USER" // Default to USER role if not specified
-      });
-
-      // Create wallet for the user
-      await storage.createWallet({
-        userId: user.id,
-        balance: "0",
-        currency: "NPT"
-      });
-
-      // Create activity log
-      await storage.createActivity({
-        userId: user.id,
-        action: "REGISTER",
-        details: "Account created",
-        ipAddress: req.ip || ""
-      });
-
-      // Log the user in
-      req.login(user, (err) => {
-        if (err) return next(err);
-        // Return user data without the password
-        const { password, ...userData } = user;
-        res.status(201).json(userData);
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Server error during registration" });
-    }
-  });
-
-  // Login route
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
-      if (err) return next(err);
       if (!user) {
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
+        return done(null, false);
+      }
+      done(null, user);
+    } catch (error) {
+      done(error, null);
+    }
+  });
+
+  // Authentication routes
+  app.post('/api/register', async (req, res, next) => {
+    try {
+      const { username, email, password, firstName, lastName, walletAddress } = req.body;
+      
+      // Validate required fields
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
       }
       
-      req.login(user, async (err) => {
-        if (err) return next(err);
-        
-        // Log successful login
-        await storage.createActivity({
-          userId: user.id,
-          action: "LOGIN",
-          details: "User logged in",
-          ipAddress: req.ip || ""
-        });
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+      
+      // Check if email is already taken (if provided)
+      if (email) {
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          return res.status(400).json({ message: 'Email already in use' });
+        }
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create the user
+      const newUser = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        walletAddress,
+        role: 'user'
+      });
+      
+      // Log in the user after registration
+      req.login(newUser, (err) => {
+        if (err) {
+          return next(err);
+        }
         
         // Return user data without password
-        const { password, ...userData } = user;
-        return res.json(userData);
+        const { password, ...userWithoutPassword } = newUser;
+        res.status(201).json(userWithoutPassword);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: 'Failed to register user' });
+    }
+  });
+
+  app.post('/api/login', (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      
+      if (!user) {
+        return res.status(401).json({
+          message: info?.message || 'Invalid username or password'
+        });
+      }
+      
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        // Return user data without password
+        const { password, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
-  // Logout route
-  app.post("/api/logout", (req, res) => {
-    if (req.isAuthenticated()) {
-      // Log the logout
-      const userId = (req.user as Express.User).id;
-      storage.createActivity({
-        userId,
-        action: "LOGOUT",
-        details: "User logged out",
-        ipAddress: req.ip || ""
-      }).catch(console.error);
-    }
-    
+  app.post('/api/logout', (req, res) => {
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: "Logout failed" });
+        return res.status(500).json({ message: 'Failed to logout' });
       }
-      res.json({ message: "Logged out successfully" });
+      
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Failed to destroy session' });
+        }
+        
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logged out successfully' });
+      });
     });
   });
 
-  // Get current user route
-  app.get("/api/user", (req, res) => {
+  app.get('/api/user', (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
+      return res.status(401).json({ message: 'Not authenticated' });
     }
     
     // Return user data without password
-    const user = req.user as Express.User;
-    const { password, ...userData } = user;
-    return res.json(userData);
+    const { password, ...userWithoutPassword } = req.user;
+    res.json(userWithoutPassword);
   });
 }

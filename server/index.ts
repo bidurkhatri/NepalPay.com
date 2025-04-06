@@ -1,99 +1,69 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase, testConnection, createTables } from "./db";
-import { PgStorage } from "./pg-storage";
+import express, { Express, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import { registerRoutes } from './routes';
+import { initializeDatabase } from './db';
+import { storage } from './storage';
+import bodyParser from 'body-parser';
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
-
-(async () => {
+/**
+ * Main server initialization and startup
+ */
+async function main() {
+  // Create express application
+  const app: Express = express();
+  
+  // Set up middleware
+  app.use(cors());
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+  
+  // Initialize database
   try {
-    // Initialize the database
-    const isInitialized = await initializeDatabase();
-    if (!isInitialized) {
-      log("Failed to initialize the database. Exiting...");
+    const dbInitialized = await initializeDatabase();
+    if (!dbInitialized) {
+      console.error('Failed to initialize database');
       process.exit(1);
     }
     
-    // Test database connection
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      log("Failed to connect to the database. Exiting...");
-      process.exit(1);
-    }
-
-    // Create database tables if they don't exist
-    await createTables();
-    
-    // Initialize the PostgreSQL storage with demo data
-    const pgStorage = new PgStorage();
-    await pgStorage.initializeDemoData();
-    
-    // Register routes and start the server
-    const server = await registerRoutes(app);
-
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-
-      res.status(status).json({ message });
-      throw err;
-    });
-
-    // importantly only setup vite in development and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port}`);
-    });
+    // Initialize demo data
+    await storage.initializeDemoData();
   } catch (error) {
-    log(`Server initialization error: ${error}`);
+    console.error('Database initialization error:', error);
     process.exit(1);
   }
-})();
+  
+  // Register routes
+  const server = await registerRoutes(app);
+  
+  // Global error handler
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Unhandled error:', err);
+    const statusCode = err.statusCode || 500;
+    const message = err.message || 'Internal Server Error';
+    res.status(statusCode).json({ error: message });
+  });
+  
+  // Start server
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+  
+  // Handle shutdown
+  const shutdown = () => {
+    console.log('Gracefully shutting down...');
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  };
+  
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}
+
+// Start the server
+main().catch(err => {
+  console.error('Server failed to start:', err);
+  process.exit(1);
+});

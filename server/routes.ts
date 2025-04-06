@@ -1,455 +1,568 @@
-import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { z } from "zod";
-import { insertUserSchema, insertTransactionSchema, insertActivitySchema, User } from "@shared/schema";
-import Stripe from "stripe";
-import { setupAuth } from "./auth";
+import { Request, Response, NextFunction, Express } from 'express';
+import { createServer, type Server } from 'http';
+import Stripe from 'stripe';
+import { ethers } from 'ethers';
+import { storage } from './storage';
+import { setupAuth } from './auth';
 
-// Type declaration for Express Request with User
-declare global {
-  namespace Express {
-    // Note: The User type is already declared in auth.ts
-    // We're just adding a reference here for clarity
+// Initialize Stripe client
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('Missing STRIPE_SECRET_KEY environment variable');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16',
+});
+
+// Authentication middleware
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Authentication required' });
   }
+  next();
+};
+
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated() || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin privileges required' });
+  }
+  next();
+};
+
+const requireSuperadmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated() || req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Superadmin privileges required' });
+  }
+  next();
+};
+
+// Initialize blockchain provider and admin wallet
+const provider = new ethers.JsonRpcProvider(
+  process.env.RPC_URL || 'https://data-seed.binance.org'
+);
+
+let adminWallet: ethers.Wallet | null = null;
+if (process.env.ADMIN_PRIVATE_KEY) {
+  adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
+  console.log('Admin wallet initialized with address:', adminWallet.address);
+} else {
+  console.warn('Missing ADMIN_PRIVATE_KEY environment variable, token transfers will not work');
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication with Passport.js
+  // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
-
-  // Authentication middleware
-  const requireAuth = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    next();
-  };
   
-  // Type assertion for req.user is defined at the top of the file
-
-  // Auth routes are now handled by the auth.ts module
-  
-  // Additional user-related routes
-  app.get("/api/user", requireAuth, async (req, res) => {
+  // User routes
+  app.get('/api/users', requireAdmin, async (req, res) => {
     try {
-      // With Passport.js, the user is already in req.user
-      // Return user data (without password)
-      if (!req.user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      const { password, ...userData } = req.user;
-      res.json(userData);
+      const users = await storage.getAllUsers();
+      // Remove sensitive data
+      const safeUsers = users.map(({ password, ...user }) => user);
+      res.json(safeUsers);
     } catch (error) {
-      res.status(500).json({ message: "Server error" });
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Error fetching users' });
     }
   });
-
-  // Wallet routes
-  app.get("/api/wallet", requireAuth, async (req, res) => {
+  
+  // User profile route
+  app.get('/api/profile', requireAuth, async (req, res) => {
     try {
-      // After requireAuth middleware, req.user is guaranteed to exist
-      const userId = req.user!.id;
-      const wallet = await storage.getWalletByUserId(userId);
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
       
+      // Get user's wallet
+      const wallet = await storage.getWalletByUserId(user.id);
+      
+      // Remove sensitive data
+      const { password, ...userProfile } = user;
+      
+      res.json({
+        ...userProfile,
+        wallet
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      res.status(500).json({ message: 'Error fetching profile' });
+    }
+  });
+  
+  // Update profile route
+  app.patch('/api/profile', requireAuth, async (req, res) => {
+    try {
+      const { id, role, password, ...updateData } = req.body;
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(req.user.id, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Remove sensitive data
+      const { password: _, ...userProfile } = updatedUser;
+      
+      res.json(userProfile);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      res.status(500).json({ message: 'Error updating profile' });
+    }
+  });
+  
+  // Wallet routes
+  app.get('/api/wallet', requireAuth, async (req, res) => {
+    try {
+      const wallet = await storage.getWalletByUserId(req.user.id);
       if (!wallet) {
-        return res.status(404).json({ message: "Wallet not found" });
+        return res.status(404).json({ message: 'Wallet not found' });
       }
       
       res.json(wallet);
     } catch (error) {
-      res.status(500).json({ message: "Server error" });
+      console.error('Error fetching wallet:', error);
+      res.status(500).json({ message: 'Error fetching wallet' });
     }
   });
   
-  app.post("/api/wallet", requireAuth, async (req, res) => {
+  app.post('/api/wallet', requireAuth, async (req, res) => {
     try {
-      const userId = req.user!.id;
-      
-      // Check if a wallet already exists for this user
-      const existingWallet = await storage.getWalletByUserId(userId);
-      
+      const existingWallet = await storage.getWalletByUserId(req.user.id);
       if (existingWallet) {
-        return res.status(400).json({ message: "User already has a wallet" });
+        return res.status(400).json({ message: 'User already has a wallet' });
       }
       
-      // Create wallet
-      const walletData = {
-        userId,
-        balance: req.body.balance || "0",
-        currency: req.body.currency || "NPR"
-      };
+      const { address } = req.body;
+      if (!address) {
+        return res.status(400).json({ message: 'Wallet address is required' });
+      }
       
-      const wallet = await storage.createWallet(walletData);
+      const wallet = await storage.createWallet({
+        userId: req.user.id,
+        address,
+        nptBalance: '0',
+        bnbBalance: '0'
+      });
+      
+      // Also update the user with the wallet address
+      await storage.updateUser(req.user.id, { walletAddress: address });
       
       // Log activity
       await storage.createActivity({
-        userId,
-        action: "WALLET_CREATED",
-        details: "Wallet was initialized",
-        ipAddress: req.ip || ""
+        userId: req.user.id,
+        action: 'WALLET_CREATE',
+        description: 'Created a new wallet',
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || ''
       });
       
       res.status(201).json(wallet);
     } catch (error) {
-      console.error("Error creating wallet:", error);
-      res.status(500).json({ message: "Failed to create wallet" });
+      console.error('Error creating wallet:', error);
+      res.status(500).json({ message: 'Error creating wallet' });
     }
   });
-
+  
   // Transaction routes
-  app.get("/api/transactions", requireAuth, async (req, res) => {
+  app.get('/api/transactions', requireAuth, async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const transactions = await storage.getUserTransactions(userId);
-      
-      // Enrich transactions with user data
-      const enrichedTransactions = await Promise.all(
-        transactions.map(async (transaction) => {
-          let sender = null;
-          let receiver = null;
-          
-          if (transaction.senderId) {
-            const senderData = await storage.getUser(transaction.senderId);
-            if (senderData) {
-              const { password, ...userData } = senderData;
-              sender = userData;
-            }
-          }
-          
-          if (transaction.receiverId) {
-            const receiverData = await storage.getUser(transaction.receiverId);
-            if (receiverData) {
-              const { password, ...userData } = receiverData;
-              receiver = userData;
-            }
-          }
-          
-          return {
-            ...transaction,
-            sender,
-            receiver
-          };
-        })
-      );
-      
-      res.json(enrichedTransactions);
+      const transactions = await storage.getUserTransactions(req.user.id);
+      res.json(transactions);
     } catch (error) {
-      res.status(500).json({ message: "Server error" });
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ message: 'Error fetching transactions' });
     }
   });
-
-  app.post("/api/transactions", requireAuth, async (req, res) => {
+  
+  app.get('/api/transactions/:id', requireAuth, async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const transaction = await storage.getTransaction(parseInt(req.params.id));
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
       
-      // Validate transaction data
-      const transactionData = {
-        ...req.body,
-        senderId: userId,
-      };
+      // Check if user is authorized to view this transaction
+      if (transaction.senderId !== req.user.id && transaction.receiverId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to view this transaction' });
+      }
       
-      const validatedData = insertTransactionSchema.parse(transactionData);
+      res.json(transaction);
+    } catch (error) {
+      console.error('Error fetching transaction:', error);
+      res.status(500).json({ message: 'Error fetching transaction' });
+    }
+  });
+  
+  app.post('/api/transactions/transfer', requireAuth, async (req, res) => {
+    try {
+      const { receiverAddress, amount } = req.body;
+      if (!receiverAddress || !amount) {
+        return res.status(400).json({ message: 'Receiver address and amount are required' });
+      }
       
-      // Check sender wallet
-      const senderWallet = await storage.getWalletByUserId(userId);
+      // Verify the sender has a wallet
+      const senderWallet = await storage.getWalletByUserId(req.user.id);
       if (!senderWallet) {
-        return res.status(404).json({ message: "Sender wallet not found" });
+        return res.status(400).json({ message: 'You need a wallet to make transfers' });
       }
       
-      // Check balance for sufficient funds
-      const amount = parseFloat(validatedData.amount.toString());
-      const senderBalance = parseFloat(senderWallet.balance.toString());
-      
-      if (senderBalance < amount && validatedData.type !== 'TOPUP') {
-        return res.status(400).json({ message: "Insufficient funds" });
+      // Check if sender has enough balance (this is a simple check, the actual transfer happens on blockchain)
+      const senderBalance = parseFloat(senderWallet.nptBalance);
+      const transferAmount = parseFloat(amount);
+      if (senderBalance < transferAmount) {
+        return res.status(400).json({ message: 'Insufficient balance' });
       }
       
-      // If receiver exists, check if receiver wallet exists
-      if (validatedData.receiverId) {
-        const receiverWallet = await storage.getWalletByUserId(validatedData.receiverId);
-        if (!receiverWallet) {
-          return res.status(404).json({ message: "Receiver wallet not found" });
-        }
-      }
-      
-      // Create transaction
-      const transaction = await storage.createTransaction(validatedData);
+      // Create a pending transaction in the database
+      const transaction = await storage.createTransaction({
+        senderId: req.user.id,
+        receiverId: null, // We don't know the receiver's user ID yet
+        amount: amount.toString(),
+        currency: 'NPT',
+        status: 'pending',
+        type: 'transfer',
+        description: `Transfer to ${receiverAddress}`
+      });
       
       // Log activity
       await storage.createActivity({
-        userId,
-        action: `TRANSACTION_${validatedData.type}`,
-        details: `${validatedData.type} transaction of ${validatedData.amount} NPR`,
-        ipAddress: req.ip || ""
+        userId: req.user.id,
+        action: 'TRANSACTION_INITIATED',
+        description: `Initiated transfer of ${amount} NPT to ${receiverAddress}`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || ''
       });
       
-      res.status(201).json(transaction);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
-      }
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // Activity routes
-  app.get("/api/activities", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      const activities = await storage.getUserActivities(req.user.id);
-      res.json(activities);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // User routes (for finding users to send money to)
-  app.get("/api/users", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      const users = Array.from(await (async () => {
-        const allUsers = [];
-        for (let i = 1; i < 100; i++) {
-          const user = await storage.getUser(i);
-          if (user && req.user && user.id !== req.user.id) {
-            allUsers.push(user);
-          }
-        }
-        return allUsers;
-      })());
-      
-      // Filter out passwords from the results
-      const filteredUsers = users.map(({ password, ...user }) => user);
-      
-      res.json(filteredUsers);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-
-  // Stripe payment routes
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      const { tokenAmount, walletAddress } = req.body;
-      
-      if (!tokenAmount || tokenAmount < 1) {
-        return res.status(400).json({ message: "Invalid amount" });
-      }
-
-      if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-        return res.status(400).json({ message: "Invalid wallet address" });
-      }
-
-      // Get current BSC gas price
-      const { ethers } = require("ethers");
-      const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
-      
-      // Calculate gas fee for a token transfer
-      const gasPrice = await provider.getFeeData();
-      const gasLimit = 65000; // Standard gas limit for ERC20 transfers
-      const gasFeeBNB = gasPrice.gasPrice * BigInt(gasLimit);
-      
-      // Get BNB/USD price
-      // In production, you should use a reliable price oracle API
-      // For simplicity, we'll use a hardcoded rate here (1 BNB = $250 USD example)
-      const bnbUsdRate = 250;
-      
-      // Calculate gas fee in USD
-      const gasFeeUSD = Number(ethers.formatEther(gasFeeBNB)) * bnbUsdRate;
-      
-      // Add a 10% buffer to account for price fluctuations
-      const gasFeeWithBuffer = gasFeeUSD * 1.1;
-      
-      // Calculate token price (1 NPT = 1 NPR = ~$0.0075 USD)
-      const tokenPriceUSD = tokenAmount * 0.0075;
-      
-      // Service fee (2% of token price)
-      const serviceFeeUSD = tokenPriceUSD * 0.02;
-      
-      // Total amount in USD
-      const totalAmountUSD = tokenPriceUSD + gasFeeWithBuffer + serviceFeeUSD;
-      
-      // Convert to cents for Stripe
-      const amountInCents = Math.round(totalAmountUSD * 100);
-      
-      // In test mode, use a payment method that doesn't require confirmation
-      // This allows testing without actual credit card info
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInCents,
-        currency: 'usd',
-        // Only in development/test environments:
-        payment_method_types: ['card'],
-        metadata: {
-          userId: req.user.id.toString(),
-          tokenAmount: tokenAmount.toString(),
-          walletAddress: walletAddress,
-          gasFeeUSD: gasFeeWithBuffer.toFixed(4),
-          serviceFeeUSD: serviceFeeUSD.toFixed(4),
-          tokenPriceUSD: tokenPriceUSD.toFixed(4)
-        },
+      res.status(201).json({
+        transaction,
+        message: 'Transfer initiated. Please complete the transaction in your Web3 wallet.'
       });
-
-      // Log the payment intent creation with detailed breakdown
+    } catch (error) {
+      console.error('Error creating transfer:', error);
+      res.status(500).json({ message: 'Error creating transfer' });
+    }
+  });
+  
+  // Collateral routes
+  app.get('/api/collaterals', requireAuth, async (req, res) => {
+    try {
+      const collaterals = await storage.getUserCollaterals(req.user.id);
+      res.json(collaterals);
+    } catch (error) {
+      console.error('Error fetching collaterals:', error);
+      res.status(500).json({ message: 'Error fetching collaterals' });
+    }
+  });
+  
+  app.post('/api/collaterals', requireAuth, async (req, res) => {
+    try {
+      const { type, amount, ltv } = req.body;
+      if (!type || !amount || !ltv) {
+        return res.status(400).json({ message: 'Type, amount, and LTV are required' });
+      }
+      
+      // Create a new collateral
+      const collateral = await storage.createCollateral({
+        userId: req.user.id,
+        type,
+        amount: amount.toString(),
+        status: 'pending',
+        ltv: parseInt(ltv)
+      });
+      
+      // Log activity
       await storage.createActivity({
         userId: req.user.id,
-        action: "PAYMENT_INTENT_CREATED",
-        details: `Created payment intent for ${tokenAmount} NPT tokens ($$${tokenPriceUSD.toFixed(2)}), gas fee: $${gasFeeWithBuffer.toFixed(2)}, service fee: $${serviceFeeUSD.toFixed(2)}`,
-        ipAddress: req.ip || ""
+        action: 'COLLATERAL_CREATED',
+        description: `Created ${amount} ${type} collateral with ${ltv}% LTV`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || ''
+      });
+      
+      res.status(201).json({
+        collateral,
+        message: 'Collateral created. Please complete the transaction in your Web3 wallet.'
+      });
+    } catch (error) {
+      console.error('Error creating collateral:', error);
+      res.status(500).json({ message: 'Error creating collateral' });
+    }
+  });
+  
+  // Loan routes
+  app.get('/api/loans', requireAuth, async (req, res) => {
+    try {
+      const loans = await storage.getUserLoans(req.user.id);
+      res.json(loans);
+    } catch (error) {
+      console.error('Error fetching loans:', error);
+      res.status(500).json({ message: 'Error fetching loans' });
+    }
+  });
+  
+  app.post('/api/loans', requireAuth, async (req, res) => {
+    try {
+      const { collateralId, amount, term } = req.body;
+      if (!collateralId || !amount || !term) {
+        return res.status(400).json({ message: 'Collateral ID, amount, and term are required' });
+      }
+      
+      // Verify the collateral exists and belongs to the user
+      const collateral = await storage.getCollateral(parseInt(collateralId));
+      if (!collateral) {
+        return res.status(404).json({ message: 'Collateral not found' });
+      }
+      
+      if (collateral.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to use this collateral' });
+      }
+      
+      if (collateral.status !== 'active') {
+        return res.status(400).json({ message: 'Collateral is not active' });
+      }
+      
+      // Calculate interest based on collateral type and LTV
+      const interest = '5'; // 5% interest rate, could be more dynamic based on risk
+      
+      // Calculate due date (term is in days)
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + parseInt(term));
+      
+      // Create a new loan
+      const loan = await storage.createLoan({
+        userId: req.user.id,
+        collateralId: collateral.id,
+        amount: amount.toString(),
+        interest,
+        term: parseInt(term),
+        status: 'pending',
+        dueDate
+      });
+      
+      // Log activity
+      await storage.createActivity({
+        userId: req.user.id,
+        action: 'LOAN_CREATED',
+        description: `Created loan of ${amount} NPT for ${term} days`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || ''
+      });
+      
+      res.status(201).json({
+        loan,
+        message: 'Loan created. Waiting for approval.'
+      });
+    } catch (error) {
+      console.error('Error creating loan:', error);
+      res.status(500).json({ message: 'Error creating loan' });
+    }
+  });
+  
+  // Ad routes
+  app.get('/api/ads', async (req, res) => {
+    try {
+      const ads = await storage.getActiveAds();
+      res.json(ads);
+    } catch (error) {
+      console.error('Error fetching ads:', error);
+      res.status(500).json({ message: 'Error fetching ads' });
+    }
+  });
+  
+  app.post('/api/ads', requireAuth, async (req, res) => {
+    try {
+      const { title, description, budget, startDate, endDate } = req.body;
+      if (!title || !description || !budget) {
+        return res.status(400).json({ message: 'Title, description, and budget are required' });
+      }
+      
+      // Create a new ad
+      const ad = await storage.createAd({
+        userId: req.user.id,
+        title,
+        description,
+        status: 'pending',
+        budget: budget.toString(),
+        impressions: 0,
+        clicks: 0,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null
+      });
+      
+      // Log activity
+      await storage.createActivity({
+        userId: req.user.id,
+        action: 'AD_CREATED',
+        description: `Created ad: ${title}`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent') || ''
+      });
+      
+      res.status(201).json({
+        ad,
+        message: 'Ad created. Waiting for approval.'
+      });
+    } catch (error) {
+      console.error('Error creating ad:', error);
+      res.status(500).json({ message: 'Error creating ad' });
+    }
+  });
+  
+  // Stripe payment routes
+  app.post('/api/create-payment-intent', requireAuth, async (req, res) => {
+    try {
+      const { amount, tokenAmount } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: 'Amount is required' });
+      }
+      
+      // Create a Payment Intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: 'usd',
+        description: `Purchase of ${tokenAmount} NPT tokens`,
+        metadata: {
+          userId: req.user.id.toString(),
+          tokenAmount: tokenAmount.toString()
+        }
       });
       
       res.json({
         clientSecret: paymentIntent.client_secret,
-        breakdown: {
-          tokenAmount,
-          tokenPriceUSD: tokenPriceUSD.toFixed(4),
-          gasFeeUSD: gasFeeWithBuffer.toFixed(4),
-          serviceFeeUSD: serviceFeeUSD.toFixed(4),
-          totalUSD: totalAmountUSD.toFixed(4)
-        }
+        paymentIntentId: paymentIntent.id
       });
     } catch (error: any) {
-      console.error("Stripe error:", error);
-      res.status(500).json({ message: "Payment processing error" });
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ message: error.message });
     }
   });
-
-  // Stripe webhook to handle successful payments
-  app.post("/api/webhook", async (req, res) => {
-    const payload = req.body;
-    const sig = req.headers['stripe-signature'];
-
+  
+  // Webhook handler for Stripe events
+  app.post('/api/webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    if (!endpointSecret) {
+      return res.status(400).json({ message: 'Webhook secret not configured' });
+    }
+    
     let event;
-
+    
     try {
       // Verify the webhook signature
-      if (process.env.STRIPE_WEBHOOK_SECRET && sig) {
-        event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
-      } else {
-        // For development, we'll just use the payload directly
-        event = payload;
-      }
-
-      // Handle the event
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).json({ message: `Webhook Error: ${err.message}` });
+    }
+    
+    // Handle the event
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      
+      try {
         // Extract metadata
         const userId = parseInt(paymentIntent.metadata.userId);
-        const tokenAmount = parseInt(paymentIntent.metadata.tokenAmount);
-        const walletAddress = paymentIntent.metadata.walletAddress;
-        const gasFeeUSD = parseFloat(paymentIntent.metadata.gasFeeUSD || "0");
-        const serviceFeeUSD = parseFloat(paymentIntent.metadata.serviceFeeUSD || "0");
+        const tokenAmount = paymentIntent.metadata.tokenAmount;
         
-        if (userId && tokenAmount && walletAddress) {
-          try {
-            // Import required libraries
-            const { ethers } = require("ethers");
-            const NepaliPayTokenABI = require("../client/src/contracts/NepaliPayTokenABI.json");
-            
-            // Blockchain configuration
-            const NEPALIPAY_TOKEN_ADDRESS = "0x69d34B25809b346702C21EB0E22EAD8C1de58D66";
-            
-            // Create a Binance Smart Chain provider
-            const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
-
-            // Hot wallet configuration (used for regular transfers)
-            // This is the wallet that will interact with users directly
-            // IMPORTANT: In production, you should NEVER hardcode private keys
-            // The private key should be in an environment variable and properly secured
-            const hotWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY || "", provider);
-            
-            // Create a contract instance connected to the hot wallet
-            const tokenContract = new ethers.Contract(
-              NEPALIPAY_TOKEN_ADDRESS,
-              NepaliPayTokenABI,
-              hotWallet
-            );
-            
-            // Parse the amount to wei (1 NPT = 10^18 wei)
-            const amountWei = ethers.parseEther(tokenAmount.toString());
-            
-            // Check hot wallet balance first
-            const hotWalletBalance = await tokenContract.balanceOf(hotWallet.address);
-            
-            // If hot wallet balance is insufficient, record for manual processing
-            if (hotWalletBalance < amountWei) {
-              throw new Error(`Hot wallet balance insufficient. Has: ${ethers.formatEther(hotWalletBalance)} NPT, Needs: ${tokenAmount} NPT`);
-            }
-            
-            // Transfer tokens from hot wallet to user's wallet
-            // Using the transfer method as we determined the contract has this function
-            const tx = await tokenContract.transfer(walletAddress, amountWei);
-            
-            // Wait for transaction confirmation
-            const receipt = await tx.wait();
-            
-            // Log successful transaction
-            await storage.createActivity({
-              userId,
-              action: "TOKEN_PURCHASE_SUCCESS",
-              details: `Successfully transferred ${tokenAmount} NPT tokens from treasury to wallet ${walletAddress}. Transaction hash: ${receipt.hash}`,
-              ipAddress: req.ip || "webhook"
-            });
-            
-            console.log(`[SUCCESS] User ${userId} purchased ${tokenAmount} NPT tokens. Tokens transferred to wallet ${walletAddress}. Gas fee: $${gasFeeUSD}, Service fee: $${serviceFeeUSD}. Tx hash: ${receipt.hash}`);
-          } catch (error: any) {
-            console.error("Error transferring tokens:", error);
-            
-            // Log the failure
-            await storage.createActivity({
-              userId,
-              action: "TOKEN_PURCHASE_FAILED",
-              details: `Failed to transfer ${tokenAmount} NPT tokens to wallet ${walletAddress}. Error: ${error.message}`,
-              ipAddress: req.ip || "webhook"
-            });
-            
-            // Still record the purchase for manual processing later
-            await storage.createActivity({
-              userId,
-              action: "TOKEN_PURCHASE",
-              details: `Purchased ${tokenAmount} NPT tokens to wallet ${walletAddress} - NEEDS MANUAL PROCESSING`,
-              ipAddress: req.ip || "webhook"
-            });
-          }
-        } else {
-          // Log incomplete metadata
-          console.error(`Incomplete metadata for payment intent ${paymentIntent.id}. userId: ${userId}, tokenAmount: ${tokenAmount}, walletAddress: ${walletAddress || "missing"}`);
-          
-          // Create activity for manual handling
-          if (userId) {
-            await storage.createActivity({
-              userId,
-              action: "TOKEN_PURCHASE_INCOMPLETE",
-              details: `Payment received but incomplete metadata. Amount: ${tokenAmount || "unknown"}, Wallet: ${walletAddress || "unknown"}`,
-              ipAddress: req.ip || "webhook"
-            });
-          }
+        // Get user and wallet
+        const user = await storage.getUser(userId);
+        if (!user) {
+          throw new Error('User not found');
         }
+        
+        const wallet = await storage.getWalletByUserId(userId);
+        if (!wallet) {
+          throw new Error('Wallet not found');
+        }
+        
+        // Create a transaction record
+        const transaction = await storage.createTransaction({
+          senderId: null, // This is from the treasury/system
+          receiverId: userId,
+          amount: tokenAmount,
+          currency: 'NPT',
+          status: 'completed',
+          type: 'purchase',
+          description: 'Token purchase via Stripe',
+          stripePaymentId: paymentIntent.id
+        });
+        
+        // Update wallet balance (optimistic update, actual tokens will be transferred by the admin wallet)
+        const currentBalance = parseFloat(wallet.nptBalance);
+        const newBalance = currentBalance + parseFloat(tokenAmount);
+        
+        await storage.updateWallet(wallet.id, {
+          nptBalance: newBalance.toString()
+        });
+        
+        // Log activity
+        await storage.createActivity({
+          userId,
+          action: 'PAYMENT_COMPLETED',
+          description: `Purchased ${tokenAmount} NPT tokens`,
+          ipAddress: 'stripe-webhook',
+          userAgent: 'Stripe'
+        });
+        
+        // Transfer tokens from admin wallet to user wallet
+        if (adminWallet && wallet.address) {
+          // This would normally call a contract method to transfer tokens
+          // The actual implementation would depend on your smart contract
+          console.log(`[SIMULATION] Transferring ${tokenAmount} NPT from ${adminWallet.address} to ${wallet.address}`);
+          
+          // In a real implementation, you would do something like:
+          // const contract = new ethers.Contract(tokenContractAddress, tokenAbi, adminWallet);
+          // const tx = await contract.transfer(wallet.address, ethers.utils.parseUnits(tokenAmount, 18));
+          // await tx.wait();
+          // const txHash = tx.hash;
+          
+          // Update transaction with tx hash once complete
+          // await storage.updateTransaction(transaction.id, { txHash });
+        } else {
+          console.warn('Admin wallet not configured, cannot transfer tokens');
+        }
+        
+        console.log(`Payment for user ${userId} completed successfully`);
+      } catch (error) {
+        console.error('Error processing payment success:', error);
       }
-
-      res.json({ received: true });
+    }
+    
+    // Return a response to acknowledge receipt of the event
+    res.json({ received: true });
+  });
+  
+  // Verification endpoint for payment status
+  app.get('/api/payment/:paymentId', requireAuth, async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      
+      // Fetch payment from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
+      
+      // Verify this payment belongs to the authenticated user
+      if (paymentIntent.metadata.userId !== req.user.id.toString()) {
+        return res.status(403).json({ message: 'Not authorized to view this payment' });
+      }
+      
+      // Fetch transaction from our database
+      const transaction = await storage.getTransaction(paymentId);
+      
+      res.json({
+        paymentStatus: paymentIntent.status,
+        transaction: transaction || null
+      });
     } catch (error: any) {
-      console.error('Webhook error:', error);
-      res.status(400).send(`Webhook Error: ${error.message}`);
-      return;
+      console.error('Error verifying payment:', error);
+      res.status(500).json({ message: error.message });
     }
   });
-
-  // Bank Account routes have been removed
-
+  
+  // Create an HTTP server
   const httpServer = createServer(app);
+  
   return httpServer;
 }

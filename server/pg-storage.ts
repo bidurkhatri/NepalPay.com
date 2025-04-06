@@ -1,350 +1,459 @@
-import { db, pool, initializeDatabase } from './db';
-import { 
-  users, wallets, transactions, activities, collaterals, loans, ads,
-  InsertUser, User, InsertWallet, Wallet, 
-  InsertTransaction, Transaction, InsertActivity, Activity,
-  InsertCollateral, Collateral, InsertLoan, Loan, InsertAd, Ad
-} from '../shared/schema';
-import { eq, and, or, desc } from 'drizzle-orm';
 import { IStorage } from './storage';
-import session from 'express-session';
+import { db, initializeDatabase } from './db';
 import connectPg from 'connect-pg-simple';
+import session from 'express-session';
+import { eq, and, or, desc } from 'drizzle-orm';
+import { pool } from './db';
+import {
+  users,
+  wallets,
+  transactions,
+  activities,
+  collaterals,
+  loans,
+  ads,
+  type User,
+  type InsertUser,
+  type Wallet,
+  type InsertWallet,
+  type Transaction,
+  type InsertTransaction,
+  type Activity,
+  type InsertActivity,
+  type Collateral,
+  type InsertCollateral,
+  type Loan,
+  type InsertLoan,
+  type Ad,
+  type InsertAd,
+} from '@shared/schema';
 
-// Initialize PostgreSQL session store
-const PgSessionStore = connectPg(session);
+const PostgresSessionStore = connectPg(session);
 
-// Make sure the database is initialized
-let dbInitialized = false;
-
+/**
+ * PostgreSQL Storage Implementation
+ */
 export class PgStorage implements IStorage {
   public sessionStore: session.Store;
-
+  private initialized: boolean = false;
+  
   constructor() {
-    // Initialize database when constructing the storage
-    this.ensureDbInitialized();
-    this.sessionStore = new PgSessionStore({
+    this.sessionStore = new PostgresSessionStore({
       pool,
-      tableName: 'session',
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      tableName: 'session'
     });
   }
-
+  
+  /**
+   * Make sure the database is initialized before first use
+   */
   private async ensureDbInitialized() {
-    if (!dbInitialized) {
-      await initializeDatabase();
-      dbInitialized = true;
+    if (!this.initialized) {
+      this.initialized = await initializeDatabase();
+      if (!this.initialized) {
+        throw new Error('Failed to initialize database');
+      }
     }
   }
   
-  // User methods
+  // ====== User Methods ======
+  
   async getUser(id: number): Promise<User | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
-
+  
   async getUserByUsername(username: string): Promise<User | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(users).where(eq(users.username, username));
     return result[0];
   }
-
+  
   async getUserByEmail(email: string): Promise<User | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(users).where(eq(users.email, email));
     return result[0];
   }
-
-  async createUser(user: InsertUser): Promise<User> {
+  
+  async getAllUsers(): Promise<User[]> {
     await this.ensureDbInitialized();
-    const result = await db.insert(users).values(user).returning();
+    return await db.select().from(users);
+  }
+  
+  async createUser(userData: InsertUser): Promise<User> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(users).values(userData).returning();
     return result[0];
   }
-
+  
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     await this.ensureDbInitialized();
-    const result = await db.update(users).set(userData).where(eq(users.id, id)).returning();
+    const result = await db.update(users)
+      .set({
+        ...userData,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id))
+      .returning();
     return result[0];
   }
-
-  // Wallet methods
+  
+  // ====== Wallet Methods ======
+  
   async getWallet(id: number): Promise<Wallet | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(wallets).where(eq(wallets.id, id));
     return result[0];
   }
-
+  
   async getWalletByUserId(userId: number): Promise<Wallet | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(wallets).where(eq(wallets.userId, userId));
     return result[0];
   }
-
-  async createWallet(wallet: InsertWallet): Promise<Wallet> {
+  
+  async createWallet(walletData: InsertWallet): Promise<Wallet> {
     await this.ensureDbInitialized();
-    const result = await db.insert(wallets).values(wallet).returning();
+    const result = await db.insert(wallets).values(walletData).returning();
     return result[0];
   }
-
+  
   async updateWallet(id: number, walletData: Partial<Wallet>): Promise<Wallet | undefined> {
     await this.ensureDbInitialized();
-    // Set lastUpdated to current time
-    const dataWithTimestamp = {
-      ...walletData,
-      lastUpdated: new Date()
-    };
-    const result = await db.update(wallets).set(dataWithTimestamp).where(eq(wallets.id, id)).returning();
+    const result = await db.update(wallets)
+      .set({
+        ...walletData,
+        updatedAt: new Date()
+      })
+      .where(eq(wallets.id, id))
+      .returning();
     return result[0];
   }
-
-  // Transaction methods
+  
+  // ====== Transaction Methods ======
+  
   async getTransaction(id: number): Promise<Transaction | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(transactions).where(eq(transactions.id, id));
     return result[0];
   }
-
+  
   async getTransactionsBySenderId(senderId: number): Promise<Transaction[]> {
     await this.ensureDbInitialized();
-    return db.select().from(transactions).where(eq(transactions.senderId, senderId)).orderBy(desc(transactions.createdAt));
+    return await db.select().from(transactions).where(eq(transactions.senderId, senderId));
   }
-
+  
   async getTransactionsByReceiverId(receiverId: number): Promise<Transaction[]> {
     await this.ensureDbInitialized();
-    return db.select().from(transactions).where(eq(transactions.receiverId, receiverId)).orderBy(desc(transactions.createdAt));
+    return await db.select().from(transactions).where(eq(transactions.receiverId, receiverId));
   }
-
+  
   async getUserTransactions(userId: number): Promise<Transaction[]> {
     await this.ensureDbInitialized();
-    return db.select().from(transactions).where(
-      or(
-        eq(transactions.senderId, userId),
-        eq(transactions.receiverId, userId)
+    return await db.select().from(transactions)
+      .where(
+        or(
+          eq(transactions.senderId, userId),
+          eq(transactions.receiverId, userId)
+        )
       )
-    ).orderBy(desc(transactions.createdAt));
+      .orderBy(desc(transactions.createdAt));
   }
-
-  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
+  
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
     await this.ensureDbInitialized();
-    const result = await db.insert(transactions).values(transaction).returning();
+    const result = await db.insert(transactions).values(transactionData).returning();
     return result[0];
   }
-
-  // Activity methods
+  
+  async updateTransaction(id: number, transactionData: Partial<Transaction>): Promise<Transaction | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.update(transactions)
+      .set({
+        ...transactionData,
+        updatedAt: new Date()
+      })
+      .where(eq(transactions.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  // ====== Activity Methods ======
+  
   async getActivity(id: number): Promise<Activity | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(activities).where(eq(activities.id, id));
     return result[0];
   }
-
+  
   async getUserActivities(userId: number): Promise<Activity[]> {
     await this.ensureDbInitialized();
-    return db.select().from(activities).where(eq(activities.userId, userId)).orderBy(desc(activities.createdAt));
+    return await db.select().from(activities)
+      .where(eq(activities.userId, userId))
+      .orderBy(desc(activities.createdAt));
   }
-
-  async createActivity(activity: InsertActivity): Promise<Activity> {
+  
+  async createActivity(activityData: InsertActivity): Promise<Activity> {
     await this.ensureDbInitialized();
-    const result = await db.insert(activities).values(activity).returning();
+    const result = await db.insert(activities).values(activityData).returning();
     return result[0];
   }
   
-  // Collateral methods
+  // ====== Collateral Methods ======
+  
   async getCollateral(id: number): Promise<Collateral | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(collaterals).where(eq(collaterals.id, id));
     return result[0];
   }
-
+  
   async getUserCollaterals(userId: number): Promise<Collateral[]> {
     await this.ensureDbInitialized();
-    return db.select().from(collaterals).where(eq(collaterals.userId, userId));
+    return await db.select().from(collaterals).where(eq(collaterals.userId, userId));
   }
-
-  async createCollateral(collateral: InsertCollateral): Promise<Collateral> {
+  
+  async createCollateral(collateralData: InsertCollateral): Promise<Collateral> {
     await this.ensureDbInitialized();
-    const result = await db.insert(collaterals).values(collateral).returning();
+    const result = await db.insert(collaterals).values(collateralData).returning();
     return result[0];
   }
-
+  
   async updateCollateral(id: number, collateralData: Partial<Collateral>): Promise<Collateral | undefined> {
     await this.ensureDbInitialized();
-    // Set updatedAt to current time
-    const dataWithTimestamp = {
-      ...collateralData,
-      updatedAt: new Date()
-    };
-    const result = await db.update(collaterals).set(dataWithTimestamp).where(eq(collaterals.id, id)).returning();
+    const result = await db.update(collaterals)
+      .set({
+        ...collateralData,
+        updatedAt: new Date()
+      })
+      .where(eq(collaterals.id, id))
+      .returning();
     return result[0];
   }
-
-  // Loan methods
+  
+  // ====== Loan Methods ======
+  
   async getLoan(id: number): Promise<Loan | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(loans).where(eq(loans.id, id));
     return result[0];
   }
-
+  
   async getUserLoans(userId: number): Promise<Loan[]> {
     await this.ensureDbInitialized();
-    return db.select().from(loans).where(eq(loans.userId, userId));
+    return await db.select().from(loans).where(eq(loans.userId, userId));
   }
-
+  
   async getActiveLoans(): Promise<Loan[]> {
     await this.ensureDbInitialized();
-    return db.select().from(loans).where(eq(loans.status, "ACTIVE"));
+    return await db.select().from(loans).where(eq(loans.status, 'active'));
   }
-
-  async createLoan(loan: InsertLoan): Promise<Loan> {
+  
+  async createLoan(loanData: InsertLoan): Promise<Loan> {
     await this.ensureDbInitialized();
-    const result = await db.insert(loans).values(loan).returning();
+    const result = await db.insert(loans).values(loanData).returning();
     return result[0];
   }
-
+  
   async updateLoan(id: number, loanData: Partial<Loan>): Promise<Loan | undefined> {
     await this.ensureDbInitialized();
-    // Set updatedAt to current time
-    const dataWithTimestamp = {
-      ...loanData,
-      updatedAt: new Date()
-    };
-    const result = await db.update(loans).set(dataWithTimestamp).where(eq(loans.id, id)).returning();
+    const result = await db.update(loans)
+      .set({
+        ...loanData,
+        updatedAt: new Date()
+      })
+      .where(eq(loans.id, id))
+      .returning();
     return result[0];
   }
-
-  // Ad methods
+  
+  // ====== Ad Methods ======
+  
   async getAd(id: number): Promise<Ad | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(ads).where(eq(ads.id, id));
     return result[0];
   }
-
+  
   async getUserAds(userId: number): Promise<Ad[]> {
     await this.ensureDbInitialized();
-    return db.select().from(ads).where(eq(ads.userId, userId));
+    return await db.select().from(ads).where(eq(ads.userId, userId));
   }
-
+  
   async getActiveAds(): Promise<Ad[]> {
     await this.ensureDbInitialized();
-    const now = new Date();
-    // Use a simpler query that avoids direct comparison operators
-    return db.select().from(ads).where(eq(ads.status, "ACTIVE"));
+    return await db.select().from(ads).where(eq(ads.status, 'approved'));
   }
-
-  async createAd(ad: InsertAd): Promise<Ad> {
+  
+  async createAd(adData: InsertAd): Promise<Ad> {
     await this.ensureDbInitialized();
-    const result = await db.insert(ads).values(ad).returning();
-    return result[0];
-  }
-
-  async updateAd(id: number, adData: Partial<Ad>): Promise<Ad | undefined> {
-    await this.ensureDbInitialized();
-    // Set updatedAt to current time
-    const dataWithTimestamp = {
-      ...adData,
-      updatedAt: new Date()
-    };
-    const result = await db.update(ads).set(dataWithTimestamp).where(eq(ads.id, id)).returning();
+    const result = await db.insert(ads).values(adData).returning();
     return result[0];
   }
   
-  // Initialize demo data if needed
-  async initializeDemoData() {
-    try {
-      await this.ensureDbInitialized();
-      
-      // Check if users already exist
-      const existingUsers = await db.select({ count: users.id }).from(users);
-      if (existingUsers.length > 0 && existingUsers[0].count > 0) {
-        console.log('Demo data already exists, skipping initialization');
-        return;
-      }
-      
-      // Create demo user
-      const demoUser = await this.createUser({
-        username: "demouser",
-        firstName: "Demo",
-        lastName: "User",
-        email: "demo@nepalipay.com",
-        password: "$2b$10$JQMN5yfcuSGLYQVEUlN1A.n4TjdqLrURoJoS3XAXBIGIvB3jQXPLm", // "password123"
-        role: "USER",
-        phoneNumber: "+9779841234567"
-      });
-
-      // Create wallet for demo user
-      const demoWallet = await this.createWallet({
-        userId: demoUser.id,
-        balance: "5000",
-        currency: "NPT"
-      });
-
-      // Create some transactions
-      await this.createTransaction({
-        senderId: demoUser.id,
-        receiverId: null,
-        amount: "500",
-        type: "MOBILE_TOPUP",
-        status: "COMPLETED",
-        note: "Mobile recharge"
-      });
-
-      await this.createTransaction({
-        senderId: demoUser.id,
-        receiverId: null,
-        amount: "1000",
-        type: "UTILITY_PAYMENT",
-        status: "COMPLETED",
-        note: "Electricity bill"
-      });
-
-      // Create some activities
-      await this.createActivity({
-        userId: demoUser.id,
-        action: "LOGIN",
-        details: "User logged in",
-        ipAddress: "192.168.1.1"
-      });
-
-      await this.createActivity({
-        userId: demoUser.id,
-        action: "FAILED_LOGIN",
-        details: "Failed login attempt",
-        ipAddress: "192.168.1.2"
-      });
-      
-      // Create a demo collateral
-      const demoCollateral = await this.createCollateral({
-        userId: demoUser.id,
-        type: "BNB",
-        amount: "10",
-        valueInNPT: "15000" // Assuming 1 BNB = 1500 NPT
-      });
-      
-      // Create a demo loan based on the collateral
-      await this.createLoan({
-        userId: demoUser.id,
-        amount: "10000",
-        collateralId: demoCollateral.id,
-        interestRate: "12.5",
-        startDate: new Date(),
-        endDate: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        status: "ACTIVE"
-      });
-      
-      // Create a demo ad
-      await this.createAd({
-        userId: demoUser.id,
-        title: "Premium Crypto Exchange Services",
-        description: "Trade BNB, ETH and BTC at competitive rates. Sign up today!",
-        bidAmount: "500",
-        tier: "GOLD",
-        startDate: new Date(),
-        endDate: new Date(new Date().getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-        status: "ACTIVE"
-      });
-      
-      console.log('Demo data initialized successfully');
-    } catch (error) {
-      console.error('Error initializing demo data:', error);
+  async updateAd(id: number, adData: Partial<Ad>): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.update(ads)
+      .set({
+        ...adData,
+        updatedAt: new Date()
+      })
+      .where(eq(ads.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  // ====== Demo Data ======
+  
+  async initializeDemoData(): Promise<void> {
+    await this.ensureDbInitialized();
+    
+    // Check if demo data already exists
+    const userCount = await db.select({ count: users.id }).from(users);
+    if (userCount[0].count > 0) {
+      console.log('Demo data already exists, skipping initialization');
+      return;
     }
+    
+    console.log('Initializing demo data...');
+    
+    // Create demo users
+    const demoUser = await this.createUser({
+      username: 'demo',
+      email: 'demo@nepalipay.com',
+      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      firstName: 'Demo',
+      lastName: 'User',
+      role: 'user',
+      walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      kycStatus: 'verified',
+      kycVerificationId: 'demo-verification',
+      kycVerifiedAt: new Date()
+    });
+    
+    const adminUser = await this.createUser({
+      username: 'admin',
+      email: 'admin@nepalipay.com',
+      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      firstName: 'Admin',
+      lastName: 'User',
+      role: 'admin',
+      walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      kycStatus: 'verified',
+      kycVerificationId: 'admin-verification',
+      kycVerifiedAt: new Date()
+    });
+    
+    const superadminUser = await this.createUser({
+      username: 'superadmin',
+      email: 'superadmin@nepalipay.com',
+      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: 'superadmin',
+      walletAddress: '0x7890abcdef1234567890abcdef1234567890abcd',
+      kycStatus: 'verified',
+      kycVerificationId: 'superadmin-verification',
+      kycVerifiedAt: new Date()
+    });
+    
+    // Create demo wallets
+    const demoWallet = await this.createWallet({
+      userId: demoUser.id,
+      address: demoUser.walletAddress!,
+      balance: '1000',
+      tokenBalance: '5000',
+      currency: 'NPR'
+    });
+    
+    const adminWallet = await this.createWallet({
+      userId: adminUser.id,
+      address: adminUser.walletAddress!,
+      balance: '5000',
+      tokenBalance: '10000',
+      currency: 'NPR'
+    });
+    
+    const superadminWallet = await this.createWallet({
+      userId: superadminUser.id,
+      address: superadminUser.walletAddress!,
+      balance: '10000',
+      tokenBalance: '100000',
+      currency: 'NPR'
+    });
+    
+    // Create demo transactions
+    await this.createTransaction({
+      senderId: superadminUser.id,
+      receiverId: demoUser.id,
+      amount: '1000',
+      fee: '10',
+      status: 'completed',
+      type: 'transfer',
+      currency: 'NPT',
+      txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+    });
+    
+    await this.createTransaction({
+      senderId: demoUser.id,
+      receiverId: adminUser.id,
+      amount: '500',
+      fee: '5',
+      status: 'completed',
+      type: 'payment',
+      currency: 'NPT',
+      txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
+    });
+    
+    // Create demo activities
+    await this.createActivity({
+      userId: demoUser.id,
+      type: 'login',
+      details: 'User logged in from web app'
+    });
+    
+    await this.createActivity({
+      userId: demoUser.id,
+      type: 'transaction',
+      details: 'Sent 500 NPT to admin'
+    });
+    
+    // Create demo collateral
+    await this.createCollateral({
+      userId: demoUser.id,
+      type: 'BNB',
+      amount: '2',
+      value: '600',
+      status: 'active'
+    });
+    
+    // Create demo loan
+    await this.createLoan({
+      userId: demoUser.id,
+      collateralId: 1,
+      amount: '450',
+      interestRate: '5',
+      term: 30,
+      status: 'active',
+      remainingAmount: '450',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+    });
+    
+    // Create demo ad
+    await this.createAd({
+      userId: adminUser.id,
+      title: 'Premium NPT Exchange',
+      content: 'Get the best rates when exchanging NPT for other cryptocurrencies!',
+      status: 'approved',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      type: 'banner',
+      imageUrl: 'https://example.com/ad-image.jpg'
+    });
+    
+    console.log('Demo data initialization complete');
   }
 }
+
+export const storage = new PgStorage();

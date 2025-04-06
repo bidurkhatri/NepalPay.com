@@ -1,135 +1,233 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  integer,
+  primaryKey,
+  pgEnum
+} from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// User schema
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
-  phoneNumber: text("phone_number"),
-  role: text("role").default("USER").notNull(), // USER, ADMIN, OWNER roles
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  finapiUserId: text("finapi_user_id"),
-  kycStatus: text("kyc_status").default("PENDING"),
-  kycVerificationId: text("kyc_verification_id"),
-  kycVerifiedAt: timestamp("kyc_verified_at"),
+// Enums
+export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'superadmin']);
+export const kycStatusEnum = pgEnum('kyc_status', ['unverified', 'pending', 'verified', 'rejected']);
+export const transactionStatusEnum = pgEnum('transaction_status', ['pending', 'completed', 'failed', 'cancelled']);
+export const transactionTypeEnum = pgEnum('transaction_type', ['deposit', 'withdrawal', 'transfer', 'purchase', 'payment', 'loan', 'repayment', 'reward']);
+export const collateralStatusEnum = pgEnum('collateral_status', ['pending', 'active', 'liquidated', 'released']);
+export const loanStatusEnum = pgEnum('loan_status', ['pending', 'active', 'paid', 'defaulted', 'cancelled']);
+export const adStatusEnum = pgEnum('ad_status', ['pending', 'active', 'paused', 'completed', 'rejected']);
+
+// User table
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  username: varchar('username', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }),
+  firstName: varchar('first_name', { length: 255 }),
+  lastName: varchar('last_name', { length: 255 }),
+  password: text('password').notNull(),
+  role: userRoleEnum('role').notNull().default('user'),
+  walletAddress: varchar('wallet_address', { length: 255 }),
+  phoneNumber: varchar('phone_number', { length: 20 }),
+  kycStatus: kycStatusEnum('kyc_status').default('unverified'),
+  kycVerificationId: varchar('kyc_verification_id', { length: 255 }),
+  kycVerifiedAt: timestamp('kyc_verified_at'),
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+  stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  firstName: true,
-  lastName: true,
-  email: true,
-  phoneNumber: true,
-  role: true,
-  finapiUserId: true,
-  kycStatus: true,
-  kycVerificationId: true,
+// Wallet table
+export const wallets = pgTable('wallets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  address: varchar('address', { length: 255 }).notNull(),
+  nptBalance: varchar('npt_balance', { length: 255 }).default('0'),
+  bnbBalance: varchar('bnb_balance', { length: 255 }).default('0'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
-// Wallet schema
-export const wallets = pgTable("wallets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  balance: numeric("balance", { precision: 10, scale: 2 }).default("0").notNull(),
-  currency: text("currency").default("NPT").notNull(),
-  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  walletAddress: text("wallet_address"),
+// Transaction table
+export const transactions = pgTable('transactions', {
+  id: serial('id').primaryKey(),
+  txHash: varchar('tx_hash', { length: 255 }),
+  senderId: integer('sender_id').references(() => users.id),
+  receiverId: integer('receiver_id').references(() => users.id),
+  amount: varchar('amount', { length: 255 }).notNull(),
+  currency: varchar('currency', { length: 50 }).notNull(),
+  status: transactionStatusEnum('status').notNull().default('pending'),
+  type: transactionTypeEnum('type').notNull(),
+  description: text('description'),
+  stripePaymentId: varchar('stripe_payment_id', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
-export const insertWalletSchema = createInsertSchema(wallets).pick({
-  userId: true,
-  balance: true,
-  currency: true,
-  walletAddress: true,
+// Activity log table
+export const activities = pgTable('activities', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  action: varchar('action', { length: 255 }).notNull(),
+  description: text('description'),
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow()
 });
 
-// Transaction schema
-export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").references(() => users.id),
-  receiverId: integer("receiver_id").references(() => users.id),
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  type: text("type").notNull(), // TRANSFER, TOPUP, UTILITY, DEPOSIT, WITHDRAWAL, MOBILE_TOPUP, UTILITY_PAYMENT
-  status: text("status").default("COMPLETED").notNull(),
-  note: text("note"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  txHash: text("tx_hash"),
+// Collateral table
+export const collaterals = pgTable('collaterals', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  type: varchar('type', { length: 50 }).notNull(),
+  amount: varchar('amount', { length: 255 }).notNull(),
+  status: collateralStatusEnum('status').notNull().default('active'),
+  ltv: integer('ltv').notNull(),
+  txHash: varchar('tx_hash', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).pick({
-  senderId: true,
-  receiverId: true,
-  amount: true,
-  type: true,
-  status: true,
-  note: true,
-  txHash: true,
-  // createdAt is handled automatically by the database
+// Loan table
+export const loans = pgTable('loans', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  collateralId: integer('collateral_id').references(() => collaterals.id),
+  amount: varchar('amount', { length: 255 }).notNull(),
+  interest: varchar('interest', { length: 255 }).notNull(),
+  term: integer('term').notNull(),
+  paymentsMade: integer('payments_made').default(0),
+  status: loanStatusEnum('status').notNull().default('active'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  dueDate: timestamp('due_date')
 });
 
-// Activity schema
-export const activities = pgTable("activities", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  action: text("action").notNull(),
-  details: text("details"),
-  ipAddress: text("ip_address"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+// Ad table
+export const ads = pgTable('ads', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: adStatusEnum('status').notNull().default('pending'),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  budget: varchar('budget', { length: 255 }),
+  impressions: integer('impressions').default(0),
+  clicks: integer('clicks').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
 });
 
-export const insertActivitySchema = createInsertSchema(activities).pick({
-  userId: true,
-  action: true,
-  details: true,
-  ipAddress: true,
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  wallets: many(wallets),
+  sentTransactions: many(transactions, { relationName: 'sender' }),
+  receivedTransactions: many(transactions, { relationName: 'receiver' }),
+  activities: many(activities),
+  collaterals: many(collaterals),
+  loans: many(loans),
+  ads: many(ads)
+}));
+
+export const walletsRelations = relations(wallets, ({ one }) => ({
+  user: one(users, {
+    fields: [wallets.userId],
+    references: [users.id]
+  })
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  sender: one(users, {
+    fields: [transactions.senderId],
+    references: [users.id],
+    relationName: 'sender'
+  }),
+  receiver: one(users, {
+    fields: [transactions.receiverId],
+    references: [users.id],
+    relationName: 'receiver'
+  })
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  user: one(users, {
+    fields: [activities.userId],
+    references: [users.id]
+  })
+}));
+
+export const collateralsRelations = relations(collaterals, ({ one, many }) => ({
+  user: one(users, {
+    fields: [collaterals.userId],
+    references: [users.id]
+  }),
+  loans: many(loans)
+}));
+
+export const loansRelations = relations(loans, ({ one }) => ({
+  user: one(users, {
+    fields: [loans.userId],
+    references: [users.id]
+  }),
+  collateral: one(collaterals, {
+    fields: [loans.collateralId],
+    references: [collaterals.id]
+  })
+}));
+
+export const adsRelations = relations(ads, ({ one }) => ({
+  user: one(users, {
+    fields: [ads.userId],
+    references: [users.id]
+  })
+}));
+
+// Create Zod schemas for data validation and insertion
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-// Collateral schema
-export const collaterals = pgTable("collaterals", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // BNB, ETH, BTC
-  amount: numeric("amount", { precision: 18, scale: 8 }).notNull(),
-  valueInNPT: numeric("value_in_npt", { precision: 18, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+export const insertWalletSchema = createInsertSchema(wallets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertCollateralSchema = createInsertSchema(collaterals).pick({
-  userId: true,
-  type: true,
-  amount: true,
-  valueInNPT: true,
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-// Loan schema
-export const loans = pgTable("loans", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
-  collateralId: integer("collateral_id").notNull().references(() => collaterals.id),
-  interestRate: numeric("interest_rate", { precision: 5, scale: 2 }).notNull(),
-  startDate: timestamp("start_date").defaultNow().notNull(),
-  endDate: timestamp("end_date"),
-  status: text("status").default("ACTIVE").notNull(), // ACTIVE, REPAID, DEFAULTED
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+  createdAt: true
 });
 
-export const insertLoanSchema = createInsertSchema(loans).pick({
-  userId: true,
-  amount: true,
-  collateralId: true,
-  interestRate: true,
-  startDate: true,
-  endDate: true,
-  status: true,
+export const insertCollateralSchema = createInsertSchema(collaterals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertLoanSchema = createInsertSchema(loans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertAdSchema = createInsertSchema(ads).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 // Export types
@@ -150,32 +248,6 @@ export type InsertCollateral = z.infer<typeof insertCollateralSchema>;
 
 export type Loan = typeof loans.$inferSelect;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
-
-// Ad schema
-export const ads = pgTable("ads", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  bidAmount: numeric("bid_amount", { precision: 18, scale: 2 }).notNull(),
-  tier: text("tier").notNull(), // BRONZE, SILVER, GOLD, PLATINUM
-  startDate: timestamp("start_date").defaultNow().notNull(),
-  endDate: timestamp("end_date").notNull(),
-  status: text("status").default("PENDING").notNull(), // ACTIVE, EXPIRED, PENDING
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const insertAdSchema = createInsertSchema(ads).pick({
-  userId: true,
-  title: true,
-  description: true,
-  bidAmount: true,
-  tier: true,
-  startDate: true,
-  endDate: true,
-  status: true,
-});
 
 export type Ad = typeof ads.$inferSelect;
 export type InsertAd = z.infer<typeof insertAdSchema>;

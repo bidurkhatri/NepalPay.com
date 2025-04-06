@@ -1,164 +1,106 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { users, wallets, transactions, activities, collaterals, loans, ads } from '../shared/schema';
-import { eq, and, or } from 'drizzle-orm';
 import pg from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { users, wallets, transactions, activities, collaterals, loans, ads } from '@shared/schema';
 
-// Initialize the pool directly for better type safety
+// Get the connection string from environment variables
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.warn('DATABASE_URL environment variable not set. Please set it to connect to the database.');
+}
+
+// Create a PostgreSQL connection pool
 export const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
 });
 
-// Set up error handler for pool
+// Handle pool errors
 pool.on('error', (err: Error) => {
   console.error('Unexpected error on idle client', err);
   process.exit(-1);
 });
 
-// Initialize Drizzle ORM
-export const db = drizzle(pool);
+// Create a drizzle database instance
+export const db = drizzle(pool, {
+  schema: {
+    users,
+    wallets,
+    transactions,
+    activities,
+    collaterals,
+    loans,
+    ads
+  }
+});
 
-// Initialize database connection asynchronously
-export async function initializeDatabase() {
+/**
+ * Initialize the database (connect and migrate)
+ */
+export async function initializeDatabase(): Promise<boolean> {
   try {
-    // Verify the connection works
-    const client = await pool.connect();
-    client.release();
+    // Test the connection
+    const connected = await testConnection();
+    if (!connected) {
+      console.error('Failed to connect to database');
+      return false;
+    }
     
-    console.log('Database initialized successfully');
+    console.log('Successfully connected to the database');
+    
+    // Run migrations to create tables if they don't exist
+    await createTables();
+    
     return true;
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('Database initialization error:', error);
     return false;
   }
 }
 
-// Function to test the database connection
-export async function testConnection() {
+/**
+ * Test the database connection
+ */
+export async function testConnection(): Promise<boolean> {
   try {
-    if (!pool) {
-      await initializeDatabase();
-    }
-    
     const client = await pool.connect();
-    console.log('Database connection successful');
     client.release();
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('Database connection error:', error);
     return false;
   }
 }
 
-// Function to create all required tables
-export async function createTables() {
+/**
+ * Create the database tables using drizzle schema
+ */
+export async function createTables(): Promise<void> {
   try {
-    if (!pool) {
-      await initializeDatabase();
+    // Currently using auto-migration which creates tables if they don't exist
+    // In a production environment, you would use a proper migration system
+    
+    // Check if the 'users' table exists
+    const result = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        AND table_name = 'users'
+      );
+    `);
+    
+    const tableExists = result.rows[0].exists;
+    
+    if (!tableExists) {
+      console.log('Tables do not exist, creating them now');
+      await migrate(db, { migrationsFolder: './drizzle' });
+      console.log('Tables created successfully');
+    } else {
+      console.log('Tables already exist, skipping creation');
     }
-    
-    // Create the users table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        "firstName" VARCHAR(255) NOT NULL,
-        "lastName" VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        "phoneNumber" VARCHAR(255),
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(20) NOT NULL DEFAULT 'USER',
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create the wallets table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS wallets (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER NOT NULL REFERENCES users(id),
-        balance DECIMAL(12, 2) NOT NULL DEFAULT 0,
-        currency VARCHAR(10) NOT NULL DEFAULT 'NPR',
-        "lastUpdated" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE("userId")
-      );
-    `);
-
-    // Create the transactions table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        id SERIAL PRIMARY KEY,
-        "senderId" INTEGER REFERENCES users(id),
-        "receiverId" INTEGER REFERENCES users(id),
-        amount DECIMAL(12, 2) NOT NULL,
-        type VARCHAR(20) NOT NULL,
-        status VARCHAR(20) NOT NULL,
-        note TEXT,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create the activities table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS activities (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER NOT NULL REFERENCES users(id),
-        action VARCHAR(50) NOT NULL,
-        details TEXT,
-        "ipAddress" VARCHAR(50),
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    // Create the collaterals table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS collaterals (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER NOT NULL REFERENCES users(id),
-        type VARCHAR(20) NOT NULL,
-        amount DECIMAL(18, 8) NOT NULL,
-        "valueInNPT" DECIMAL(18, 2) NOT NULL,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    // Create the loans table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS loans (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER NOT NULL REFERENCES users(id),
-        amount DECIMAL(18, 2) NOT NULL,
-        "collateralId" INTEGER NOT NULL REFERENCES collaterals(id),
-        "interestRate" DECIMAL(5, 2) NOT NULL,
-        "startDate" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "endDate" TIMESTAMP,
-        status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    
-    // Create the ads table if it doesn't exist
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS ads (
-        id SERIAL PRIMARY KEY,
-        "userId" INTEGER NOT NULL REFERENCES users(id),
-        title VARCHAR(255) NOT NULL,
-        description TEXT NOT NULL,
-        "bidAmount" DECIMAL(18, 2) NOT NULL,
-        tier VARCHAR(20) NOT NULL,
-        "startDate" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "endDate" TIMESTAMP NOT NULL,
-        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    console.log('Database tables created successfully');
-    return true;
   } catch (error) {
-    console.error('Error creating database tables:', error);
-    return false;
+    console.error('Error creating tables:', error);
+    throw error;
   }
 }

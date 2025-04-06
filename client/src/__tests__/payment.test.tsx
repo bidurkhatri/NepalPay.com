@@ -1,63 +1,58 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastProvider } from '../hooks/use-toast';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { Route, Router } from 'wouter';
+import { ToastProvider } from '@/hooks/use-toast';
+import { AuthProvider } from '@/hooks/use-auth';
+import BuyTokensPage from '@/pages/buy-tokens';
+import PaymentSuccessPage from '@/pages/payment-success';
 
-// Mock the loadStripe function
-vi.mock('@stripe/stripe-js', () => {
-  return {
-    loadStripe: vi.fn(() => Promise.resolve({
-      elements: vi.fn(() => ({
-        create: vi.fn(() => ({
-          mount: vi.fn(),
-          unmount: vi.fn(),
-          on: vi.fn(),
-          update: vi.fn(),
-        })),
-      })),
-      confirmPayment: vi.fn(() => Promise.resolve({ paymentIntent: { status: 'succeeded' } })),
-    })),
-  };
-});
+// Mock all Stripe components and hooks
+vi.mock('@stripe/react-stripe-js', () => ({
+  useStripe: vi.fn(),
+  useElements: vi.fn(),
+  Elements: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PaymentElement: () => <div data-testid="payment-element">Payment Form</div>,
+}));
 
-// Create a simple test payment component
-const TestPaymentComponent = () => {
-  const handlePayment = async () => {
-    try {
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 1000 }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.clientSecret) {
-        document.getElementById('payment-status')!.textContent = 'Ready for payment';
-      }
-    } catch (error) {
-      document.getElementById('payment-status')!.textContent = 'Error: ' + (error as Error).message;
-    }
-  };
-  
-  return (
-    <div>
-      <h1>Payment Test</h1>
-      <div id="payment-status">Not started</div>
-      <button 
-        onClick={handlePayment}
-        data-testid="start-payment"
-      >
-        Start Payment
-      </button>
-    </div>
-  );
-};
+// Mock the Stripe loader
+vi.mock('@stripe/stripe-js', () => ({
+  loadStripe: vi.fn().mockResolvedValue({
+    elements: vi.fn().mockReturnValue({
+      create: vi.fn(),
+      getElement: vi.fn(),
+    }),
+  }),
+}));
 
-// Create a wrapper for the component with providers
-const renderWithProviders = (ui: React.ReactElement) => {
+// Mock the apiRequest function from queryClient
+vi.mock('@/lib/queryClient', () => ({
+  apiRequest: vi.fn(),
+  queryClient: {
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+  },
+  getQueryFn: vi.fn(),
+}));
+
+// Mock BlockchainContext
+vi.mock('@/contexts/blockchain-context', () => ({
+  useBlockchain: vi.fn().mockReturnValue({
+    connectWallet: vi.fn(),
+    walletAddress: '0x1234567890123456789012345678901234567890',
+    isConnected: true,
+    tokenBalance: '100.0',
+    getTokenBalance: vi.fn(),
+  }),
+}));
+
+// Import the mocked modules
+import { apiRequest } from '@/lib/queryClient';
+import { useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Create a test wrapper
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -65,79 +60,203 @@ const renderWithProviders = (ui: React.ReactElement) => {
       },
     },
   });
-  
-  // Mock Stripe elements
-  const stripePromise = loadStripe('fake-publishable-key');
-  
-  return render(
+
+  return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <Elements stripe={stripePromise} options={{ clientSecret: 'fake-client-secret' }}>
-          {ui}
-        </Elements>
+        <AuthProvider>
+          <Router>{children}</Router>
+        </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
 };
 
-describe('Payment Integration', () => {
+describe('BuyTokens Page', () => {
   beforeEach(() => {
-    // Reset mocks
-    vi.clearAllMocks();
+    // Reset all mocks
+    vi.resetAllMocks();
     
-    // Set up DOM element for payment status
-    document.body.innerHTML = '<div id="payment-status">Not started</div>';
-  });
-  
-  it('initializes the payment component', async () => {
-    renderWithProviders(<TestPaymentComponent />);
-    
-    expect(screen.getByTestId('start-payment')).toBeInTheDocument();
-    expect(document.getElementById('payment-status')?.textContent).toBe('Not started');
-  });
-  
-  it('creates a payment intent when start button is clicked', async () => {
-    // Mock the fetch function for payment intent creation
-    vi.spyOn(global, 'fetch').mockImplementationOnce(() => 
-      Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({
-          clientSecret: 'pi_test123456789_secret_987654321',
-        }),
-      } as Response)
-    );
-    
-    renderWithProviders(<TestPaymentComponent />);
-    
-    // Click the start payment button
-    fireEvent.click(screen.getByTestId('start-payment'));
-    
-    await waitFor(() => {
-      expect(document.getElementById('payment-status')?.textContent).toBe('Ready for payment');
+    // Mock successful client secret API response
+    vi.mocked(apiRequest).mockImplementation(async (method, url, body) => {
+      if (method === 'POST' && url === '/api/create-payment-intent') {
+        return {
+          status: 200,
+          json: () => Promise.resolve({ clientSecret: 'test_client_secret' }),
+        };
+      }
+      return {
+        status: 404,
+        json: () => Promise.resolve({}),
+      };
     });
     
-    // Verify the fetch was called with the correct data
-    expect(global.fetch).toHaveBeenCalledWith('/api/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: 1000 }),
+    // Mock Stripe hooks
+    vi.mocked(useStripe).mockReturnValue({
+      confirmPayment: vi.fn().mockResolvedValue({ error: null }),
+    });
+    
+    vi.mocked(useElements).mockReturnValue({
+      getElement: vi.fn(),
     });
   });
   
-  it('handles payment intent creation errors', async () => {
-    // Mock fetch to reject with an error
-    vi.spyOn(global, 'fetch').mockImplementationOnce(() => 
-      Promise.reject(new Error('Network error'))
+  it('should render the buy tokens form', async () => {
+    render(
+      <TestWrapper>
+        <BuyTokensPage />
+      </TestWrapper>
     );
     
-    renderWithProviders(<TestPaymentComponent />);
-    
-    // Click the start payment button
-    fireEvent.click(screen.getByTestId('start-payment'));
-    
+    // Check that the page renders with token amount input
     await waitFor(() => {
-      expect(document.getElementById('payment-status')?.textContent).toBe('Error: Network error');
+      expect(screen.getByText(/Buy NPT Tokens/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByLabelText(/Token Amount/i, { exact: false })).toBeInTheDocument();
+    });
+  });
+  
+  it('should calculate fees correctly', async () => {
+    render(
+      <TestWrapper>
+        <BuyTokensPage />
+      </TestWrapper>
+    );
+    
+    // Find the token amount input
+    const amountInput = await screen.findByLabelText(/Token Amount/i, { exact: false });
+    
+    // Enter a token amount
+    await userEvent.clear(amountInput);
+    await userEvent.type(amountInput, '100');
+    
+    // Verify that fees are calculated and displayed
+    await waitFor(() => {
+      expect(screen.getByText(/Token Cost/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/Gas Fee/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/Service Fee/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/Total Cost/i, { exact: false })).toBeInTheDocument();
+    });
+  });
+  
+  it('should create a payment intent when the form is submitted', async () => {
+    render(
+      <TestWrapper>
+        <BuyTokensPage />
+      </TestWrapper>
+    );
+    
+    // Find the token amount input
+    const amountInput = await screen.findByLabelText(/Token Amount/i, { exact: false });
+    
+    // Enter a token amount
+    await userEvent.clear(amountInput);
+    await userEvent.type(amountInput, '100');
+    
+    // Submit the form
+    const submitButton = screen.getByRole('button', { name: /Continue to Payment/i });
+    await userEvent.click(submitButton);
+    
+    // Verify that the API was called to create a payment intent
+    await waitFor(() => {
+      expect(apiRequest).toHaveBeenCalledWith('POST', '/api/create-payment-intent', expect.objectContaining({
+        amount: expect.any(Number),
+        walletAddress: '0x1234567890123456789012345678901234567890',
+      }));
+    });
+  });
+});
+
+describe('PaymentSuccess Page', () => {
+  beforeEach(() => {
+    // Reset all mocks
+    vi.resetAllMocks();
+  });
+  
+  it('should render the payment success page', async () => {
+    // Mock URL search params to include payment_intent and payment_intent_client_secret
+    Object.defineProperty(window, 'location', {
+      value: {
+        search: '?payment_intent=pi_123&payment_intent_client_secret=cs_123',
+        pathname: '/payment-success',
+      },
+      writable: true,
+    });
+    
+    // Mock the API request for getting transaction details
+    vi.mocked(apiRequest).mockImplementation(async (method, url) => {
+      if (url.includes('/api/payment/')) {
+        return {
+          status: 200,
+          json: () => Promise.resolve({
+            id: 'pi_123',
+            status: 'succeeded',
+            amount: 10000, // $100.00 in cents
+            walletAddress: '0x1234567890123456789012345678901234567890',
+            tokenAmount: '100',
+            txHash: '0xabcdef1234567890',
+          }),
+        };
+      }
+      return {
+        status: 404,
+        json: () => Promise.resolve({}),
+      };
+    });
+    
+    render(
+      <TestWrapper>
+        <PaymentSuccessPage />
+      </TestWrapper>
+    );
+    
+    // Check that the success page renders with correct details
+    await waitFor(() => {
+      expect(screen.getByText(/Payment Successful/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/100 NPT/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/0x1234/i, { exact: false })).toBeInTheDocument(); // Shortened wallet address
+      expect(screen.getByText(/Transaction Hash/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/0xabcdef/i, { exact: false })).toBeInTheDocument(); // Shortened tx hash
+    });
+  });
+  
+  it('should handle errors gracefully if payment fails', async () => {
+    // Mock URL search params for a failed payment
+    Object.defineProperty(window, 'location', {
+      value: {
+        search: '?payment_intent=pi_123&payment_intent_client_secret=cs_123&redirect_status=failed',
+        pathname: '/payment-success',
+      },
+      writable: true,
+    });
+    
+    // Mock the API request to return a failed payment
+    vi.mocked(apiRequest).mockImplementation(async (method, url) => {
+      if (url.includes('/api/payment/')) {
+        return {
+          status: 200,
+          json: () => Promise.resolve({
+            id: 'pi_123',
+            status: 'failed',
+            error: 'Payment was declined',
+          }),
+        };
+      }
+      return {
+        status: 404,
+        json: () => Promise.resolve({}),
+      };
+    });
+    
+    render(
+      <TestWrapper>
+        <PaymentSuccessPage />
+      </TestWrapper>
+    );
+    
+    // Check that error message is displayed
+    await waitFor(() => {
+      expect(screen.getByText(/Payment Failed/i, { exact: false })).toBeInTheDocument();
+      expect(screen.getByText(/Payment was declined/i, { exact: false })).toBeInTheDocument();
     });
   });
 });
