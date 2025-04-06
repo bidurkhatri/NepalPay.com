@@ -18,6 +18,7 @@ import SectionsPage from "@/pages/sections-page";
 import RewardsPage from "@/pages/rewards-page";
 import AdBazaarPage from "@/pages/ad-bazaar-page";
 import BorrowPage from "@/pages/borrow-page";
+import BuyTokensPage from "@/pages/buy-tokens";
 import SupportPage from "@/pages/support-page";
 import FAQPage from "@/pages/faq-page";
 import KnowledgePage from "@/pages/knowledge-page";
@@ -195,6 +196,7 @@ function Router() {
       <Route path="/rewards" component={() => <ProtectedRoute component={RewardsPage} requiredRole="USER" />} />
       <Route path="/ad-bazaar" component={() => <ProtectedRoute component={AdBazaarPage} requiredRole="USER" />} />
       <Route path="/borrow" component={() => <ProtectedRoute component={BorrowPage} requiredRole="USER" />} />
+      <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} requiredRole="USER" />} />
       
       {/* Support and Knowledge routes */}
       <Route path="/support" component={() => <ProtectedRoute component={SupportPage} />} />

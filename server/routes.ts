@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const allUsers = [];
         for (let i = 1; i < 100; i++) {
           const user = await storage.getUser(i);
-          if (user && user.id !== req.user.id) {
+          if (user && req.user && user.id !== req.user.id) {
             allUsers.push(user);
           }
         }
@@ -306,22 +306,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tokenAmount = parseInt(paymentIntent.metadata.tokenAmount);
         const walletAddress = paymentIntent.metadata.walletAddress;
         
-        if (userId && tokenAmount) {
-          // Handle token purchase success
-          // In a real app, this would mint the tokens to the user's address
-          await storage.createActivity({
-            userId,
-            action: "TOKEN_PURCHASE",
-            details: `Purchased ${tokenAmount} NPT tokens to wallet ${walletAddress || "unknown"}`,
-            ipAddress: req.ip || "webhook"
-          });
-
-          // Here you would trigger your blockchain function to mint/transfer tokens
-          // For a real implementation, you would:
-          // 1. Connect to the blockchain using a backend wallet
-          // 2. Call the NepaliPayToken contract's transfer or mint function
-          // 3. Send the tokens to the user's wallet address
-          console.log(`User ${userId} purchased ${tokenAmount} NPT tokens to wallet ${walletAddress || "unknown"}`);
+        if (userId && tokenAmount && walletAddress) {
+          try {
+            // Import required libraries
+            const { ethers } = require("ethers");
+            const NepaliPayTokenABI = require("../client/src/contracts/NepaliPayTokenABI.json");
+            
+            // Blockchain configuration
+            const NEPALIPAY_TOKEN_ADDRESS = "0x69d34B25809b346702C21EB0E22EAD8C1de58D66";
+            
+            // Create a Binance Smart Chain provider
+            const provider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
+            
+            // Load the admin wallet (this should use secure environment variables for private key)
+            // IMPORTANT: In production, you should NEVER hardcode private keys
+            // The private key should be in an environment variable and properly secured
+            const adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY || "", provider);
+            
+            // Create a contract instance
+            const tokenContract = new ethers.Contract(
+              NEPALIPAY_TOKEN_ADDRESS,
+              NepaliPayTokenABI,
+              adminWallet
+            );
+            
+            // Parse the amount to wei (1 NPT = 10^18 wei)
+            const amountWei = ethers.parseEther(tokenAmount.toString());
+            
+            // Mint or transfer tokens to the user's wallet
+            // The exact function depends on the contract: transfer, mint, or another method
+            // Check the specific method available in your contract
+            const tx = await tokenContract.transfer(walletAddress, amountWei);
+            
+            // Wait for transaction confirmation
+            const receipt = await tx.wait();
+            
+            // Log successful transaction
+            await storage.createActivity({
+              userId,
+              action: "TOKEN_PURCHASE_SUCCESS",
+              details: `Successfully minted ${tokenAmount} NPT tokens to wallet ${walletAddress}. Transaction hash: ${receipt.hash}`,
+              ipAddress: req.ip || "webhook"
+            });
+            
+            console.log(`[SUCCESS] User ${userId} purchased ${tokenAmount} NPT tokens. Tokens minted to wallet ${walletAddress}. Tx hash: ${receipt.hash}`);
+          } catch (error: any) {
+            console.error("Error minting tokens:", error);
+            
+            // Log the failure
+            await storage.createActivity({
+              userId,
+              action: "TOKEN_PURCHASE_FAILED",
+              details: `Failed to mint ${tokenAmount} NPT tokens to wallet ${walletAddress}. Error: ${error.message}`,
+              ipAddress: req.ip || "webhook"
+            });
+            
+            // Still record the purchase for manual processing later
+            await storage.createActivity({
+              userId,
+              action: "TOKEN_PURCHASE",
+              details: `Purchased ${tokenAmount} NPT tokens to wallet ${walletAddress} - NEEDS MANUAL PROCESSING`,
+              ipAddress: req.ip || "webhook"
+            });
+          }
+        } else {
+          // Log incomplete metadata
+          console.error(`Incomplete metadata for payment intent ${paymentIntent.id}. userId: ${userId}, tokenAmount: ${tokenAmount}, walletAddress: ${walletAddress || "missing"}`);
+          
+          // Create activity for manual handling
+          if (userId) {
+            await storage.createActivity({
+              userId,
+              action: "TOKEN_PURCHASE_INCOMPLETE",
+              details: `Payment received but incomplete metadata. Amount: ${tokenAmount || "unknown"}, Wallet: ${walletAddress || "unknown"}`,
+              ipAddress: req.ip || "webhook"
+            });
+          }
         }
       }
 
