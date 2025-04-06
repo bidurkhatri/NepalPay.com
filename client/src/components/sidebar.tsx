@@ -23,11 +23,13 @@ const Sidebar: React.FC = () => {
   const initials = getInitials(user.firstName, user.lastName);
 
   const menuItems = [
-    { href: '/dashboard', icon: <DashboardIcon className="mr-2 h-5 w-5" />, label: 'Dashboard' },
-    { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
+    { href: '/sections', icon: <DashboardIcon className="mr-2 h-5 w-5" />, label: 'Sections' },
     { href: '/nepalipaytoken', icon: <Coins className="mr-2 h-5 w-5 text-blue-500" />, label: 'NPT Tokens' },
+    { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
     { href: '/transactions', icon: <TransactionIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
-    { href: '/analytics', icon: <ChartIcon className="mr-2 h-5 w-5" />, label: 'Analytics' },
+    { href: '/borrow', icon: <CardIcon className="mr-2 h-5 w-5" />, label: 'Borrow NPT' },
+    { href: '/rewards', icon: <ChartIcon className="mr-2 h-5 w-5" />, label: 'Rewards' },
+    { href: '/ad-bazaar', icon: <TransactionIcon className="mr-2 h-5 w-5" />, label: 'Ad Bazaar' },
     { href: '/profile', icon: <UserIcon className="mr-2 h-5 w-5" />, label: 'Profile' },
     { href: '/settings', icon: <SettingsIcon className="mr-2 h-5 w-5" />, label: 'Settings' },
   ];

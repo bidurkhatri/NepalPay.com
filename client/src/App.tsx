@@ -13,12 +13,12 @@ import WalletPage from "@/pages/wallet";
 import TransactionsPage from "@/pages/transactions";
 import ProfilePage from "@/pages/profile";
 import SettingsPage from "@/pages/settings";
-import AnalyticsPage from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
 import SectionsPage from "@/pages/sections-page";
-import BuyTokensPage from "@/pages/buy-tokens";
 import RewardsPage from "@/pages/rewards-page";
 import AdBazaarPage from "@/pages/ad-bazaar-page";
+import BorrowPage from "@/pages/borrow-page";
+// Removed BuyTokensPage as it's not needed anymore
 
 // Superadmin Pages
 import SuperAdminIndex from "@/pages/superadmin";
@@ -93,10 +93,10 @@ const ProtectedRoute = ({ component: Component, requiredRole }: ProtectedRoutePr
   // This makes it easier to test the application
   const isDemoUser = user.username === 'demo';
   
-  // If role is required and user doesn't have it, redirect to dashboard
+  // If role is required and user doesn't have it, redirect to sections
   // Skip this check for demo users who should have access to everything
   if (requiredRole && userRole !== requiredRole && !isDemoUser) {
-    return <Redirect to="/dashboard" />;
+    return <Redirect to="/sections" />;
   }
   
   // If authenticated and role matches or no role required, render the component
@@ -125,7 +125,7 @@ const PublicRoute = ({ component: Component }: { component: React.ComponentType 
     } else if (portalType === 'superadmin' && userRole === 'OWNER') {
       return <Redirect to="/superadmin/dashboard" />;
     } else {
-      return <Redirect to="/dashboard" />;
+      return <Redirect to="/sections" />;
     }
   }
   
@@ -169,7 +169,7 @@ function Router() {
       <Route path="/login" component={() => <PublicRoute component={Login} />} />
       <Route path="/register" component={() => <PublicRoute component={Register} />} />
       
-      {/* User portal routes */}
+      {/* User portal routes - Core blockchain functionality */}
       <Route path="/sections" component={() => <ProtectedRoute component={SectionsPage} requiredRole="USER" />} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} requiredRole="USER" />} />
       <Route path="/nepalipaytoken" component={() => <ProtectedRoute component={NepaliPayTokenPage} requiredRole="USER" />} />
@@ -177,9 +177,9 @@ function Router() {
       <Route path="/transactions" component={() => <ProtectedRoute component={TransactionsPage} requiredRole="USER" />} />
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} requiredRole="USER" />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} requiredRole="USER" />} />
-      <Route path="/buy-tokens" component={() => <ProtectedRoute component={BuyTokensPage} requiredRole="USER" />} />
       <Route path="/rewards" component={() => <ProtectedRoute component={RewardsPage} requiredRole="USER" />} />
       <Route path="/ad-bazaar" component={() => <ProtectedRoute component={AdBazaarPage} requiredRole="USER" />} />
+      <Route path="/borrow" component={() => <ProtectedRoute component={BorrowPage} requiredRole="USER" />} />
       
       {/* Admin portal routes (admin.nepalipay.com) */}
       <Route path="/admin" component={() => <PublicRoute component={AdminLoginPage} />} />

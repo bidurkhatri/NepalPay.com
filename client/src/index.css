@@ -15,9 +15,9 @@
     @apply font-sans antialiased text-foreground;
     font-family: 'Inter', sans-serif;
     background: 
-      radial-gradient(ellipse at top right, rgba(43, 108, 196, 0.15), transparent 70%),
-      radial-gradient(ellipse at top left, rgba(220, 53, 69, 0.05), transparent 70%),
-      radial-gradient(ellipse at bottom, rgba(10, 20, 40, 1), rgba(5, 10, 20, 1));
+      radial-gradient(ellipse at top right, rgba(145, 75, 230, 0.15), transparent 70%),
+      radial-gradient(ellipse at top left, rgba(230, 75, 190, 0.08), transparent 70%),
+      radial-gradient(ellipse at bottom, rgba(10, 14, 30, 1), rgba(5, 7, 15, 1));
     background-attachment: fixed;
     background-size: 100% 100vh;
     -webkit-font-smoothing: antialiased;
@@ -54,11 +54,11 @@
   :root {
     --glass-shine: linear-gradient(120deg, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.05), rgba(255,255,255,0) 70%);
     --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-background: rgba(15, 23, 42, 0.55);
-    --blur-amount: 16px;
+    --glass-background: rgba(14, 20, 36, 0.65);
+    --blur-amount: 20px;
     --soft-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    --primary-rgb: 43, 108, 196; /* Himalayan blue from Nepali flag */
-    --accent-rgb: 220, 53, 69; /* Crimson red from Nepali flag */
+    --primary-rgb: 145, 75, 230; /* Modern purple for futuristic look */
+    --accent-rgb: 10, 230, 180; /* Teal accent for futuristic contrast */
     --neon-shadow: 0 0 5px theme('colors.primary.DEFAULT'), 0 0 20px theme('colors.primary.DEFAULT');
     --primary-glow: 0 0 25px rgba(var(--primary-rgb), 0.6);
     
@@ -255,9 +255,9 @@
 
   /* Futuristic glass-morphic card */
   .cyber-card {
-    background: rgba(10, 18, 35, 0.55);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(10, 18, 35, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -451,8 +451,8 @@
   /* Card with frosted glass effect */
   .glass-card {
     background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -474,8 +474,8 @@
   /* Token page specific styles */
   .npt-glass-card {
     background: rgba(10, 16, 34, 0.4);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(30, 42, 74, 0.8);
     box-shadow: 
@@ -513,8 +513,8 @@
   /* Nepal flag inspired card */
   .nepal-card {
     background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -550,8 +550,8 @@
   /* Nepal flag inspired accent on the side */
   .nepal-card-alt {
     background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
@@ -608,8 +608,8 @@
   .app-tabs {
     @apply flex gap-1 p-1 rounded-lg;
     background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.04);
   }
   
@@ -629,8 +629,8 @@
   /* Sidebar navigation */
   .sidebar-nav {
     background: rgba(10, 15, 30, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-right: 1px solid rgba(255, 255, 255, 0.04);
     padding: 1.25rem 0.75rem;
     position: relative;

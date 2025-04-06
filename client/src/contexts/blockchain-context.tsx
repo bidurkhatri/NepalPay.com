@@ -35,9 +35,7 @@ interface BlockchainContextType {
   nptBalance: string;
   username: string | null;
   userRole: string;
-  isStaking: boolean;
-  stakedAmount: string;
-  stakingRewards: string;
+  // Remove staking properties as they're not needed
   userCollaterals: {
     bnb: string;
     eth: string;
@@ -104,9 +102,7 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
   const [nptBalance, setNptBalance] = useState<string>("0");
   const [username, setUsernameState] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("NONE"); // NONE, USER, ADMIN
-  const [isStaking, setIsStaking] = useState<boolean>(false);
-  const [stakedAmount, setStakedAmount] = useState<string>("0");
-  const [stakingRewards, setStakingRewards] = useState<string>("0");
+  // Removed staking state variables as they're not required
   const [userCollaterals, setUserCollaterals] = useState({
     bnb: "0",
     eth: "0",
@@ -764,9 +760,6 @@ export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children
         nptBalance,
         username,
         userRole,
-        isStaking,
-        stakedAmount,
-        stakingRewards,
         userCollaterals,
         userDebt,
         loanStartTimestamp,
