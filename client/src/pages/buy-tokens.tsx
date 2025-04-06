@@ -161,15 +161,19 @@ const BuyTokensPage: React.FC = () => {
         setFeeBreakdown(data.breakdown);
       }
       
-      // Load Stripe and redirect to checkout
+      // Load Stripe and confirm payment with the clientSecret
       const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
       
       if (!stripe) {
         throw new Error("Stripe failed to load. Please try again.");
       }
       
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
+      // Use the client secret to redirect to the payment page
+      const { error } = await stripe.confirmPayment({
+        clientSecret: data.clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success`,
+        },
       });
       
       if (error) {
