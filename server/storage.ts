@@ -83,7 +83,13 @@ export class MemStorage implements IStorage {
     
     const user: User = { 
       id, 
-      ...insertUser,
+      username: insertUser.username,
+      password: insertUser.password,
+      firstName: insertUser.firstName,
+      lastName: insertUser.lastName,
+      email: insertUser.email,
+      role: insertUser.role || 'USER', // Default role if not provided
+      phoneNumber: insertUser.phoneNumber || null, // Default to null if not provided
       createdAt: now
     };
     
@@ -116,7 +122,9 @@ export class MemStorage implements IStorage {
     
     const wallet: Wallet = { 
       id, 
-      ...insertWallet,
+      userId: insertWallet.userId,
+      balance: insertWallet.balance || "0",
+      currency: insertWallet.currency || "NPT",
       lastUpdated: now
     };
     
@@ -166,8 +174,13 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const transaction: Transaction = { 
-      id, 
-      ...insertTransaction,
+      id,
+      type: insertTransaction.type,
+      amount: insertTransaction.amount,
+      status: insertTransaction.status || "COMPLETED",
+      senderId: insertTransaction.senderId || null,
+      receiverId: insertTransaction.receiverId || null,
+      note: insertTransaction.note || null,
       createdAt: now
     };
     
@@ -190,8 +203,11 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const activity: Activity = { 
-      id, 
-      ...insertActivity,
+      id,
+      userId: insertActivity.userId,
+      action: insertActivity.action,
+      details: insertActivity.details || null,
+      ipAddress: insertActivity.ipAddress || null,
       createdAt: now
     };
     
