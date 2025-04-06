@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './hooks/use-auth';
+import { RealTimeProvider } from './contexts/real-time-context';
 import { ProtectedRoute } from './lib/protected-route';
 
 // Pages
@@ -16,14 +17,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Switch>
-          <Route path="/auth" component={AuthPage} />
-          <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
-          <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
-          <ProtectedRoute path="/" component={HomePage} />
-          <Route component={NotFoundPage} />
-        </Switch>
-        <Toaster />
+        <RealTimeProvider>
+          <Switch>
+            <Route path="/auth" component={AuthPage} />
+            <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
+            <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
+            <ProtectedRoute path="/" component={HomePage} />
+            <Route component={NotFoundPage} />
+          </Switch>
+          <Toaster />
+        </RealTimeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

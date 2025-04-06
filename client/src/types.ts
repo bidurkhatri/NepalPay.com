@@ -18,6 +18,17 @@ export interface WalletBalance {
   npt: string;
 }
 
+export interface Wallet {
+  id: number;
+  userId: number;
+  address: string;
+  bnbBalance: string;
+  nptBalance: string;
+  privateKey?: string; // Only for demo/testing, never expose in production
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Transaction {
   id: number;
   hash: string;
@@ -103,4 +114,16 @@ export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   error?: string;
+}
+
+// Activity
+export interface Activity {
+  id: number;
+  userId: number;
+  action: string;
+  details?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
