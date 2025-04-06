@@ -56,7 +56,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
   };
 
   return (
-    <div className="flex h-screen bg-transparent">
+    <div className="flex h-screen bg-transparent superadmin-portal">
       {/* Sidebar */}
       <motion.div
         className="sidebar-nav relative h-full flex flex-col shadow-xl"

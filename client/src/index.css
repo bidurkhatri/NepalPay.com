@@ -66,7 +66,62 @@
     --cyber-line: rgba(var(--primary-rgb), 0.4);
     --cyber-glow: 0 0 10px rgba(var(--primary-rgb), 0.8);
     --hologram-effect: repeating-linear-gradient(90deg, rgba(var(--primary-rgb), 0.05) 0px, rgba(var(--primary-rgb), 0.1) 1px, rgba(var(--primary-rgb), 0.05) 2px);
+    
+    /* Role-specific theme colors */
+    --user-primary-rgb: 145, 75, 230; /* Purple for regular users */
+    --user-accent-rgb: 10, 230, 180; /* Teal accent */
+    
+    --admin-primary-rgb: 59, 130, 246; /* Blue for admin */
+    --admin-accent-rgb: 96, 165, 250; /* Light blue accent */
+    
+    --superadmin-primary-rgb: 45, 212, 191; /* Teal for superadmin */
+    --superadmin-accent-rgb: 20, 184, 166; /* Deep teal accent */
   }
+}
+
+/* Role-specific styles */
+.admin-portal {
+  --primary-rgb: var(--admin-primary-rgb);
+  --accent-rgb: var(--admin-accent-rgb);
+}
+
+.admin-portal .sidebar-nav::before {
+  background: linear-gradient(to bottom, 
+    rgba(var(--admin-primary-rgb), 0.9), 
+    rgba(var(--admin-accent-rgb), 0.9)
+  );
+  box-shadow: 
+    0 0 15px rgba(var(--admin-primary-rgb), 0.5),
+    0 0 5px rgba(var(--admin-primary-rgb), 0.3);
+}
+
+.admin-portal .sidebar-item.active::before {
+  background: rgba(var(--admin-primary-rgb), 1);
+  box-shadow: 
+    0 0 10px rgba(var(--admin-primary-rgb), 0.7),
+    0 0 5px rgba(var(--admin-primary-rgb), 0.5);
+}
+
+.superadmin-portal {
+  --primary-rgb: var(--superadmin-primary-rgb);
+  --accent-rgb: var(--superadmin-accent-rgb);
+}
+
+.superadmin-portal .sidebar-nav::before {
+  background: linear-gradient(to bottom, 
+    rgba(var(--superadmin-primary-rgb), 0.9), 
+    rgba(var(--superadmin-accent-rgb), 0.9)
+  );
+  box-shadow: 
+    0 0 15px rgba(var(--superadmin-primary-rgb), 0.5),
+    0 0 5px rgba(var(--superadmin-primary-rgb), 0.3);
+}
+
+.superadmin-portal .sidebar-item.active::before {
+  background: rgba(var(--superadmin-primary-rgb), 1);
+  box-shadow: 
+    0 0 10px rgba(var(--superadmin-primary-rgb), 0.7),
+    0 0 5px rgba(var(--superadmin-primary-rgb), 0.5);
 }
 
 @layer components {

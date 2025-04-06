@@ -60,7 +60,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-background to-background/80 text-foreground">
+    <div className="flex min-h-screen bg-gradient-to-b from-background to-background/80 text-foreground admin-portal">
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex flex-col w-64 border-r border-border/40 backdrop-blur-sm">
         <div className="p-6">
@@ -71,23 +71,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
           
           <nav className="space-y-1 mt-8">
             {navigationItems.map((item) => (
-              <Link key={item.path} href={item.path}>
-                <a
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    location === item.path
-                      ? 'bg-primary/10 text-primary'
-                      : 'hover:bg-accent/50'
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  {location === item.path && (
-                    <motion.div
-                      layoutId="sidebar-highlight"
-                      className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
-                    />
-                  )}
-                </a>
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all sidebar-item ${
+                  location === item.path ? 'active' : 'hover:bg-accent/50'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+                {location === item.path && (
+                  <motion.div
+                    layoutId="sidebar-highlight"
+                    className="absolute left-0 w-1 h-8 bg-primary rounded-r-full"
+                  />
+                )}
               </Link>
             ))}
           </nav>
@@ -176,18 +174,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
               
               <nav className="p-4 space-y-1">
                 {navigationItems.map((item) => (
-                  <Link key={item.path} href={item.path}>
-                    <a
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                        location === item.path
-                          ? 'bg-primary/10 text-primary'
-                          : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </a>
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all sidebar-item ${
+                      location === item.path ? 'active' : 'hover:bg-accent/50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
                   </Link>
                 ))}
               </nav>
