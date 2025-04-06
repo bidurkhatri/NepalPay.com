@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useWallet } from '@/contexts/wallet-context';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import MobileNavigation from '@/components/mobile-navigation';
 import TransactionList from '@/components/transaction-list';
 import QuickTransferForm from '@/components/quick-transfer-form';
+import NepaliWalletVisualization from '@/components/nepali-wallet-visualization';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WalletIcon } from '@/lib/icons';
 import { Link } from 'wouter';
-import { Coins, CreditCard, ArrowRight } from 'lucide-react';
+import { Coins, CreditCard, ArrowRight, PieChart, BarChartIcon, RefreshCw } from 'lucide-react';
 
 const WalletPage: React.FC = () => {
   const { wallet, transactions, stats, loading } = useWallet();
+  const [visualizationSize, setVisualizationSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [animationEnabled, setAnimationEnabled] = useState(true);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen relative">
@@ -40,6 +44,94 @@ const WalletPage: React.FC = () => {
                 <Button variant="outline" size="sm" className="text-xs flex items-center border-primary/50 bg-primary/10 text-white hover:bg-primary/20 transition-all duration-300 glow">
                   <Coins className="h-3.5 w-3.5 mr-1" /> Add Funds
                 </Button>
+              </div>
+            </div>
+            
+            {/* Balance Visualization Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-white">Balance Visualization</h2>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 bg-gray-900/50 p-1.5 rounded-lg">
+                    <Button 
+                      variant={visualizationSize === 'small' ? "secondary" : "ghost"} 
+                      size="sm" 
+                      onClick={() => setVisualizationSize('small')}
+                      className="h-8 px-2"
+                    >
+                      S
+                    </Button>
+                    <Button 
+                      variant={visualizationSize === 'medium' ? "secondary" : "ghost"} 
+                      size="sm" 
+                      onClick={() => setVisualizationSize('medium')}
+                      className="h-8 px-2"
+                    >
+                      M
+                    </Button>
+                    <Button 
+                      variant={visualizationSize === 'large' ? "secondary" : "ghost"} 
+                      size="sm" 
+                      onClick={() => setVisualizationSize('large')}
+                      className="h-8 px-2"
+                    >
+                      L
+                    </Button>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAnimationEnabled(!animationEnabled)}
+                    className={`h-8 px-3 ${animationEnabled ? 'bg-primary/20 border-primary/50' : 'bg-gray-800/50 border-gray-700'}`}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1.5 ${animationEnabled ? 'animate-spin' : ''}`} />
+                    {animationEnabled ? 'Animated' : 'Static'}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="cyber-card glass rounded-xl overflow-hidden p-6 bg-gray-900/30">
+                <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center lg:justify-between">
+                  <div className="mb-6 lg:mb-0">
+                    <h3 className="text-lg font-semibold text-white mb-2">Interactive Nepali Art Style</h3>
+                    <p className="text-gray-400 mb-4 max-w-md">
+                      This visualization changes dynamically based on your wallet balance, incorporating traditional 
+                      Nepali art motifs like mandalas and cultural symbols. Hover over the visualization to see more details.
+                    </p>
+                    
+                    <div className="glass-card p-4 rounded-lg bg-gray-900/30 border border-gray-800 max-w-sm">
+                      <h4 className="text-white text-sm font-medium mb-2">Visualization Legend</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                          <span className="text-gray-300 text-xs">Low Balance (red)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                          <span className="text-gray-300 text-xs">Medium Balance (gold)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-teal-500 mr-2"></div>
+                          <span className="text-gray-300 text-xs">High Balance (teal)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full bg-gray-500 mr-2"></div>
+                          <span className="text-gray-300 text-xs">Empty Balance (gray)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                    <NepaliWalletVisualization 
+                      size={visualizationSize} 
+                      animated={animationEnabled}
+                      showDetails={true}
+                      className="shadow-lg shadow-primary/20"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
