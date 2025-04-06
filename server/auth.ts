@@ -26,8 +26,15 @@ export async function hashPassword(password: string): Promise<string> {
 
 /**
  * Compare a password against a stored hash
+ * Supports both hashed passwords (format: "hash.salt") and plain text passwords for development
  */
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  // Handle plain text passwords for development
+  if (!stored.includes('.')) {
+    return supplied === stored;
+  }
+  
+  // Handle properly hashed passwords
   const [hashed, salt] = stored.split('.');
   const hashedBuf = Buffer.from(hashed, 'hex');
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
