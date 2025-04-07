@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth as useBaseAuth } from '@/hooks/use-auth';
 import { User } from '@shared/schema';
 
 type AuthContextType = {
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loginMutation,
     registerMutation,
     logoutMutation,
-  } = useAuth();
+  } = useBaseAuth();
 
   // Computed authenticated state
   const isAuthenticated = !!user;
