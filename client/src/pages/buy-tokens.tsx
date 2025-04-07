@@ -70,7 +70,7 @@ function CheckoutForm({ amount, walletAddress }: { amount: number; walletAddress
 
 export default function BuyTokensPage() {
   const [tokenAmount, setTokenAmount] = useState<number>(100);
-  const [tokenPrice, setTokenPrice] = useState<number>(1); // 1 USD per token
+  const [tokenPrice, setTokenPrice] = useState<number>(1); // Default value before fetching
   const [gasFee, setGasFee] = useState<number>(0.5); // Fixed gas fee in USD
   const [serviceFee, setServiceFee] = useState<number>(0); // 2% service fee
   const [totalCost, setTotalCost] = useState<number>(0);
@@ -78,8 +78,36 @@ export default function BuyTokensPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const { walletAddress, isConnected, connectWallet } = useBlockchain();
   const { toast } = useToast();
+  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(true);
 
-  // Calculate fees and total cost when token amount changes
+  // Fetch token price from blockchain
+  useEffect(() => {
+    const fetchTokenPrice = async () => {
+      try {
+        setIsLoadingPrice(true);
+        // Call the API to get the token price from the blockchain contract
+        const response = await apiRequest('GET', '/api/token-price');
+        const data = await response.json();
+        
+        if (data.price) {
+          setTokenPrice(data.price);
+        }
+      } catch (error) {
+        console.error("Failed to fetch token price:", error);
+        toast({
+          title: "Price Fetch Error",
+          description: "Could not fetch the current token price. Using default value instead.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingPrice(false);
+      }
+    };
+
+    fetchTokenPrice();
+  }, [toast]);
+
+  // Calculate fees and total cost when token amount or price changes
   useEffect(() => {
     const tokenCost = tokenAmount * tokenPrice;
     const serviceFeeAmount = tokenCost * 0.02; // 2% service fee

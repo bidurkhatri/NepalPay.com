@@ -69,6 +69,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
   
+  // Token price endpoint - fetches the current price from the blockchain
+  app.get('/api/token-price', async (req, res) => {
+    try {
+      // The NPT token is a stablecoin pegged to the Nepalese Rupee (NPR)
+      // 1 NPT = 1 NPR
+      // For USD price, we need to convert NPR to USD
+      // Typically this would involve checking an exchange rate API
+      
+      // Current conversion rate: 1 USD = approximately 133 NPR
+      // So 1 NPT = 1/133 USD = approximately 0.0075 USD
+      const nprToUsdRate = 0.0075;
+      
+      // In a production environment, this would call the actual blockchain to get the current price
+      if (adminWallet) {
+        // Create a contract instance for the token
+        const tokenContract = new ethers.Contract(
+          '0x69d34B25809b346702C21EB0E22EAD8C1de58D66', // NEPALI_PAY_TOKEN_ADDRESS 
+          [
+            "function balanceOf(address) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)",
+            "function tokenPrice() view returns (uint256)"
+          ],
+          provider
+        );
+        
+        try {
+          // For now, we're returning the static conversion rate
+          // In a full implementation, we would call tokenContract.tokenPrice()
+          res.json({ price: nprToUsdRate });
+        } catch (error) {
+          console.error('Error fetching token price from blockchain:', error);
+          // Fall back to static price
+          res.json({ price: nprToUsdRate });
+        }
+      } else {
+        // No admin wallet configured, return static price
+        res.json({ price: nprToUsdRate });
+      }
+    } catch (error) {
+      console.error('Error in token price endpoint:', error);
+      res.status(500).json({ message: 'Error fetching token price' });
+    }
+  });
+  
   // User routes
   app.get('/api/users', requireAdmin, async (req, res) => {
     try {

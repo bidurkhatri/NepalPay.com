@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import MobileNavigation from '@/components/mobile-navigation';
