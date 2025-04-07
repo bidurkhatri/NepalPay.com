@@ -114,14 +114,16 @@ export default function HomePage() {
         <div className="flex flex-col flex-grow overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <a className={`flex items-center px-4 py-3 rounded-lg text-sm transition-all ${item.current ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'}`}>
-                  <span className={`mr-3 ${item.current ? 'text-primary' : 'text-white/70'}`}>{item.icon}</span>
-                  <span>{item.label}</span>
-                  {item.current && (
-                    <div className="ml-auto w-1.5 h-6 bg-primary rounded-full"></div>
-                  )}
-                </a>
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={`flex items-center px-4 py-3 rounded-lg text-sm transition-all ${item.current ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+              >
+                <span className={`mr-3 ${item.current ? 'text-primary' : 'text-white/70'}`}>{item.icon}</span>
+                <span>{item.label}</span>
+                {item.current && (
+                  <div className="ml-auto w-1.5 h-6 bg-primary rounded-full"></div>
+                )}
               </Link>
             ))}
           </nav>
@@ -140,11 +142,12 @@ export default function HomePage() {
             </div>
             
             <div className="space-y-1">
-              <Link href="/settings">
-                <a className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:text-white hover:bg-white/5 transition-all">
-                  <Settings className="h-4 w-4 mr-3" />
-                  Settings
-                </a>
+              <Link 
+                href="/settings"
+                className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                Settings
               </Link>
               
               <button 
@@ -181,17 +184,17 @@ export default function HomePage() {
           <div className="px-2 py-4">
             <nav className="space-y-1">
               {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <a 
-                    className={`flex items-center px-4 py-3 rounded-lg text-sm ${item.current ? 'bg-white/10 text-white' : 'text-white/70'}`}
-                    onClick={toggleMobileMenu}
-                  >
-                    <span className={`mr-3 ${item.current ? 'text-primary' : ''}`}>{item.icon}</span>
-                    <span>{item.label}</span>
-                    {item.current && (
-                      <div className="ml-auto w-1 h-5 bg-primary rounded-full"></div>
-                    )}
-                  </a>
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 rounded-lg text-sm ${item.current ? 'bg-white/10 text-white' : 'text-white/70'}`}
+                  onClick={toggleMobileMenu}
+                >
+                  <span className={`mr-3 ${item.current ? 'text-primary' : ''}`}>{item.icon}</span>
+                  <span>{item.label}</span>
+                  {item.current && (
+                    <div className="ml-auto w-1 h-5 bg-primary rounded-full"></div>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -210,14 +213,13 @@ export default function HomePage() {
               </div>
               
               <div className="space-y-1 px-2">
-                <Link href="/settings">
-                  <a 
-                    className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:bg-white/5"
-                    onClick={toggleMobileMenu}
-                  >
-                    <Settings className="h-4 w-4 mr-3" />
-                    Settings
-                  </a>
+                <Link 
+                  href="/settings"
+                  className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:bg-white/5"
+                  onClick={toggleMobileMenu}
+                >
+                  <Settings className="h-4 w-4 mr-3" />
+                  Settings
                 </Link>
                 
                 <button 
@@ -321,11 +323,12 @@ export default function HomePage() {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                     <h2 className="text-xl font-bold text-white mb-1">Your Wallet <Badge variant="outline" className="ml-2 bg-white/10">Live</Badge></h2>
                     
-                    <Link href="/wallet">
-                      <a className="inline-flex items-center text-sm text-white/70 hover:text-white transition-colors mt-2 sm:mt-0">
-                        View Details
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                      </a>
+                    <Link 
+                      href="/wallet"
+                      className="inline-flex items-center text-sm text-white/70 hover:text-white transition-colors mt-2 sm:mt-0"
+                    >
+                      View Details
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </Link>
                   </div>
                   
@@ -353,15 +356,17 @@ export default function HomePage() {
                             {formatBalance(wallet.nptBalance)} <span className="text-lg">NPT</span>
                           </div>
                           <div className="flex justify-between items-center mt-4">
-                            <Link href="/buy-tokens">
-                              <a className="text-sm px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
-                                Buy More
-                              </a>
+                            <Link 
+                              href="/buy-tokens"
+                              className="text-sm px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+                            >
+                              Buy More
                             </Link>
-                            <Link href="/send">
-                              <a className="text-sm px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all">
-                                Send
-                              </a>
+                            <Link 
+                              href="/send"
+                              className="text-sm px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all"
+                            >
+                              Send
                             </Link>
                           </div>
                         </div>
@@ -429,17 +434,17 @@ export default function HomePage() {
                           { icon: <Wallet className="h-5 w-5" />, label: 'Receive', href: '/receive' },
                           { icon: <Gift className="h-5 w-5" />, label: 'Rewards', href: '/rewards' }
                         ].map((action, index) => (
-                          <Link key={index} href={action.href}>
-                            <a 
-                              className={`flex flex-col items-center justify-center py-3 px-2 rounded-lg text-sm text-center transition-all ${
-                                action.primary 
-                                  ? 'bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30' 
-                                  : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
-                              }`}
-                            >
-                              <span className="mb-1">{action.icon}</span>
-                              <span>{action.label}</span>
-                            </a>
+                          <Link 
+                            key={index} 
+                            href={action.href}
+                            className={`flex flex-col items-center justify-center py-3 px-2 rounded-lg text-sm text-center transition-all ${
+                              action.primary 
+                                ? 'bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30' 
+                                : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            <span className="mb-1">{action.icon}</span>
+                            <span>{action.label}</span>
                           </Link>
                         ))}
                       </div>
