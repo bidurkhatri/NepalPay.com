@@ -90,6 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/**
+ * Enhanced auth hook with additional functionality like navigation integration.
+ * Use this when you need the enhanced features like login/logout with navigation.
+ */
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -98,7 +102,10 @@ export const useAuthContext = () => {
   return context;
 };
 
-// Export useAuth as alias to useAuthContext for backward compatibility
+/**
+ * @deprecated Use useAuthContext() for enhanced functionality or import from '@/hooks/use-auth' for basic auth.
+ * This is provided only for backward compatibility.
+ */
 export const useAuth = useAuthContext;
 
 export default AuthContext;
