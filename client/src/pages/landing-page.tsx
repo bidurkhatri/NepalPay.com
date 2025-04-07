@@ -132,11 +132,11 @@ const LandingPage: React.FC = () => {
               NepaliPay is your digital wallet to send money, borrow securely, advertise your business, and earn rewards — powered by blockchain, made for Nepal.
             </p>
             <div className="flex flex-wrap gap-4 justify-center pt-4">
-              <Link href="/login" className="modern-button flex items-center">
+              <Link href="/auth" className="modern-button flex items-center">
                 <Wallet className="mr-2 h-5 w-5" />
                 Connect Wallet
               </Link>
-              <Link href="/login" className="modern-button-outline flex items-center">
+              <Link href="/auth" className="modern-button-outline flex items-center">
                 <Rocket className="mr-2 h-5 w-5" />
                 Try Demo
               </Link>
@@ -375,15 +375,15 @@ const LandingPage: React.FC = () => {
             Join thousands of users already using NepaliPay to save, send, borrow, and grow.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/register" className="modern-button flex items-center">
+            <Link href="/auth" className="modern-button flex items-center">
               <Rocket className="mr-2 h-5 w-5" />
               Create Free Account
             </Link>
-            <Link href="/login" className="modern-button-outline flex items-center">
+            <Link href="/auth" className="modern-button-outline flex items-center">
               <ArrowUpRight className="mr-2 h-5 w-5" />
               Sign In
             </Link>
-            <Link href="/login" className="modern-button-outline flex items-center">
+            <Link href="/auth" className="modern-button-outline flex items-center">
               <Globe className="mr-2 h-5 w-5" />
               Connect Wallet
             </Link>

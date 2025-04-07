@@ -16,7 +16,7 @@ export default function AuthPage() {
   // Use useEffect to handle redirection instead of doing it in render
   useEffect(() => {
     if (user) {
-      setLocation('/');
+      setLocation('/dashboard');
     }
   }, [user, setLocation]);
 

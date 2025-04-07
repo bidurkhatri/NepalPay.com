@@ -12,6 +12,7 @@ import BuyTokensPage from './pages/buy-tokens';
 import PaymentSuccessPage from './pages/payment-success';
 import NotFoundPage from './pages/not-found';
 import HomePage from './pages/home-page';
+import LandingPage from './pages/new-landing-page';
 
 function App() {
   return (
@@ -19,10 +20,11 @@ function App() {
       <AuthProvider>
         <RealTimeProvider>
           <Switch>
+            <Route path="/" component={LandingPage} />
             <Route path="/auth" component={AuthPage} />
+            <ProtectedRoute path="/dashboard" component={HomePage} />
             <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
             <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
-            <ProtectedRoute path="/" component={HomePage} />
             <Route component={NotFoundPage} />
           </Switch>
           <Toaster />

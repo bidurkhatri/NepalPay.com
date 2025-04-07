@@ -37,13 +37,13 @@ const LandingPage: React.FC = () => {
                 </button>
               </div>
               
-              <Link href="/login">
+              <Link href="/auth">
                 <button className="modern-button bg-gradient-to-r from-blue-600 to-blue-500">
                   Login
                 </button>
               </Link>
               
-              <Link href="/register">
+              <Link href="/auth">
                 <button className="modern-button bg-gradient-to-r from-green-600 to-green-500">
                   Get Started
                 </button>
@@ -77,14 +77,14 @@ const LandingPage: React.FC = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
-            <Link href="/register">
+            <Link href="/auth">
               <button className="modern-button bg-gradient-to-r from-green-600 to-green-500 h-12 px-8">
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </button>
             </Link>
             
-            <Link href="/login">
+            <Link href="/auth">
               <button className="modern-button-outline h-12 px-8">
                 Login
               </button>
@@ -235,7 +235,7 @@ const LandingPage: React.FC = () => {
               <p className="text-lg text-gray-300 mb-8 max-w-xl mx-auto">
                 Be part of Nepal's digital financial revolution and take control of your money.
               </p>
-              <Link href="/register">
+              <Link href="/auth">
                 <button className="modern-button bg-gradient-to-r from-green-600 to-green-500 h-12 px-8">
                   Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
