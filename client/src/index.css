@@ -71,6 +71,12 @@ button {
   box-shadow: 0 8px 32px 0 rgba(147, 51, 234, 0.15);
 }
 
+.shadow-glow {
+  box-shadow: 0 10px 50px rgba(147, 51, 234, 0.3),
+              0 4px 20px rgba(147, 51, 234, 0.2),
+              0 0 0 1px rgba(147, 51, 234, 0.1);
+}
+
 .cyber-card {
   position: relative;
   transition: all 0.3s ease-in-out;

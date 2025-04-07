@@ -1,19 +1,46 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownLeft, Smartphone, Zap } from 'lucide-react';
+import { 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Smartphone, 
+  Zap,
+  RefreshCcw,
+  DollarSign,
+  ShieldCheck,
+  BadgePercent,
+  ReceiptText,
+  Wallet,
+  CreditCard
+} from 'lucide-react';
 
-// Using Lucide React icons with custom wrapper functions
-export const SendIcon = (props: React.ComponentProps<typeof ArrowUpRight>) => (
-  <ArrowUpRight {...props} />
-);
+// Outgoing payment icon
+export const SendIcon = ArrowUpRight;
 
-export const ReceiveIcon = (props: React.ComponentProps<typeof ArrowDownLeft>) => (
-  <ArrowDownLeft {...props} />
-);
+// Incoming payment icon
+export const ReceiveIcon = ArrowDownLeft;
 
-export const MobileIcon = (props: React.ComponentProps<typeof Smartphone>) => (
-  <Smartphone {...props} />
-);
+// Mobile/utility payment icon
+export const MobileIcon = Smartphone;
 
-export const ElectricityIcon = (props: React.ComponentProps<typeof Zap>) => (
-  <Zap {...props} />
-);
+// Energy/electricity icon 
+export const ElectricityIcon = Zap;
+
+// Refresh/sync icon
+export const RefreshIcon = RefreshCcw;
+
+// Payment/transaction icon
+export const PaymentIcon = DollarSign;
+
+// Security/collateral icon
+export const SecurityIcon = ShieldCheck;
+
+// Interest/reward icon
+export const RewardIcon = BadgePercent;
+
+// Invoice/bill icon
+export const InvoiceIcon = ReceiptText;
+
+// Wallet/crypto icon
+export const WalletIcon = Wallet;
+
+// Purchase/card payment icon
+export const CardIcon = CreditCard;
