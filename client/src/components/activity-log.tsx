@@ -55,26 +55,42 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
     return <div className={`h-2 w-2 rounded-full ${bgColor} ${ringColor} ${pulseEffect}`}></div>;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+  const formatDate = (dateString: string | undefined) => {
+    // Ensure dateString is valid
+    if (!dateString) return 'N/A';
     
-    if (date.toDateString() === today.toDateString()) {
-      return `Today, ${format(date, 'hh:mm a')}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday, ${format(date, 'hh:mm a')}`;
-    } else {
-      return format(date, 'MMM dd, hh:mm a');
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date in activity log:', dateString);
+        return 'Invalid date';
+      }
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (date.toDateString() === today.toDateString()) {
+        return `Today, ${format(date, 'hh:mm a')}`;
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday, ${format(date, 'hh:mm a')}`;
+      } else {
+        return format(date, 'MMM dd, hh:mm a');
+      }
+    } catch (error) {
+      console.error('Error formatting date in activity log:', error);
+      return 'Date error';
     }
   };
 
   const formatActivityTitle = (activity: Activity) => {
-    let title = activity.details || activity.action;
+    // Use description (new field) or details (legacy field) or action
+    let title = activity.description || activity.details || activity.action;
     
-    // Clean up the action for display if details not provided
-    if (!activity.details) {
+    // Clean up the action for display if description/details not provided
+    if (!activity.description && !activity.details) {
       title = activity.action
         .replace(/_/g, ' ')
         .toLowerCase()

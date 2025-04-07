@@ -48,86 +48,131 @@ const TransactionList: React.FC<TransactionListProps> = ({
     );
   }
 
-  const getTransactionIcon = (type: string, isSender: boolean) => {
-    switch (type) {
-      case 'send':
-        return (
-          <div className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <SendIcon className="text-red-400 h-5 w-5" />
-          </div>
-        );
-      case 'receive':
-        return (
-          <div className="p-2 bg-green-500/20 border border-green-500/30 rounded-lg">
-            <ReceiveIcon className="text-green-400 h-5 w-5" />
-          </div>
-        );
-      case 'deposit':
-      case 'purchase':
-        return (
-          <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-            <ReceiveIcon className="text-blue-400 h-5 w-5" />
-          </div>
-        );
-      case 'withdraw':
-        return (
-          <div className="p-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
-            <SendIcon className="text-orange-400 h-5 w-5" />
-          </div>
-        );
-      case 'loan':
-      case 'repayment':
-      case 'collateral':
-        return (
-          <div className="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-            <ElectricityIcon className="text-purple-400 h-5 w-5" />
-          </div>
-        );
-      default:
-        return (
-          <div className="p-2 bg-primary/20 border border-primary/30 rounded-lg">
-            <SendIcon className="text-primary h-5 w-5" />
-          </div>
-        );
+  const getTransactionIcon = (type: string | undefined, isSender: boolean) => {
+    // Normalize transaction type
+    const normalizedType = type?.toString().toLowerCase() || '';
+    
+    // Send money icon (red)
+    if (normalizedType.includes('send') || normalizedType.includes('transfer')) {
+      return (
+        <div className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <SendIcon className="text-red-400 h-5 w-5" />
+        </div>
+      );
     }
+    
+    // Receive money icon (green)
+    if (normalizedType.includes('receive')) {
+      return (
+        <div className="p-2 bg-green-500/20 border border-green-500/30 rounded-lg">
+          <ReceiveIcon className="text-green-400 h-5 w-5" />
+        </div>
+      );
+    }
+    
+    // Deposit/purchase/topup icon (blue)
+    if (normalizedType.includes('deposit') || normalizedType.includes('purchase') || normalizedType.includes('topup')) {
+      return (
+        <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+          <ReceiveIcon className="text-blue-400 h-5 w-5" />
+        </div>
+      );
+    }
+    
+    // Withdraw icon (orange)
+    if (normalizedType.includes('withdraw')) {
+      return (
+        <div className="p-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+          <SendIcon className="text-orange-400 h-5 w-5" />
+        </div>
+      );
+    }
+    
+    // Loan/repayment/collateral icon (purple)
+    if (normalizedType.includes('loan') || normalizedType.includes('repay') || normalizedType.includes('collateral')) {
+      return (
+        <div className="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+          <ElectricityIcon className="text-purple-400 h-5 w-5" />
+        </div>
+      );
+    }
+    
+    // Utility payment icon
+    if (normalizedType.includes('utility')) {
+      return (
+        <div className="p-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+          <MobileIcon className="text-yellow-400 h-5 w-5" />
+        </div>
+      );
+    }
+    
+    // Default icon
+    return (
+      <div className="p-2 bg-primary/20 border border-primary/30 rounded-lg">
+        <SendIcon className="text-primary h-5 w-5" />
+      </div>
+    );
   };
 
   const getTransactionTitle = (transaction: Transaction) => {
-    // Get transaction type based on our type definition
-    switch (transaction.type) {
-      case 'send':
-        return 'Sent Money';
-      case 'receive':
-        return 'Received Money';
-      case 'deposit':
-        return 'Deposit';
-      case 'withdraw':
-        return 'Withdrawal';
-      case 'loan':
-        return 'Loan';
-      case 'repayment':
-        return 'Loan Repayment';
-      case 'collateral':
-        return 'Collateral';
-      case 'purchase':
-        return 'Token Purchase';
-      default:
-        return transaction.description || 'Transaction';
+    // Normalize transaction type (convert to lowercase for case insensitive comparison)
+    const normalizedType = transaction.type?.toString().toLowerCase() || '';
+    
+    // Map transaction types to friendly titles
+    if (normalizedType.includes('send') || normalizedType.includes('transfer')) {
+      return 'Sent Money';
+    } else if (normalizedType.includes('receive')) {
+      return 'Received Money';
+    } else if (normalizedType.includes('deposit') || normalizedType.includes('topup')) {
+      return 'Deposit';
+    } else if (normalizedType.includes('withdraw')) {
+      return 'Withdrawal';
+    } else if (normalizedType === 'loan') {
+      return 'Loan';
+    } else if (normalizedType.includes('repay')) {
+      return 'Loan Repayment';
+    } else if (normalizedType.includes('collateral')) {
+      return 'Collateral';
+    } else if (normalizedType.includes('purchase')) {
+      return 'Token Purchase';
+    } else if (normalizedType.includes('utility')) {
+      return 'Utility Payment';
+    } else {
+      // Return description if available or fallback to type or generic title
+      return transaction.description || 
+             transaction.type?.toString().replace(/_/g, ' ').toLowerCase()
+               .replace(/\b\w/g, c => c.toUpperCase()) || 
+             'Transaction';
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+  const formatDate = (dateString: string | undefined) => {
+    // Ensure dateString is valid
+    if (!dateString) return 'N/A';
     
-    if (date.toDateString() === today.toDateString()) {
-      return `Today, ${format(date, 'hh:mm a')}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return `Yesterday, ${format(date, 'hh:mm a')}`;
-    } else {
-      return format(date, 'dd MMM, hh:mm a');
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return 'Invalid date';
+      }
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (date.toDateString() === today.toDateString()) {
+        return `Today, ${format(date, 'hh:mm a')}`;
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday, ${format(date, 'hh:mm a')}`;
+      } else {
+        return format(date, 'dd MMM, hh:mm a');
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Date error';
     }
   };
 
@@ -145,20 +190,49 @@ const TransactionList: React.FC<TransactionListProps> = ({
       ) : (
         <div className="divide-y divide-primary/10">
           {transactions.map((transaction) => {
-            // Determine if transaction is outgoing based on type
-            const isSender = transaction.type === 'send' || transaction.type === 'withdraw';
-            const isPositiveAmount = !isSender;
+            // Determine if transaction is outgoing based on type and user context
+            const normalizedType = transaction.type?.toString().toLowerCase() || '';
+            
+            // These transaction types are always outgoing
+            const isOutgoingType = 
+              normalizedType.includes('send') || 
+              normalizedType.includes('transfer') || 
+              normalizedType.includes('withdraw') || 
+              normalizedType.includes('utility');
+              
+            // For TOPUP and other incoming transactions
+            const isIncomingType = 
+              normalizedType.includes('topup') || 
+              normalizedType.includes('receive') || 
+              normalizedType.includes('deposit');
+            
+            // Calculate if transaction is positive or negative for the current user
+            let isPositiveAmount = isIncomingType;
+            
+            // Safely parse the amount
+            let numAmount = 0;
+            try {
+              numAmount = parseFloat(transaction.amount?.toString() || '0');
+              // Check if the amount is a valid number
+              if (isNaN(numAmount)) numAmount = 0;
+            } catch (error) {
+              console.error('Error parsing amount:', error);
+            }
+            
+            // Get currency from transaction or default to NPT
+            const currency = transaction.currency || 'NPT';
+            
             const formattedAmount = isPositiveAmount 
-              ? `+NPR ${parseFloat(transaction.amount.toString()).toFixed(2)}`
-              : `-NPR ${parseFloat(transaction.amount.toString()).toFixed(2)}`;
+              ? `+${currency} ${numAmount.toFixed(2)}`
+              : `-${currency} ${numAmount.toFixed(2)}`;
             
             return (
               <div key={transaction.id} className="px-6 py-4 flex items-center justify-between hover:bg-primary/5 transition-colors group">
                 <div className="flex items-center space-x-4">
-                  {getTransactionIcon(transaction.type, isSender)}
+                  {getTransactionIcon(transaction.type, isOutgoingType)}
                   <div>
                     <p className="font-medium text-white group-hover:text-primary transition-colors duration-300">{getTransactionTitle(transaction)}</p>
-                    <p className="text-sm text-white/60">{formatDate(transaction.timestamp)}</p>
+                    <p className="text-sm text-white/60">{formatDate(transaction.createdAt || transaction.timestamp)}</p>
                   </div>
                 </div>
                 <div className="text-right">

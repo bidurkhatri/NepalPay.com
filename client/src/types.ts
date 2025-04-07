@@ -31,16 +31,25 @@ export interface Wallet {
 
 export interface Transaction {
   id: number;
-  hash: string;
-  from: string;
-  to: string;
-  amount: string;
-  token: string;
-  fee: string;
-  status: 'pending' | 'completed' | 'failed';
-  timestamp: string;
-  type: 'send' | 'receive' | 'deposit' | 'withdraw' | 'loan' | 'repayment' | 'collateral' | 'purchase';
+  senderId?: number;
+  receiverId?: number;
+  amount: string | number;
+  currency?: string;
+  type: string;
+  status: string;
+  note?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  txHash?: string;
+  stripePaymentId?: string;
   description?: string;
+  // Legacy fields for backward compatibility
+  hash?: string;
+  from?: string;
+  to?: string;
+  token?: string;
+  fee?: string;
+  timestamp?: string;
 }
 
 // Collateral and Loans
@@ -119,11 +128,13 @@ export interface ApiResponse<T> {
 // Activity
 export interface Activity {
   id: number;
-  userId: number;
+  userId: number; // matches user_id in database
   action: string;
+  description?: string; // was 'details' in old interface
+  ipAddress?: string; // matches ip_address in database
+  userAgent?: string; // matches user_agent in database
+  createdAt: string; // matches created_at in database
+  // Legacy fields for backward compatibility
   details?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  createdAt: string;
   updatedAt?: string;
 }
