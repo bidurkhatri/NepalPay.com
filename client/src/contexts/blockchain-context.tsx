@@ -254,7 +254,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           const accounts = await web3Provider.listAccounts();
           if (accounts.length > 0) {
             // Get signer and set account
-            const address = accounts[0];
+            const address = accounts[0] as string;
             setAccount(address);
             setUserAddress(address);
             const signer = await web3Provider.getSigner();
@@ -311,7 +311,9 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       disconnectWallet();
     } else {
       // User switched accounts
-      setAccount(accounts[0]);
+      const address = accounts[0] as string;
+      setAccount(address);
+      setUserAddress(address);
       refreshBalances();
     }
   };
@@ -354,7 +356,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
 
       // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const account = accounts[0];
+      const account = accounts[0] as string;
       setAccount(account);
       setUserAddress(account);
       setIsConnected(true);
