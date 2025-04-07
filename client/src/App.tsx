@@ -26,29 +26,87 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RealTimeProvider>
-          <DashboardLayout>
-            <Switch>
-              <Route path="/" component={AdvancedLandingPage} />
-              <Route path="/auth" component={AuthPage} />
-              <ProtectedRoute path="/dashboard" component={HomePage} />
-              <ProtectedRoute path="/wallet" component={HomePage} />
-              <ProtectedRoute path="/send" component={HomePage} />
-              <ProtectedRoute path="/transactions" component={HomePage} />
-              <ProtectedRoute path="/rewards" component={HomePage} />
-              <ProtectedRoute path="/referrals" component={HomePage} />
-              <ProtectedRoute path="/settings" component={HomePage} />
-              <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
-              <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
-              
-              {/* Support Routes */}
-              <Route path="/support" component={SupportPage} />
-              <Route path="/support/faq" component={FAQPage} />
-              <Route path="/support/knowledgebase" component={KnowledgebasePage} />
-              <Route path="/support/contact" component={ContactPage} />
-              
-              <Route component={NotFoundPage} />
-            </Switch>
-          </DashboardLayout>
+          <Switch>
+            <Route path="/">
+              <AdvancedLandingPage />
+            </Route>
+            <Route path="/auth">
+              <AuthPage />
+            </Route>
+            
+            {/* Protected routes with Dashboard Layout */}
+            <ProtectedRoute path="/dashboard">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/wallet">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/send">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/transactions">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/rewards">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/referrals">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/settings">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/buy-tokens">
+              <DashboardLayout>
+                <BuyTokensPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/payment-success">
+              <DashboardLayout>
+                <PaymentSuccessPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            
+            {/* Support Routes */}
+            <ProtectedRoute path="/support">
+              <DashboardLayout>
+                <SupportPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/faq">
+              <DashboardLayout>
+                <FAQPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/knowledgebase">
+              <DashboardLayout>
+                <KnowledgebasePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/contact">
+              <DashboardLayout>
+                <ContactPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            
+            <Route>
+              <NotFoundPage />
+            </Route>
+          </Switch>
           <Toaster />
         </RealTimeProvider>
       </AuthProvider>

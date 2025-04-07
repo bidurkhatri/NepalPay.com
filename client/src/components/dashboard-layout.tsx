@@ -1,19 +1,12 @@
 import React, { ReactNode } from 'react';
 import Sidebar from './sidebar';
 import MobileNavigation from './mobile-navigation';
-import { useAuth } from '@/hooks/use-auth';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
-
-  if (!user) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
