@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { WalletIcon, SendIcon } from '@/lib/icons';
-import { Coins, Home, BarChart3, HelpCircle } from 'lucide-react';
+import { Home, BarChart3, HelpCircle } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   const [location] = useLocation();

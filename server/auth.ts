@@ -26,19 +26,25 @@ export async function hashPassword(password: string): Promise<string> {
 
 /**
  * Compare a password against a stored hash
- * Supports both hashed passwords (format: "hash.salt") and plain text passwords for development
+ * Only processes properly hashed passwords for security (format: "hash.salt")
  */
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  // Handle plain text passwords for development
-  if (!stored.includes('.')) {
-    return supplied === stored;
+  try {
+    // Ensure we're only dealing with properly hashed passwords
+    if (!stored.includes('.')) {
+      console.error('Security warning: Stored password is not properly hashed');
+      return false;
+    }
+    
+    // Handle properly hashed passwords
+    const [hashed, salt] = stored.split('.');
+    const hashedBuf = Buffer.from(hashed, 'hex');
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
   }
-  
-  // Handle properly hashed passwords
-  const [hashed, salt] = stored.split('.');
-  const hashedBuf = Buffer.from(hashed, 'hex');
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 /**
@@ -155,7 +161,7 @@ export function setupAuth(app: Express): void {
   });
 
   app.post('/api/login', (req, res, next) => {
-    passport.authenticate('local', (err, user, info) => {
+    passport.authenticate('local', (err: any, user: Express.User | false, info: { message?: string } | undefined) => {
       if (err) {
         return next(err);
       }
@@ -166,7 +172,7 @@ export function setupAuth(app: Express): void {
         });
       }
       
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) {
           return next(err);
         }

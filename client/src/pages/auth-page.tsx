@@ -17,6 +17,7 @@ export default function AuthPage() {
   useEffect(() => {
     if (user) {
       setLocation('/dashboard');
+      console.log("User authenticated, redirecting to dashboard");
     }
   }, [user, setLocation]);
 
@@ -259,25 +260,27 @@ export default function AuthPage() {
       </div>
       
       {/* CSS for the floating animation */}
-      <style jsx>{`
-        @keyframes float {
-          0% {
-            transform: translateY(0px) translateX(0px);
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes float {
+            0% {
+              transform: translateY(0px) translateX(0px);
+            }
+            25% {
+              transform: translateY(-30px) translateX(10px);
+            }
+            50% {
+              transform: translateY(-10px) translateX(20px);
+            }
+            75% {
+              transform: translateY(-20px) translateX(-10px);
+            }
+            100% {
+              transform: translateY(0px) translateX(0px);
+            }
           }
-          25% {
-            transform: translateY(-30px) translateX(10px);
-          }
-          50% {
-            transform: translateY(-10px) translateX(20px);
-          }
-          75% {
-            transform: translateY(-20px) translateX(-10px);
-          }
-          100% {
-            transform: translateY(0px) translateX(0px);
-          }
-        }
-      `}</style>
+        `
+      }} />
     </div>
   );
 }

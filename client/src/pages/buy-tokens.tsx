@@ -53,13 +53,13 @@ function CheckoutForm({ amount, walletAddress }: { amount: number; walletAddress
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElement />
-      <div className="payment-details-summary">
-        <p>Amount: {amount} USD</p>
-        <p>Wallet Address: {walletAddress}</p>
+      <div className="mt-6 p-4 bg-glass-bg-light rounded-lg border border-border-light backdrop-blur-md">
+        <p className="mb-2 text-text-color"><span className="font-semibold">Amount:</span> ${amount.toFixed(2)} USD</p>
+        <p className="text-text-color"><span className="font-semibold">Wallet Address:</span> {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</p>
       </div>
       <button 
         disabled={isProcessing || !stripe || !elements} 
-        className="payment-button"
+        className="w-full mt-6 px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg relative overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1 disabled:opacity-70 disabled:hover:translate-y-0"
       >
         {isProcessing ? 'Processing...' : 'Pay Now'}
       </button>
@@ -111,7 +111,7 @@ export default function BuyTokensPage() {
 
     try {
       const response = await apiRequest('POST', '/api/create-payment-intent', {
-        amount: Math.round(totalCost * 100), // Convert to cents
+        amount: totalCost, // The server will handle conversion to cents
         walletAddress,
         tokenAmount,
       });
@@ -134,80 +134,114 @@ export default function BuyTokensPage() {
   };
 
   return (
-    <div className="buy-tokens-container">
-      {!showPaymentForm ? (
-        <div className="token-purchase-form">
-          <h1>Buy NPT Tokens</h1>
-          <p>Purchase NPT tokens with your credit/debit card</p>
-          
-          <div className="form-group">
-            <label htmlFor="tokenAmount">Token Amount</label>
-            <input
-              id="tokenAmount"
-              type="number"
-              min="1"
-              value={tokenAmount}
-              onChange={handleAmountChange}
-            />
-          </div>
-          
-          <div className="fee-breakdown">
-            <div className="fee-item">
-              <span>Token Cost</span>
-              <span>${(tokenAmount * tokenPrice).toFixed(2)}</span>
-            </div>
-            <div className="fee-item">
-              <span>Gas Fee</span>
-              <span>${gasFee.toFixed(2)}</span>
-            </div>
-            <div className="fee-item">
-              <span>Service Fee (2%)</span>
-              <span>${serviceFee.toFixed(2)}</span>
-            </div>
-            <div className="fee-item total">
-              <span>Total Cost</span>
-              <span>${totalCost.toFixed(2)}</span>
-            </div>
-          </div>
-          
-          <div className="wallet-info">
-            <h3>Wallet Information</h3>
-            {isConnected ? (
-              <div>
-                <p>Connected Wallet: {`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</p>
+    <div className="min-h-screen p-6 flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Animated background gradients */}
+      <div className="absolute inset-0 bg-background-dark z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
+        <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-gradient-to-tl from-secondary/5 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/3 w-1/2 h-1/2 bg-gradient-to-br from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      </div>
+      
+      <div className="gradient-border w-full max-w-4xl z-10">
+        <div className="glass-card p-8 md:p-12">
+          {!showPaymentForm ? (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary mb-3">
+                  Buy NPT Tokens
+                </h1>
+                <p className="text-text-muted text-lg">
+                  Purchase NPT tokens with your credit/debit card
+                </p>
               </div>
-            ) : (
-              <p>You need to connect your wallet to continue</p>
-            )}
-          </div>
-          
-          <button 
-            onClick={handleContinue}
-            disabled={!tokenAmount || tokenAmount <= 0}
-            className="continue-button"
-          >
-            Continue to Payment
-          </button>
-        </div>
-      ) : (
-        <div className="payment-form-container">
-          <h1>Complete Payment</h1>
-          <p>Please enter your payment information below</p>
-          
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <CheckoutForm amount={totalCost} walletAddress={walletAddress} />
-            </Elements>
+              
+              <div className="form-group mb-8">
+                <label htmlFor="tokenAmount" className="block text-text-color mb-2 font-medium">
+                  Token Amount
+                </label>
+                <div className="relative">
+                  <input
+                    id="tokenAmount"
+                    type="number"
+                    min="1"
+                    value={tokenAmount}
+                    onChange={handleAmountChange}
+                    className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                  />
+                </div>
+              </div>
+              
+              <div className="bg-glass-bg-light border border-border-light rounded-lg p-5 backdrop-blur-md mb-8">
+                <h3 className="text-lg font-semibold mb-4 text-text-color">Fee Breakdown</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-text-muted">Token Cost</span>
+                    <span className="text-text-color font-medium">${(tokenAmount * tokenPrice).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-muted">Gas Fee</span>
+                    <span className="text-text-color font-medium">${gasFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-muted">Service Fee (2%)</span>
+                    <span className="text-text-color font-medium">${serviceFee.toFixed(2)}</span>
+                  </div>
+                  <div className="h-px w-full bg-border-light my-2"></div>
+                  <div className="flex justify-between">
+                    <span className="text-text-color font-semibold">Total Cost</span>
+                    <span className="text-primary font-bold">${totalCost.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-glass-bg-light border border-border-light rounded-lg p-5 backdrop-blur-md mb-8">
+                <h3 className="text-lg font-semibold mb-4 text-text-color">Wallet Information</h3>
+                {isConnected ? (
+                  <div className="text-text-muted">
+                    <p>Connected Wallet: <span className="text-text-color font-medium">{`${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}</span></p>
+                  </div>
+                ) : (
+                  <p className="text-danger-light">You need to connect your wallet to continue</p>
+                )}
+              </div>
+              
+              <button 
+                onClick={handleContinue}
+                disabled={!tokenAmount || tokenAmount <= 0}
+                className="w-full px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg relative overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1 disabled:opacity-70 disabled:hover:translate-y-0"
+              >
+                Continue to Payment
+              </button>
+            </div>
+          ) : (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary mb-3">
+                  Complete Payment
+                </h1>
+                <p className="text-text-muted text-lg">
+                  Please enter your payment information below
+                </p>
+              </div>
+              
+              {clientSecret && (
+                <div className="mb-8">
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <CheckoutForm amount={totalCost} walletAddress={walletAddress} />
+                  </Elements>
+                </div>
+              )}
+              
+              <button 
+                onClick={() => setShowPaymentForm(false)}
+                className="w-full px-8 py-3 bg-glass-bg-light border border-border-light text-text-color font-medium rounded-lg hover:bg-border-light/10 transition-all"
+              >
+                Back to Token Selection
+              </button>
+            </div>
           )}
-          
-          <button 
-            onClick={() => setShowPaymentForm(false)}
-            className="back-button"
-          >
-            Back to Token Selection
-          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
