@@ -1,106 +1,150 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* Reset and Base Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  /* Core color palette - High contrast, sharp, and modern fintech style */
-  --primary-color: #6366f1; /* Indigo-500 */
-  --primary-light: #818cf8; /* Indigo-400 */
-  --primary-dark: #4f46e5;  /* Indigo-600 */
-  --primary-rgb: 99, 102, 241;
-  
-  --secondary-color: #10b981; /* Emerald-500 */
-  --secondary-light: #34d399; /* Emerald-400 */
-  --secondary-dark: #059669;  /* Emerald-600 */
-  --secondary-rgb: 16, 185, 129;
-  
-  --accent-color: #f97316; /* Orange-500 */
-  --accent-light: #fb923c; /* Orange-400 */
-  --accent-dark: #ea580c;  /* Orange-600 */
-  --accent-rgb: 249, 115, 22;
-  
-  --danger-color: #ef4444; /* Red-500 */
-  --danger-light: #f87171; /* Red-400 */
-  --danger-dark: #dc2626;  /* Red-600 */
-  
-  --success-color: #10b981; /* Green-500 */
-  --success-light: #34d399; /* Green-400 */
-  --success-dark: #059669;  /* Green-600 */
-  
-  --warning-color: #f59e0b; /* Amber-500 */
-  --warning-light: #fbbf24; /* Amber-400 */
-  --warning-dark: #d97706;  /* Amber-600 */
-  
-  /* Surfaces & backgrounds */
-  --background-color: #0f172a; /* Slate-900 */
-  --background-light: #1e293b; /* Slate-800 */
-  --background-dark: #020617;  /* Slate-950 */
-  
-  --card-bg: rgba(15, 23, 42, 0.6); /* Slate-900 with opacity */
-  --card-bg-alt: rgba(30, 41, 59, 0.7); /* Slate-800 with opacity */
-  
-  /* Text colors - High contrast for readability */
-  --text-color: #f8fafc; /* Slate-50 */
-  --text-muted: rgba(248, 250, 252, 0.7); /* Slate-50 with opacity */
-  --text-dimmed: rgba(248, 250, 252, 0.5); /* Slate-50 with opacity */
-  --text-disabled: rgba(248, 250, 252, 0.3); /* Slate-50 with opacity */
-  
-  /* Border colors */
-  --border-color: rgba(99, 102, 241, 0.3); /* Indigo-500 with opacity */
-  --border-light: rgba(255, 255, 255, 0.1); /* White with opacity */
-  --border-dark: rgba(255, 255, 255, 0.05); /* White with opacity */
-  
-  /* Glass effect colors */
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-bg-light: rgba(30, 41, 59, 0.7);
-  --glass-border: rgba(99, 102, 241, 0.3);
-  --glass-shadow: rgba(99, 102, 241, 0.15);
-  
-  /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  --font-weight-thin: 300;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
-  
-  /* Spacing system - Consistent spacing using 4px grid */
-  --space-1: 0.25rem; /* 4px */
-  --space-2: 0.5rem;  /* 8px */
-  --space-3: 0.75rem; /* 12px */
-  --space-4: 1rem;    /* 16px */
-  --space-5: 1.25rem; /* 20px */
-  --space-6: 1.5rem;  /* 24px */
-  --space-8: 2rem;    /* 32px */
-  --space-10: 2.5rem; /* 40px */
-  --space-12: 3rem;   /* 48px */
-  --space-16: 4rem;   /* 64px */
-  --space-20: 5rem;   /* 80px */
-  
-  /* Border radius */
-  --radius-sm: 0.25rem;  /* 4px */
-  --radius-md: 0.5rem;   /* 8px */
-  --radius-lg: 0.75rem;  /* 12px */
-  --radius-xl: 1rem;     /* 16px */
-  --radius-2xl: 1.5rem;  /* 24px */
-  --radius-full: 9999px;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 10px rgba(99, 102, 241, 0.15);
-  --shadow-lg: 0 10px 25px rgba(99, 102, 241, 0.2);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.35);
-  
-  /* Animations */
-  --transition-fast: all 0.15s ease;
-  --transition-normal: all 0.3s ease;
-  --transition-slow: all 0.5s ease;
+/* Reset and Base Styles */
+@layer base {
+  :root {
+    /* Shadcn UI Variables */
+    --background: 222 47% 11%;
+    --foreground: 0 0% 100%;
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 240 82% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 80% 39%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 223 47% 11%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 87% 62%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 240 83% 42%;
+    --input: 240 83% 42%;
+    --ring: 240 82% 67%;
+    --radius: 0.75rem;
+
+    /* NepaliPay Custom Variables */
+    --primary-color: hsl(var(--primary));
+    --primary-light: hsl(240, 82%, 77%);
+    --primary-dark: hsl(240, 82%, 57%);
+    --primary-rgb: 99, 102, 241;
+    
+    --secondary-color: hsl(var(--secondary));
+    --secondary-light: hsl(150, 80%, 49%);
+    --secondary-dark: hsl(150, 80%, 29%);
+    --secondary-rgb: 16, 185, 129;
+    
+    --accent-color: hsl(24, 95%, 53%);
+    --accent-light: hsl(24, 95%, 63%);
+    --accent-dark: hsl(24, 95%, 43%);
+    --accent-rgb: 249, 115, 22;
+    
+    --danger-color: hsl(var(--destructive));
+    --danger-light: hsl(0, 87%, 72%);
+    --danger-dark: hsl(0, 87%, 52%);
+    
+    --success-color: hsl(var(--secondary));
+    --success-light: hsl(150, 80%, 49%);
+    --success-dark: hsl(150, 80%, 29%);
+    
+    --warning-color: hsl(38, 92%, 50%);
+    --warning-light: hsl(38, 92%, 60%);
+    --warning-dark: hsl(38, 92%, 40%);
+    
+    /* Surfaces & backgrounds */
+    --background-color: hsl(var(--background));
+    --background-light: hsl(222, 47%, 21%);
+    --background-dark: hsl(222, 47%, 7%);
+    
+    --card-bg: hsl(var(--card) / 0.6);
+    --card-bg-alt: hsl(var(--card) / 0.7);
+    
+    /* Text colors - High contrast for readability */
+    --text-color: hsl(var(--foreground));
+    --text-muted: hsl(var(--muted-foreground));
+    --text-dimmed: hsl(215, 20%, 65%, 0.7);
+    --text-disabled: hsl(215, 20%, 65%, 0.5);
+    
+    /* Border colors */
+    --border-color: hsl(var(--border) / 0.3);
+    --border-light: hsl(0, 0%, 100%, 0.1);
+    --border-dark: hsl(0, 0%, 100%, 0.05);
+    
+    /* Glass effect colors */
+    --glass-bg: hsl(var(--background) / 0.7);
+    --glass-bg-light: hsl(var(--background) / 0.5);
+    --glass-border: hsl(var(--border) / 0.3);
+    --glass-shadow: hsl(var(--primary) / 0.15);
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-weight-thin: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    
+    /* Spacing system - Consistent spacing using 4px grid */
+    --space-1: 0.25rem; /* 4px */
+    --space-2: 0.5rem;  /* 8px */
+    --space-3: 0.75rem; /* 12px */
+    --space-4: 1rem;    /* 16px */
+    --space-5: 1.25rem; /* 20px */
+    --space-6: 1.5rem;  /* 24px */
+    --space-8: 2rem;    /* 32px */
+    --space-10: 2.5rem; /* 40px */
+    --space-12: 3rem;   /* 48px */
+    --space-16: 4rem;   /* 64px */
+    --space-20: 5rem;   /* 80px */
+    
+    /* Border radius */
+    --radius-sm: 0.25rem;  /* 4px */
+    --radius-md: 0.5rem;   /* 8px */
+    --radius-lg: 0.75rem;  /* 12px */
+    --radius-xl: 1rem;     /* 16px */
+    --radius-2xl: 1.5rem;  /* 24px */
+    --radius-full: 9999px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 10px rgba(99, 102, 241, 0.15);
+    --shadow-lg: 0 10px 25px rgba(99, 102, 241, 0.2);
+    --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.35);
+    
+    /* Animations */
+    --transition-fast: all 0.15s ease;
+    --transition-normal: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 20% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 20% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 240 82% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 80% 39%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 223 47% 11%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 87% 62%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 240 83% 42%;
+    --input: 240 83% 42%;
+    --ring: 240 82% 67%;
+  }
 }
 
 body {
