@@ -217,7 +217,29 @@ export function useRealTime(): RealtimeHook {
   // Connect when component mounts or user changes
   useEffect(() => {
     if (user) {
-      connectWebSocket();
+      try {
+        connectWebSocket();
+      } catch (error) {
+        console.error('Error connecting WebSocket:', error);
+        toast({
+          title: 'Connection Error',
+          description: 'Failed to establish real-time connection. Will retry automatically.',
+          variant: 'destructive'
+        });
+        
+        // Try to reconnect after a short delay
+        const reconnectTimer = setTimeout(() => {
+          if (user) {
+            try {
+              connectWebSocket();
+            } catch (reconnectError) {
+              console.error('Error reconnecting WebSocket:', reconnectError);
+            }
+          }
+        }, 3000);
+        
+        return () => clearTimeout(reconnectTimer);
+      }
     } else {
       // Reset data when user logs out
       setData({
@@ -232,7 +254,11 @@ export function useRealTime(): RealtimeHook {
       
       // Close connection if exists
       if (socketRef.current) {
-        socketRef.current.close();
+        try {
+          socketRef.current.close();
+        } catch (error) {
+          console.error('Error closing WebSocket:', error);
+        }
         socketRef.current = null;
       }
     }
@@ -240,24 +266,52 @@ export function useRealTime(): RealtimeHook {
     // Clean up on unmount
     return () => {
       if (socketRef.current) {
-        socketRef.current.close();
+        try {
+          socketRef.current.close();
+        } catch (error) {
+          console.error('Error closing WebSocket on unmount:', error);
+        }
         socketRef.current = null;
       }
     };
-  }, [user, connectWebSocket]);
+  }, [user, connectWebSocket, toast]);
 
   // Function to manually refresh data
   const refreshData = useCallback(() => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN && user) {
-      socketRef.current.send(JSON.stringify({
-        type: 'requestData',
-        userId: user.id
-      }));
-    } else if (user) {
-      // If socket is not connected, try to reconnect
-      connectWebSocket();
+    if (!user) {
+      return;
     }
-  }, [user, connectWebSocket]);
+    
+    try {
+      // Check if the socket is open and ready
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          type: 'requestData',
+          userId: user.id
+        }));
+      } else {
+        // If socket is not connected, try to reconnect
+        connectWebSocket();
+        
+        // Set a small timeout to give the socket time to connect before sending the request
+        setTimeout(() => {
+          if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({
+              type: 'requestData',
+              userId: user.id
+            }));
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: 'Refresh Failed',
+        description: 'Unable to refresh data. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  }, [user, connectWebSocket, toast]);
 
   return {
     isConnected,

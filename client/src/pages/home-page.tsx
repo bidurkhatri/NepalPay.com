@@ -31,7 +31,13 @@ export default function HomePage() {
   // Format NPT balance for display
   const formatBalance = (balance: string | undefined) => {
     if (!balance) return "0.00";
-    return parseFloat(balance).toFixed(2);
+    
+    try {
+      return parseFloat(balance).toFixed(2);
+    } catch (error) {
+      console.error('Error formatting balance:', error);
+      return "0.00";
+    }
   };
   
   const handleRefresh = () => {

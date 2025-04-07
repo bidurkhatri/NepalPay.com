@@ -35,21 +35,31 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
     );
   }
 
-  const getActivityDot = (action: string) => {
+  const getActivityDot = (action: string | undefined) => {
     let bgColor = 'bg-primary/80';
     let ringColor = 'ring-1 ring-primary';
     let pulseEffect = '';
 
-    if (action.includes('LOGIN') || action.includes('REGISTER')) {
-      bgColor = 'bg-green-400';
-      ringColor = 'ring-1 ring-green-500';
-    } else if (action.includes('FAILED')) {
-      bgColor = 'bg-yellow-400';
-      ringColor = 'ring-1 ring-yellow-500';
-      pulseEffect = 'animate-pulse';
-    } else if (action.includes('TRANSACTION')) {
-      bgColor = 'bg-blue-400';
-      ringColor = 'ring-1 ring-blue-500';
+    if (!action) {
+      return <div className={`h-2 w-2 rounded-full ${bgColor} ${ringColor}`}></div>;
+    }
+
+    try {
+      const actionUpper = action.toUpperCase();
+      
+      if (actionUpper.includes('LOGIN') || actionUpper.includes('REGISTER')) {
+        bgColor = 'bg-green-400';
+        ringColor = 'ring-1 ring-green-500';
+      } else if (actionUpper.includes('FAILED')) {
+        bgColor = 'bg-yellow-400';
+        ringColor = 'ring-1 ring-yellow-500';
+        pulseEffect = 'animate-pulse';
+      } else if (actionUpper.includes('TRANSACTION') || actionUpper.includes('PAYMENT')) {
+        bgColor = 'bg-blue-400';
+        ringColor = 'ring-1 ring-blue-500';
+      }
+    } catch (error) {
+      console.error('Error processing activity dot:', error);
     }
 
     return <div className={`h-2 w-2 rounded-full ${bgColor} ${ringColor} ${pulseEffect}`}></div>;
@@ -86,18 +96,27 @@ const ActivityLog: React.FC<ActivityLogProps> = ({
   };
 
   const formatActivityTitle = (activity: Activity) => {
-    // Use description (new field) or details (legacy field) or action
-    let title = activity.description || activity.details || activity.action;
-    
-    // Clean up the action for display if description/details not provided
-    if (!activity.description && !activity.details) {
-      title = activity.action
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, char => char.toUpperCase());
+    if (!activity) {
+      return 'Unknown Activity';
     }
     
-    return title;
+    try {
+      // Use description (new field) or details (legacy field) or action
+      let title = activity.description || activity.details || activity.action;
+      
+      // Clean up the action for display if description/details not provided
+      if (!activity.description && !activity.details && activity.action) {
+        title = activity.action
+          .replace(/_/g, ' ')
+          .toLowerCase()
+          .replace(/\b\w/g, char => char.toUpperCase());
+      }
+      
+      return title || 'Activity';
+    } catch (error) {
+      console.error('Error formatting activity title:', error);
+      return 'Activity';
+    }
   };
 
   return (

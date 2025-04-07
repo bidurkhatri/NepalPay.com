@@ -115,34 +115,43 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
 
   const getTransactionTitle = (transaction: Transaction) => {
-    // Normalize transaction type (convert to lowercase for case insensitive comparison)
-    const normalizedType = transaction.type?.toString().toLowerCase() || '';
+    if (!transaction) {
+      return 'Unknown Transaction';
+    }
     
-    // Map transaction types to friendly titles
-    if (normalizedType.includes('send') || normalizedType.includes('transfer')) {
-      return 'Sent Money';
-    } else if (normalizedType.includes('receive')) {
-      return 'Received Money';
-    } else if (normalizedType.includes('deposit') || normalizedType.includes('topup')) {
-      return 'Deposit';
-    } else if (normalizedType.includes('withdraw')) {
-      return 'Withdrawal';
-    } else if (normalizedType === 'loan') {
-      return 'Loan';
-    } else if (normalizedType.includes('repay')) {
-      return 'Loan Repayment';
-    } else if (normalizedType.includes('collateral')) {
-      return 'Collateral';
-    } else if (normalizedType.includes('purchase')) {
-      return 'Token Purchase';
-    } else if (normalizedType.includes('utility')) {
-      return 'Utility Payment';
-    } else {
-      // Return description if available or fallback to type or generic title
-      return transaction.description || 
-             transaction.type?.toString().replace(/_/g, ' ').toLowerCase()
-               .replace(/\b\w/g, c => c.toUpperCase()) || 
-             'Transaction';
+    try {
+      // Normalize transaction type (convert to lowercase for case insensitive comparison)
+      const normalizedType = transaction.type?.toString().toLowerCase() || '';
+      
+      // Map transaction types to friendly titles
+      if (normalizedType.includes('send') || normalizedType.includes('transfer')) {
+        return 'Sent Money';
+      } else if (normalizedType.includes('receive')) {
+        return 'Received Money';
+      } else if (normalizedType.includes('deposit') || normalizedType.includes('topup')) {
+        return 'Deposit';
+      } else if (normalizedType.includes('withdraw')) {
+        return 'Withdrawal';
+      } else if (normalizedType === 'loan') {
+        return 'Loan';
+      } else if (normalizedType.includes('repay')) {
+        return 'Loan Repayment';
+      } else if (normalizedType.includes('collateral')) {
+        return 'Collateral';
+      } else if (normalizedType.includes('purchase')) {
+        return 'Token Purchase';
+      } else if (normalizedType.includes('utility')) {
+        return 'Utility Payment';
+      } else {
+        // Return description if available or fallback to type or generic title
+        return transaction.description || 
+               (transaction.type ? transaction.type.toString().replace(/_/g, ' ').toLowerCase()
+                 .replace(/\b\w/g, c => c.toUpperCase()) : 'Transaction') || 
+               'Transaction';
+      }
+    } catch (error) {
+      console.error('Error determining transaction title:', error);
+      return 'Transaction';
     }
   };
 
