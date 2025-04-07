@@ -6,60 +6,70 @@ export default {
   theme: {
     extend: {
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "var(--radius-lg)",
+        md: "var(--radius-md)",
+        sm: "var(--radius-sm)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+        full: "var(--radius-full)",
       },
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
+        // Map our CSS custom properties to Tailwind colors
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "var(--primary-color)",
+          light: "var(--primary-light)",
+          dark: "var(--primary-dark)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--secondary-color)",
+          light: "var(--secondary-light)",
+          dark: "var(--secondary-dark)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "var(--accent-color)",
+          light: "var(--accent-light)",
+          dark: "var(--accent-dark)",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        danger: {
+          DEFAULT: "var(--danger-color)",
+          light: "var(--danger-light)",
+          dark: "var(--danger-dark)",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+        success: {
+          DEFAULT: "var(--success-color)",
+          light: "var(--success-light)",
+          dark: "var(--success-dark)",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        warning: {
+          DEFAULT: "var(--warning-color)",
+          light: "var(--warning-light)",
+          dark: "var(--warning-dark)",
+        },
+        background: {
+          DEFAULT: "var(--background-color)",
+          light: "var(--background-light)",
+          dark: "var(--background-dark)",
+        },
+        text: {
+          DEFAULT: "var(--text-color)",
+          muted: "var(--text-muted)",
+          dimmed: "var(--text-dimmed)",
+          disabled: "var(--text-disabled)",
+        },
+        border: {
+          DEFAULT: "var(--border-color)",
+          light: "var(--border-light)",
+          dark: "var(--border-dark)",
+        },
+        glass: {
+          DEFAULT: "var(--glass-bg)",
+          light: "var(--glass-bg-light)",
+          border: "var(--glass-border)",
+          shadow: "var(--glass-shadow)",
+        },
+        card: {
+          DEFAULT: "var(--card-bg)",
+          alt: "var(--card-bg-alt)",
         },
       },
       keyframes: {
