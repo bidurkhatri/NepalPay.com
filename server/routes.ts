@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from './storage';
 import { setupAuth } from './auth';
-import { Transaction } from '@shared/schema';
+import { Transaction, Wallet, Collateral, Loan, Activity } from '@shared/schema';
 
 // Initialize Stripe client
 if (!process.env.STRIPE_SECRET_KEY) {
