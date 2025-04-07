@@ -14,6 +14,12 @@ import NotFoundPage from './pages/not-found';
 import HomePage from './pages/home-page';
 import AdvancedLandingPage from './pages/advanced-landing-page';
 
+// Support Pages
+import SupportPage from './pages/support/support-page';
+import FAQPage from './pages/support/faq-page';
+import KnowledgebasePage from './pages/support/knowledgebase-page';
+import ContactPage from './pages/support/contact-page';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -25,6 +31,13 @@ function App() {
             <ProtectedRoute path="/dashboard" component={HomePage} />
             <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
             <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
+            
+            {/* Support Routes */}
+            <Route path="/support" component={SupportPage} />
+            <Route path="/support/faq" component={FAQPage} />
+            <Route path="/support/knowledgebase" component={KnowledgebasePage} />
+            <Route path="/support/contact" component={ContactPage} />
+            
             <Route component={NotFoundPage} />
           </Switch>
           <Toaster />

@@ -16,6 +16,7 @@
     "test:coverage": "vitest run --coverage && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
     "@jest/globals": "^29.7.0",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",

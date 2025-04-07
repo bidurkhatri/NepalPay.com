@@ -1,0 +1,42 @@
+NepaliPay App Links Structure Table
+Section	Suggested Link	Description
+Initial Landing/Authentication (Not Logged In)		
+Authentication Page	/auth	Login and registration forms
+User Portal (nepalipay.com/sections)		
+Main Navigation		
+Dashboard	/	Main home page after login
+Wallet	/wallet	Detailed balance and transaction history
+Buy Tokens	/buy-tokens	Purchase NPT with credit/debit card via Stripe
+Transactions	/transactions	Full transaction history
+Send	/send	Send NPT to other users/addresses
+Receive	/receive	Shows wallet address and QR code for receiving NPT
+Loans	/loans	Loan management interface
+Additional User Pages		
+Payment Success	/payment-success	Confirmation page after Stripe payment
+Collateral	/collateral	Manage collateral for loans
+Profile	/profile	User profile settings
+Rewards	/rewards	Rewards and cashback management
+Help and Support	/support	Help and support section
+FAQ	/support/faq	Frequently Asked Questions
+Knowledgebase	/support/knowledgebase	Detailed guides and educational content
+Contact Us	/support/contact	Contact form and support contact info
+Settings	/settings	Account settings (notifications, security, etc.)
+Admin Portal (admin.nepalipay.com)		
+Admin Dashboard	/admin	Admin overview page
+Users	/admin/users	User management
+Transactions	/admin/transactions	Transaction monitoring
+Loans	/admin/loans	Loan approval and management
+Collateral	/admin/collateral	Collateral monitoring
+Ads	/admin/ads	Advertisement approval
+Analytics	/admin/analytics	System analytics and metrics
+Settings	/admin/settings	Admin settings
+Superadmin Portal (superadmin.nepalipay.com)		
+Superadmin Dashboard	/superadmin	Superadmin overview page
+Treasury	/superadmin/treasury	Treasury management
+Exchange Rates	/superadmin/exchange-rates	Manage token exchange rates
+Mint	/superadmin/mint	Token minting control
+Burn	/superadmin/burn	Token burning control
+System	/superadmin/system	System parameters
+Admins	/superadmin/admins	Admin user management
+Analytics	/superadmin/analytics	Advanced blockchain analytics
+Fees	/superadmin/fees	Fee structure management

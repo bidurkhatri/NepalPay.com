@@ -20,7 +20,8 @@ import {
   X,
   ChevronRight,
   Gift,
-  Users
+  Users,
+  HelpCircle
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Avatar } from '@/components/ui/avatar';
@@ -95,7 +96,8 @@ export default function HomePage() {
     { icon: <Send className="h-5 w-5" />, label: 'Send & Receive', href: '/send', current: location === '/send' },
     { icon: <BarChart3 className="h-5 w-5" />, label: 'Transactions', href: '/transactions', current: location === '/transactions' },
     { icon: <Gift className="h-5 w-5" />, label: 'Rewards', href: '/rewards', current: location === '/rewards' },
-    { icon: <Users className="h-5 w-5" />, label: 'Referrals', href: '/referrals', current: location === '/referrals' }
+    { icon: <Users className="h-5 w-5" />, label: 'Referrals', href: '/referrals', current: location === '/referrals' },
+    { icon: <HelpCircle className="h-5 w-5" />, label: 'Help & Support', href: '/support', current: location === '/support' || location.startsWith('/support/') }
   ];
 
   return (

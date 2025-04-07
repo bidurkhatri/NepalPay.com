@@ -1,0 +1,88 @@
+Below is a table suggesting the updated link structure for the **Help and Support**, **FAQ**, **Knowledgebase**, and **Contact Us** sections within the NepaliPay app, integrating them into the provided **NepaliPay App Links Structure**. I’ll ensure these links fit logically within the existing framework, particularly under the **User Portal (nepalipay.com/)**, while maintaining consistency with the app’s navigation hierarchy. The table includes all sections from your provided structure, plus the requested additions, with concise descriptions and suggested URLs.
+
+---
+
+### NepaliPay App Links Structure Table
+
+| **Section**                  | **Suggested Link**                  | **Description**                                      |
+|------------------------------|-------------------------------------|-----------------------------------------------------|
+| **Initial Landing/Authentication (Not Logged In)** |                                     |                                                     |
+| Authentication Page          | `/auth`                            | Login and registration forms                        |
+| **User Portal (nepalipay.com/)** |                                     |                                                     |
+| **Main Navigation**          |                                     |                                                     |
+| Dashboard                    | `/`                                | Main home page after login                          |
+| Wallet                       | `/wallet`                          | Detailed balance and transaction history            |
+| Buy Tokens                   | `/buy-tokens`                      | Purchase NPT with credit/debit card via Stripe      |
+| Transactions                 | `/transactions`                    | Full transaction history                            |
+| Send                         | `/send`                            | Send NPT to other users/addresses                   |
+| Receive                      | `/receive`                         | Shows wallet address and QR code for receiving NPT  |
+| Loans                        | `/loans`                           | Loan management interface                           |
+| **Additional User Pages**    |                                     |                                                     |
+| Payment Success              | `/payment-success`                 | Confirmation page after Stripe payment              |
+| Collateral                   | `/collateral`                      | Manage collateral for loans                         |
+| Profile                      | `/profile`                         | User profile settings                               |
+| Rewards                      | `/rewards`                         | Rewards and cashback management                     |
+| **Help and Support**         | `/support`                         | Help and support section                            |
+| **FAQ**                      | `/support/faq`                     | Frequently Asked Questions                          |
+| **Knowledgebase**            | `/support/knowledgebase`           | Detailed guides and educational content             |
+| **Contact Us**               | `/support/contact`                 | Contact form and support contact info               |
+| Settings                     | `/settings`                        | Account settings (notifications, security, etc.)    |
+| **Admin Portal (admin.nepalipay.com)** |                                     |                                                     |
+| Admin Dashboard              | `/admin`                           | Admin overview page                                 |
+| Users                        | `/admin/users`                     | User management                                     |
+| Transactions                 | `/admin/transactions`              | Transaction monitoring                               |
+| Loans                        | `/admin/loans`                     | Loan approval and management                        |
+| Collateral                   | `/admin/collateral`                | Collateral monitoring                               |
+| Ads                          | `/admin/ads`                       | Advertisement approval                              |
+| Analytics                    | `/admin/analytics`                 | System analytics and metrics                        |
+| Settings                     | `/admin/settings`                  | Admin settings                                      |
+| **Superadmin Portal (superadmin.nepalipay.com)** |                                     |                                                     |
+| Superadmin Dashboard         | `/superadmin`                      | Superadmin overview page                            |
+| Treasury                     | `/superadmin/treasury`             | Treasury management                                 |
+| Exchange Rates               | `/superadmin/exchange-rates`       | Manage token exchange rates                         |
+| Mint                         | `/superadmin/mint`                 | Token minting control                               |
+| Burn                         | `/superadmin/burn`                 | Token burning control                               |
+| System                       | `/superadmin/system`               | System parameters                                   |
+| Admins                       | `/superadmin/admins`               | Admin user management                               |
+| Analytics                    | `/superadmin/analytics`            | Advanced blockchain analytics                       |
+| Fees                         | `/superadmin/fees`                 | Fee structure management                            |
+
+---
+
+### Suggested Features for New Sections
+
+#### Help and Support (/support)
+- Live Chat Button
+- Submit Ticket Form
+- View Support Status
+- Link to FAQ
+- Link to Knowledgebase
+- Link to Contact Us
+
+#### FAQ (/support/faq)
+- Search FAQs
+- View Categories: Getting Started, Payments, Loans, Rewards, Ads
+- Expandable Questions: e.g., "How do I add collateral?", "What is NPT?"
+
+#### Knowledgebase (/support/knowledgebase)
+- Browse Topics: Wallet Setup, Loan Basics, Reward Tips, Ad Posting
+- Search Articles
+- View Guides: e.g., "How to Borrow NPT", "Understanding Collateral"
+- Video Tutorials Link
+
+#### Contact Us (/support/contact)
+- Contact Form: Name, Username, Email, Message
+- Support Email: support@nepalipay.com
+- Phone Number: e.g., "+977-1-555-1234"
+- Social Media Links: e.g., Facebook, Twitter
+
+---
+
+### Reasoning for Link Structure
+- **Help and Support (/support)**: Placed as a top-level page under the User Portal, as it’s a primary resource for user assistance, already matching your structure.
+- **FAQ (/support/faq)**: Nested under `/support` for logical grouping, providing quick answers to common queries.
+- **Knowledgebase (/support/knowledgebase)**: Also under `/support`, offering deeper educational content as a sub-resource.
+- **Contact Us (/support/contact)**: Nested under `/support` for direct communication, keeping all help-related pages together.
+- **Consistency**: URLs follow the hierarchical pattern of your existing structure (e.g., `/support/*` mirrors `/admin/*` and `/superadmin/*`).
+
+This table integrates the new sections seamlessly into the User Portal, enhancing user experience while preserving the app’s navigation clarity.
