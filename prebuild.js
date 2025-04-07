@@ -43,15 +43,22 @@ async function copyFile(src, dest) {
 async function main() {
   console.log('Starting prebuild process...');
 
-  // Ensure src directory exists (needed for build)
-  ensureDirectoryExists('src');
+  // Ensure client/src directory exists
+  ensureDirectoryExists('client/src');
 
-  // Copy all files from client/src to src
-  await copyDir('client/src', 'src');
+  // No need to copy files since Vite is configured to look for files in client/src
+  // The issue was we were copying files to src/ but Vite config has root set to client/
   
-  // Copy index.html to root (if it exists in client directory)
+  // Make sure client/index.html refers to the correct main.tsx path
   if (fs.existsSync('client/index.html')) {
-    copyFile('client/index.html', 'index.html');
+    const content = fs.readFileSync('client/index.html', 'utf8');
+    // Make sure the script tag points to ./src/main.tsx relative to client directory
+    const updatedContent = content.replace(
+      '<script type="module" src="/src/main.tsx"></script>',
+      '<script type="module" src="./src/main.tsx"></script>'
+    );
+    fs.writeFileSync('client/index.html', updatedContent);
+    console.log('Updated client/index.html with correct path to main.tsx');
   }
 
   console.log('Prebuild process completed successfully');
