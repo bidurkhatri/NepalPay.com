@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
-import { WalletIcon, CardIcon, PaymentIcon, SendIcon } from '@/lib/icons';
+import { WalletIcon, CardIcon, PaymentIcon, SendIcon, getInitials } from '@/lib/icons';
 import { 
   Coins, 
   LayoutDashboard, 
@@ -18,11 +18,6 @@ const Sidebar: React.FC = () => {
   const [location] = useLocation();
 
   if (!user) return null;
-
-  // Get user initials
-  const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
-  };
 
   const initials = getInitials(user.firstName || '', user.lastName || '');
 

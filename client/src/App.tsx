@@ -14,6 +14,14 @@ import PaymentSuccessPage from './pages/payment-success';
 import NotFoundPage from './pages/not-found';
 import HomePage from './pages/home-page';
 import AdvancedLandingPage from './pages/advanced-landing-page';
+import WalletPage from './pages/wallet';
+import SendPage from './pages/send-page';
+import TransactionsPage from './pages/transactions';
+import RewardsPage from './pages/rewards-page'; 
+import BorrowPage from './pages/borrow-page';
+import AdBazaarPage from './pages/ad-bazaar-page';
+import ProfilePage from './pages/profile';
+import SettingsPage from './pages/settings';
 
 // Support Pages
 import SupportPage from './pages/support/support-page';
@@ -42,47 +50,47 @@ function App() {
             </ProtectedRoute>
             <ProtectedRoute path="/wallet">
               <DashboardLayout>
-                <HomePage />
+                <WalletPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/send">
               <DashboardLayout>
-                <HomePage />
+                <SendPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/transactions">
               <DashboardLayout>
-                <HomePage />
+                <TransactionsPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/rewards">
               <DashboardLayout>
-                <HomePage />
+                <RewardsPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/referrals">
               <DashboardLayout>
-                <HomePage />
+                <RewardsPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/borrow">
               <DashboardLayout>
-                <HomePage />
+                <BorrowPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/ad-bazaar">
               <DashboardLayout>
-                <HomePage />
+                <AdBazaarPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/profile">
               <DashboardLayout>
-                <HomePage />
+                <ProfilePage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/settings">
               <DashboardLayout>
-                <HomePage />
+                <SettingsPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/buy-tokens">

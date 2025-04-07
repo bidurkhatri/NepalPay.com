@@ -9,7 +9,9 @@ import {
   BadgePercent,
   ReceiptText,
   Wallet,
-  CreditCard
+  CreditCard,
+  Bell,
+  Search
 } from 'lucide-react';
 
 // Outgoing payment icon
@@ -44,3 +46,14 @@ export const WalletIcon = Wallet;
 
 // Purchase/card payment icon
 export const CardIcon = CreditCard;
+
+// Notification icon
+export const NotificationIcon = Bell;
+
+// Search icon
+export const SearchIcon = Search;
+
+// Utility function to get user initials from name
+export const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined): string => {
+  return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
+};

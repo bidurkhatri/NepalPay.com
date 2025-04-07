@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
+import { getInitials } from '@/lib/icons';
 import { 
   Home, 
   Wallet, 
@@ -49,12 +50,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return <>{children}</>;
   }
 
-  // User initials for avatar
-  const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
-    if (!firstName && !lastName) return 'NP';
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`;
-  };
-  
+  // Get user initials for avatar
   const userInitials = getInitials(user.firstName || '', user.lastName || '');
 
   return (
