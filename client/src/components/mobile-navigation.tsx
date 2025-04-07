@@ -1,55 +1,37 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { WalletIcon, SendIcon } from '@/lib/icons';
-import { Home, BarChart3, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Wallet, Settings, BadgePercent, Store } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   const [location] = useLocation();
-  
+
+  const menuItems = [
+    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Home' },
+    { href: '/wallet', icon: <Wallet className="h-5 w-5" />, label: 'Wallet' },
+    { href: '/rewards', icon: <BadgePercent className="h-5 w-5" />, label: 'Rewards' },
+    { href: '/ad-bazaar', icon: <Store className="h-5 w-5" />, label: 'Ads' },
+    { href: '/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
+  ];
+
   return (
-    <nav className="md:hidden bg-black/80 backdrop-blur-lg border-t border-primary/20 fixed bottom-0 left-0 right-0 z-10 glass">
-      <div className="grid grid-cols-5">
-        <Link href="/dashboard">
-          <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
-            location === '/dashboard' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
-          }`}>
-            <Home className="h-5 w-5" />
-            <span className="text-xs mt-1">Dashboard</span>
-          </div>
-        </Link>
-        <Link href="/wallet">
-          <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
-            location === '/wallet' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
-          }`}>
-            <WalletIcon className="h-5 w-5" />
-            <span className="text-xs mt-1">Wallet</span>
-          </div>
-        </Link>
-        <div className="flex items-center justify-center">
-          <Link href="/buy-tokens">
-            <div className="bg-gradient-to-tr from-primary to-purple-500 text-white rounded-full p-3 -mt-6 shadow-lg cursor-pointer glow hover:scale-110 transition-all duration-300">
-              <SendIcon className="h-5 w-5" />
+    <div className="fixed inset-x-0 bottom-0 md:hidden border-t border-primary/20 bg-black/90 backdrop-blur-lg">
+      <nav className="flex justify-around">
+        {menuItems.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <div
+              className={`flex flex-col items-center justify-center p-3 ${
+                location === item.href
+                  ? 'text-primary'
+                  : 'text-gray-400'
+              }`}
+            >
+              {item.icon}
+              <span className="text-xs mt-1">{item.label}</span>
             </div>
           </Link>
-        </div>
-        <Link href="/transactions">
-          <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
-            location === '/transactions' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
-          }`}>
-            <BarChart3 className="h-5 w-5" />
-            <span className="text-xs mt-1">History</span>
-          </div>
-        </Link>
-        <Link href="/support">
-          <div className={`flex flex-col items-center justify-center py-3 cursor-pointer transition-all duration-300 ${
-            location === '/support' ? 'text-primary glow' : 'text-gray-400 hover:text-white'
-          }`}>
-            <HelpCircle className="h-5 w-5" />
-            <span className="text-xs mt-1">Support</span>
-          </div>
-        </Link>
-      </div>
-    </nav>
+        ))}
+      </nav>
+    </div>
   );
 };
 

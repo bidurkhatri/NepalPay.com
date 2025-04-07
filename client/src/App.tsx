@@ -5,6 +5,7 @@ import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './hooks/use-auth';
 import { RealTimeProvider } from './contexts/real-time-context';
 import { ProtectedRoute } from './lib/protected-route';
+import DashboardLayout from './components/dashboard-layout';
 
 // Pages
 import AuthPage from './pages/auth-page';
@@ -25,27 +26,29 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RealTimeProvider>
-          <Switch>
-            <Route path="/" component={AdvancedLandingPage} />
-            <Route path="/auth" component={AuthPage} />
-            <ProtectedRoute path="/dashboard" component={HomePage} />
-            <ProtectedRoute path="/wallet" component={HomePage} />
-            <ProtectedRoute path="/send" component={HomePage} />
-            <ProtectedRoute path="/transactions" component={HomePage} />
-            <ProtectedRoute path="/rewards" component={HomePage} />
-            <ProtectedRoute path="/referrals" component={HomePage} />
-            <ProtectedRoute path="/settings" component={HomePage} />
-            <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
-            <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
-            
-            {/* Support Routes */}
-            <Route path="/support" component={SupportPage} />
-            <Route path="/support/faq" component={FAQPage} />
-            <Route path="/support/knowledgebase" component={KnowledgebasePage} />
-            <Route path="/support/contact" component={ContactPage} />
-            
-            <Route component={NotFoundPage} />
-          </Switch>
+          <DashboardLayout>
+            <Switch>
+              <Route path="/" component={AdvancedLandingPage} />
+              <Route path="/auth" component={AuthPage} />
+              <ProtectedRoute path="/dashboard" component={HomePage} />
+              <ProtectedRoute path="/wallet" component={HomePage} />
+              <ProtectedRoute path="/send" component={HomePage} />
+              <ProtectedRoute path="/transactions" component={HomePage} />
+              <ProtectedRoute path="/rewards" component={HomePage} />
+              <ProtectedRoute path="/referrals" component={HomePage} />
+              <ProtectedRoute path="/settings" component={HomePage} />
+              <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
+              <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
+              
+              {/* Support Routes */}
+              <Route path="/support" component={SupportPage} />
+              <Route path="/support/faq" component={FAQPage} />
+              <Route path="/support/knowledgebase" component={KnowledgebasePage} />
+              <Route path="/support/contact" component={ContactPage} />
+              
+              <Route component={NotFoundPage} />
+            </Switch>
+          </DashboardLayout>
           <Toaster />
         </RealTimeProvider>
       </AuthProvider>
