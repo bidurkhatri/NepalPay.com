@@ -28,6 +28,8 @@ type BlockchainContextType = {
   chainId: number | null;
   balance: string;
   tokenBalance: string;
+  nptBalance: string; // NPT Token balance
+  userAddress: string | null; // User wallet address
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
@@ -37,6 +39,7 @@ type BlockchainContextType = {
   sendTokens: (toAddress: string, amount: string) => Promise<string>;
   depositTokens: (amount: string) => Promise<string>;
   withdrawTokens: (amount: string) => Promise<string>;
+  mintTokens: (amount: string) => Promise<string>; // Function to mint NPT tokens
   setUsername: (username: string) => Promise<string>;
   addCollateral: (type: string, amount: string) => Promise<string>;
   takeLoan: (amount: string, collateralId: number) => Promise<string>;
@@ -61,6 +64,8 @@ const defaultContextValue: BlockchainContextType = {
   chainId: null,
   balance: '0',
   tokenBalance: '0',
+  nptBalance: '0',
+  userAddress: null,
   isConnected: false,
   isLoading: false,
   error: null,
@@ -70,6 +75,7 @@ const defaultContextValue: BlockchainContextType = {
   sendTokens: async () => '',
   depositTokens: async () => '',
   withdrawTokens: async () => '',
+  mintTokens: async () => '',
   setUsername: async () => '',
   addCollateral: async () => '',
   takeLoan: async () => '',
@@ -98,6 +104,8 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   const [chainId, setChainId] = useState<number | null>(null);
   const [balance, setBalance] = useState<string>('0');
   const [tokenBalance, setTokenBalance] = useState<string>('0');
+  const [nptBalance, setNptBalance] = useState<string>('0');
+  const [userAddress, setUserAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +165,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       // In demo mode, use hardcoded balances
       setBalance('1000');
       setTokenBalance('5000');
+      setNptBalance('5000');
       return;
     }
 
@@ -171,10 +180,54 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
 
       // Get NPT token balance
       const tokenBalance = await tokenContract.balanceOf(account);
-      setTokenBalance(ethers.formatUnits(tokenBalance, 18));
+      const formattedBalance = ethers.formatUnits(tokenBalance, 18);
+      setTokenBalance(formattedBalance);
+      setNptBalance(formattedBalance);
     } catch (error: any) {
       console.error('Error refreshing balances:', error);
       setError(error.message || 'Error refreshing balances');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+    // Mint tokens function (interacts with server to perform Stripe payment then mint tokens)
+  const mintTokens = async (amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      setTokenBalance((prev) => (parseFloat(prev) + parseFloat(amount)).toString());
+      setNptBalance((prev) => (parseFloat(prev) + parseFloat(amount)).toString());
+      toast({
+        title: 'Tokens Purchased',
+        description: `You have successfully purchased ${amount} NPT tokens`,
+        variant: 'default',
+      });
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!account) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // This would typically connect to a Stripe payment flow
+      // followed by a server-side minting of tokens to the user address
+      // Here we're just showing a toast for now
+      toast({
+        title: 'Processing Purchase',
+        description: 'Redirecting to payment gateway...',
+      });
+      
+      // In a real implementation, redirect to Stripe checkout or handle payment flow
+      // Then server will mint tokens and send to user's wallet
+      window.location.href = `/buy-tokens?amount=${amount}`;
+      
+      return 'processing';
+    } catch (error: any) {
+      console.error('Error minting tokens:', error);
+      throw new Error(error.message || 'Error purchasing tokens');
     } finally {
       setIsLoading(false);
     }
@@ -203,6 +256,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
             // Get signer and set account
             const address = accounts[0];
             setAccount(address);
+            setUserAddress(address);
             const signer = await web3Provider.getSigner();
             setSigner(signer);
             setIsConnected(true);
@@ -220,7 +274,9 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
               signer
             );
             const nptBalance = await tokenContract.balanceOf(accounts[0]);
-            setTokenBalance(ethers.formatUnits(nptBalance, 18));
+            const formattedBalance = ethers.formatUnits(nptBalance, 18);
+            setTokenBalance(formattedBalance);
+            setNptBalance(formattedBalance);
           }
         }
       } catch (error: any) {
@@ -273,10 +329,13 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   // Connect wallet function
   const connectWallet = async () => {
     if (demoMode) {
-      setAccount('0xDemoAddress...1234');
+      const demoAddress = '0xDemoAddress...1234';
+      setAccount(demoAddress);
+      setUserAddress(demoAddress);
       setIsConnected(true);
       setBalance('1000');
       setTokenBalance('5000');
+      setNptBalance('5000');
       return;
     }
 
@@ -297,6 +356,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const account = accounts[0];
       setAccount(account);
+      setUserAddress(account);
       setIsConnected(true);
 
       // Get current chain ID
@@ -338,9 +398,11 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   // Disconnect wallet function
   const disconnectWallet = () => {
     setAccount(null);
+    setUserAddress(null);
     setIsConnected(false);
     setBalance('0');
     setTokenBalance('0');
+    setNptBalance('0');
     
     if (!demoMode) {
       toast({
@@ -417,10 +479,13 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     
     if (!demoMode) {
       // If turning on demo mode, set demo values
-      setAccount('0xDemoAddress...1234');
+      const demoAddress = '0xDemoAddress...1234';
+      setAccount(demoAddress);
+      setUserAddress(demoAddress);
       setIsConnected(true);
       setBalance('1000');
       setTokenBalance('5000');
+      setNptBalance('5000');
       
       toast({
         title: 'Demo Mode Activated',
@@ -430,9 +495,11 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     } else {
       // If turning off demo mode, reset values
       setAccount(null);
+      setUserAddress(null);
       setIsConnected(false);
       setBalance('0');
       setTokenBalance('0');
+      setNptBalance('0');
       
       toast({
         title: 'Demo Mode Deactivated',
@@ -778,6 +845,8 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     chainId,
     balance,
     tokenBalance,
+    nptBalance,
+    userAddress,
     isConnected,
     isLoading,
     error,
@@ -787,6 +856,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     sendTokens,
     depositTokens,
     withdrawTokens,
+    mintTokens,
     setUsername,
     addCollateral,
     takeLoan,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { useBlockchain } from '@/contexts/blockchain-context';
 import { SearchIcon, NotificationIcon } from '@/lib/icons';
 import { getInitials } from '@/lib/icons';
@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dialog";
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { 
     nptBalance, 
     userAddress, 
@@ -153,7 +153,7 @@ const Header: React.FC = () => {
                   </nav>
                   <div className="mt-auto p-4 border-t border-primary/20">
                     <button 
-                      onClick={() => logout()}
+                      onClick={() => logoutMutation.mutate()}
                       className="w-full py-2 px-4 bg-primary/20 hover:bg-primary/30 text-white rounded-md transition-colors"
                     >
                       Logout
@@ -387,7 +387,7 @@ const Header: React.FC = () => {
                     <Link href="/settings">Settings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-primary/20" />
-                  <DropdownMenuItem onClick={() => logout()} className="hover:bg-primary/20 cursor-pointer">
+                  <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="hover:bg-primary/20 cursor-pointer">
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>

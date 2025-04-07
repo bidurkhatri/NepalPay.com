@@ -9,6 +9,7 @@ import DashboardLayout from './components/dashboard-layout';
 
 // Pages
 import AuthPage from './pages/auth-page';
+import LoginPage from './pages/login';
 import BuyTokensPage from './pages/buy-tokens';
 import PaymentSuccessPage from './pages/payment-success';
 import NotFoundPage from './pages/not-found';
@@ -40,6 +41,9 @@ function App() {
             </Route>
             <Route path="/auth">
               <AuthPage />
+            </Route>
+            <Route path="/login">
+              <LoginPage />
             </Route>
             
             {/* Protected routes with Dashboard Layout */}
