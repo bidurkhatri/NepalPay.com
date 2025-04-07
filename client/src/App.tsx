@@ -4,6 +4,7 @@ import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './hooks/use-auth';
 import { RealTimeProvider } from './contexts/real-time-context';
+import { BlockchainProvider } from './contexts/blockchain-context';
 import { ProtectedRoute } from './lib/protected-route';
 import DashboardLayout from './components/dashboard-layout';
 
@@ -34,108 +35,110 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RealTimeProvider>
-          <Switch>
-            <Route path="/">
-              <AdvancedLandingPage />
-            </Route>
-            <Route path="/auth">
-              <AuthPage />
-            </Route>
-            <Route path="/login">
-              <LoginPage />
-            </Route>
+        <BlockchainProvider>
+          <RealTimeProvider>
+            <Switch>
+              <Route path="/">
+                <AdvancedLandingPage />
+              </Route>
+              <Route path="/auth">
+                <AuthPage />
+              </Route>
+              <Route path="/login">
+                <LoginPage />
+              </Route>
             
-            {/* Protected routes with Dashboard Layout */}
-            <ProtectedRoute path="/dashboard">
-              <DashboardLayout>
-                <HomePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/wallet">
-              <DashboardLayout>
-                <WalletPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/send">
-              <DashboardLayout>
-                <SendPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/transactions">
-              <DashboardLayout>
-                <TransactionsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/rewards">
-              <DashboardLayout>
-                <RewardsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/referrals">
-              <DashboardLayout>
-                <RewardsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/borrow">
-              <DashboardLayout>
-                <BorrowPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/ad-bazaar">
-              <DashboardLayout>
-                <AdBazaarPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/profile">
-              <DashboardLayout>
-                <ProfilePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/settings">
-              <DashboardLayout>
-                <SettingsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/buy-tokens">
-              <DashboardLayout>
-                <BuyTokensPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/payment-success">
-              <DashboardLayout>
-                <PaymentSuccessPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            
-            {/* Support Routes */}
-            <ProtectedRoute path="/support">
-              <DashboardLayout>
-                <SupportPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/support/faq">
-              <DashboardLayout>
-                <FAQPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/support/knowledgebase">
-              <DashboardLayout>
-                <KnowledgebasePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            <ProtectedRoute path="/support/contact">
-              <DashboardLayout>
-                <ContactPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-            
-            <Route>
-              <NotFoundPage />
-            </Route>
-          </Switch>
-          <Toaster />
-        </RealTimeProvider>
+              {/* Protected routes with Dashboard Layout */}
+              <ProtectedRoute path="/dashboard">
+                <DashboardLayout>
+                  <HomePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/wallet">
+                <DashboardLayout>
+                  <WalletPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/send">
+                <DashboardLayout>
+                  <SendPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/transactions">
+                <DashboardLayout>
+                  <TransactionsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/rewards">
+                <DashboardLayout>
+                  <RewardsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/referrals">
+                <DashboardLayout>
+                  <RewardsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/borrow">
+                <DashboardLayout>
+                  <BorrowPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/ad-bazaar">
+                <DashboardLayout>
+                  <AdBazaarPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/profile">
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/settings">
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/buy-tokens">
+                <DashboardLayout>
+                  <BuyTokensPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/payment-success">
+                <DashboardLayout>
+                  <PaymentSuccessPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              
+              {/* Support Routes */}
+              <ProtectedRoute path="/support">
+                <DashboardLayout>
+                  <SupportPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/support/faq">
+                <DashboardLayout>
+                  <FAQPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/support/knowledgebase">
+                <DashboardLayout>
+                  <KnowledgebasePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              <ProtectedRoute path="/support/contact">
+                <DashboardLayout>
+                  <ContactPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+              
+              <Route>
+                <NotFoundPage />
+              </Route>
+            </Switch>
+            <Toaster />
+          </RealTimeProvider>
+        </BlockchainProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
