@@ -70,17 +70,16 @@ const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
         {menuItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <div 
-              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md cursor-pointer backdrop-blur-sm transition-all duration-300 ${
-                location === item.href 
-                  ? 'bg-primary/20 text-white glow' 
-                  : 'text-gray-300 hover:bg-primary/10 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </div>
+          <Link key={item.href} 
+            href={item.href}
+            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md cursor-pointer backdrop-blur-sm transition-all duration-300 ${
+              location === item.href 
+                ? 'bg-primary/20 text-white glow' 
+                : 'text-gray-300 hover:bg-primary/10 hover:text-white'
+            }`}
+          >
+            {item.icon}
+            {item.label}
           </Link>
         ))}
       </nav>

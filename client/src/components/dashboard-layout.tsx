@@ -1,12 +1,19 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import Sidebar from './sidebar';
 import MobileNavigation from './mobile-navigation';
+import { useLocation } from 'wouter';
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const [location] = useLocation();
+  
+  useEffect(() => {
+    console.log(`Dashboard Layout rendered at location: ${location}`);
+  }, [location]);
+  
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
