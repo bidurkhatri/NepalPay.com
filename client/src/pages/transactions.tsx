@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useWallet } from '@/contexts/wallet-context';
+import React, { useState, useEffect } from 'react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import MobileNavigation from '@/components/mobile-navigation';
@@ -16,10 +17,42 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
-import { Transaction, TransactionType } from '@/types';
+
+// Define transaction types
+interface Transaction {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  amount: string;
+  currency: string;
+  status: string;
+  type: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+  sender?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  receiver?: {
+    firstName?: string;
+    lastName?: string;
+  };
+}
+
+// Define TransactionType as a string type
+type TransactionType = string;
 
 const TransactionsPage: React.FC = () => {
-  const { transactions, loading } = useWallet();
+  // Fetch transactions using React Query
+  const { data: transactions = [], isLoading: loading } = useQuery({
+    queryKey: ['/api/transactions'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/transactions');
+      return response.json();
+    }
+  });
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<string>('all');
 
@@ -34,7 +67,7 @@ const TransactionsPage: React.FC = () => {
     }).format(date);
   };
 
-  const getTransactionTypeDisplay = (type: TransactionType) => {
+  const getTransactionTypeDisplay = (type: string) => {
     switch(type) {
       case 'TRANSFER': return 'Transfer';
       case 'TOPUP': return 'Top Up';
@@ -52,7 +85,7 @@ const TransactionsPage: React.FC = () => {
     }
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
+  const filteredTransactions = transactions.filter((transaction: Transaction) => {
     // Apply category filter
     if (activeTab !== 'all' && transaction.type !== activeTab) {
       return false;
@@ -133,7 +166,7 @@ const TransactionsPage: React.FC = () => {
 
             {/* Transactions Table */}
             <div className="cyber-card glass rounded-xl overflow-hidden">
-              {loading.transactions ? (
+              {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="mt-4 text-white/60">Loading transactions...</p>
@@ -156,7 +189,7 @@ const TransactionsPage: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredTransactions.map((transaction) => (
+                      {filteredTransactions.map((transaction: Transaction) => (
                         <TableRow 
                           key={transaction.id} 
                           className="border-b border-primary/10 hover:bg-primary/5 transition-colors cursor-pointer"
