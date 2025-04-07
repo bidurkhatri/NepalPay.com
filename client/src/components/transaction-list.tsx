@@ -49,57 +49,71 @@ const TransactionList: React.FC<TransactionListProps> = ({
   }
 
   const getTransactionIcon = (type: string, isSender: boolean) => {
-    if (type === 'TRANSFER') {
-      return isSender ? (
-        <div className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
-          <SendIcon className="text-red-400 text-xl" />
-        </div>
-      ) : (
-        <div className="p-2 bg-green-500/20 border border-green-500/30 rounded-lg">
-          <ReceiveIcon className="text-green-400 text-xl" />
-        </div>
-      );
-    } else if (type === 'TOPUP') {
-      return (
-        <div className="p-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
-          <MobileIcon className="text-orange-400 text-xl" />
-        </div>
-      );
-    } else if (type === 'UTILITY') {
-      return (
-        <div className="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-          <ElectricityIcon className="text-purple-400 text-xl" />
-        </div>
-      );
+    switch (type) {
+      case 'send':
+        return (
+          <div className="p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+            <SendIcon className="text-red-400 h-5 w-5" />
+          </div>
+        );
+      case 'receive':
+        return (
+          <div className="p-2 bg-green-500/20 border border-green-500/30 rounded-lg">
+            <ReceiveIcon className="text-green-400 h-5 w-5" />
+          </div>
+        );
+      case 'deposit':
+      case 'purchase':
+        return (
+          <div className="p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+            <ReceiveIcon className="text-blue-400 h-5 w-5" />
+          </div>
+        );
+      case 'withdraw':
+        return (
+          <div className="p-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+            <SendIcon className="text-orange-400 h-5 w-5" />
+          </div>
+        );
+      case 'loan':
+      case 'repayment':
+      case 'collateral':
+        return (
+          <div className="p-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+            <ElectricityIcon className="text-purple-400 h-5 w-5" />
+          </div>
+        );
+      default:
+        return (
+          <div className="p-2 bg-primary/20 border border-primary/30 rounded-lg">
+            <SendIcon className="text-primary h-5 w-5" />
+          </div>
+        );
     }
-    return (
-      <div className="p-2 bg-primary/20 border border-primary/30 rounded-lg">
-        <SendIcon className="text-primary text-xl" />
-      </div>
-    );
   };
 
   const getTransactionTitle = (transaction: Transaction) => {
-    const currentUser = true; // This would come from auth context in a real app
-
-    if (transaction.type === 'TRANSFER') {
-      if (transaction.senderId && !transaction.receiverId) {
+    // Get transaction type based on our type definition
+    switch (transaction.type) {
+      case 'send':
         return 'Sent Money';
-      } else if (!transaction.senderId && transaction.receiverId) {
+      case 'receive':
         return 'Received Money';
-      } else if (transaction.sender && transaction.receiver) {
-        const isSender = currentUser;
-        return isSender 
-          ? `Sent to ${transaction.receiver.firstName} ${transaction.receiver.lastName}`
-          : `Received from ${transaction.sender.firstName} ${transaction.sender.lastName}`;
-      }
-    } else if (transaction.type === 'TOPUP') {
-      return 'Mobile Recharge';
-    } else if (transaction.type === 'UTILITY') {
-      return transaction.note || 'Utility Payment';
+      case 'deposit':
+        return 'Deposit';
+      case 'withdraw':
+        return 'Withdrawal';
+      case 'loan':
+        return 'Loan';
+      case 'repayment':
+        return 'Loan Repayment';
+      case 'collateral':
+        return 'Collateral';
+      case 'purchase':
+        return 'Token Purchase';
+      default:
+        return transaction.description || 'Transaction';
     }
-    
-    return 'Transaction';
   };
 
   const formatDate = (dateString: string) => {
@@ -131,8 +145,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
       ) : (
         <div className="divide-y divide-primary/10">
           {transactions.map((transaction) => {
-            const isSender = !!transaction.senderId;
-            const isPositiveAmount = !isSender || transaction.type === 'TOPUP';
+            // Determine if transaction is outgoing based on type
+            const isSender = transaction.type === 'send' || transaction.type === 'withdraw';
+            const isPositiveAmount = !isSender;
             const formattedAmount = isPositiveAmount 
               ? `+NPR ${parseFloat(transaction.amount.toString()).toFixed(2)}`
               : `-NPR ${parseFloat(transaction.amount.toString()).toFixed(2)}`;
@@ -143,7 +158,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   {getTransactionIcon(transaction.type, isSender)}
                   <div>
                     <p className="font-medium text-white group-hover:text-primary transition-colors duration-300">{getTransactionTitle(transaction)}</p>
-                    <p className="text-sm text-white/60">{formatDate(transaction.createdAt)}</p>
+                    <p className="text-sm text-white/60">{formatDate(transaction.timestamp)}</p>
                   </div>
                 </div>
                 <div className="text-right">

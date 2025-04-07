@@ -177,25 +177,25 @@ export default function HomePage() {
               <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-3">
                 <Link 
-                  to="/buy-tokens" 
+                  href="/buy-tokens" 
                   className="cyber-btn primary-glass-btn text-center py-2 rounded-lg"
                 >
                   Buy Tokens
                 </Link>
                 <Link 
-                  to="/send" 
+                  href="/send" 
                   className="cyber-btn secondary-glass-btn text-center py-2 rounded-lg"
                 >
                   Send
                 </Link>
                 <Link 
-                  to="/receive" 
+                  href="/receive" 
                   className="cyber-btn secondary-glass-btn text-center py-2 rounded-lg"
                 >
                   Receive
                 </Link>
                 <Link 
-                  to="/loans" 
+                  href="/loans" 
                   className="cyber-btn secondary-glass-btn text-center py-2 rounded-lg"
                 >
                   Loans
