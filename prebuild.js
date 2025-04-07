@@ -46,16 +46,25 @@ async function main() {
   // Ensure client/src directory exists
   ensureDirectoryExists('client/src');
 
-  // No need to copy files since Vite is configured to look for files in client/src
-  // The issue was we were copying files to src/ but Vite config has root set to client/
+  // Revert back to original approach - copy all files to src/
+  // Ensure src directory exists (needed for build)
+  ensureDirectoryExists('src');
+
+  // Copy all files from client/src to src
+  await copyDir('client/src', 'src');
   
-  // Make sure client/index.html refers to the correct main.tsx path
+  // Copy client/index.html to root for development
+  if (fs.existsSync('client/index.html')) {
+    copyFile('client/index.html', 'index.html');
+  }
+
+  // Make sure client/index.html has the original path
   if (fs.existsSync('client/index.html')) {
     const content = fs.readFileSync('client/index.html', 'utf8');
-    // Make sure the script tag points to ./src/main.tsx relative to client directory
+    // Make sure the script tag points to /src/main.tsx 
     const updatedContent = content.replace(
-      '<script type="module" src="/src/main.tsx"></script>',
-      '<script type="module" src="./src/main.tsx"></script>'
+      /<script type="module" src=".*\/main.tsx.*"><\/script>/,
+      '<script type="module" src="/src/main.tsx"></script>'
     );
     fs.writeFileSync('client/index.html', updatedContent);
     console.log('Updated client/index.html with correct path to main.tsx');
