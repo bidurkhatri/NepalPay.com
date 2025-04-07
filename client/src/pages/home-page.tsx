@@ -243,13 +243,7 @@ export default function HomePage() {
         <header className="bg-black/60 backdrop-blur-md border-b border-white/5 lg:border-b-0">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center">
-              <button 
-                onClick={toggleMobileMenu}
-                className="p-2 text-white lg:hidden"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <div className="lg:hidden ml-2 text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">
+              <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">
                 NepaliPay
               </div>
             </div>
@@ -274,6 +268,13 @@ export default function HomePage() {
                   <span className="text-sm font-semibold text-white">{user?.username?.charAt(0).toUpperCase()}</span>
                 </Avatar>
               </div>
+              
+              <button 
+                onClick={toggleMobileMenu}
+                className="p-2 text-white lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </header>

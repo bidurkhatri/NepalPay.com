@@ -29,6 +29,12 @@ function App() {
             <Route path="/" component={AdvancedLandingPage} />
             <Route path="/auth" component={AuthPage} />
             <ProtectedRoute path="/dashboard" component={HomePage} />
+            <ProtectedRoute path="/wallet" component={HomePage} />
+            <ProtectedRoute path="/send" component={HomePage} />
+            <ProtectedRoute path="/transactions" component={HomePage} />
+            <ProtectedRoute path="/rewards" component={HomePage} />
+            <ProtectedRoute path="/referrals" component={HomePage} />
+            <ProtectedRoute path="/settings" component={HomePage} />
             <ProtectedRoute path="/buy-tokens" component={BuyTokensPage} />
             <ProtectedRoute path="/payment-success" component={PaymentSuccessPage} />
             
