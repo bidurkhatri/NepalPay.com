@@ -13,7 +13,7 @@ const HomePage = () => {
       <header className="w-full py-4 px-6 backdrop-blur-sm bg-background/30 border-b border-border/40 fixed top-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">
+            <h1 className="text-2xl font-bold text-primary">
               NepaliPay
             </h1>
           </div>
@@ -38,7 +38,7 @@ const HomePage = () => {
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
                 Your Gateway to Nepal's
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80"> Digital Financial Future</span>
+                <span className="text-primary"> Digital Financial Future</span>
               </h1>
               <p className="text-lg text-foreground/90 mb-8">
                 Experience the power of blockchain technology with NepaliPay - a secure, transparent and efficient platform for all your digital financial needs.
@@ -106,7 +106,7 @@ const HomePage = () => {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80">
+              <h2 className="text-xl font-bold text-primary">
                 NepaliPay
               </h2>
               <p className="text-sm text-foreground/80">Empowering Nepal's Digital Financial Future</p>

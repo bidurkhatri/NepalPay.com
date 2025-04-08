@@ -121,11 +121,6 @@
   --ring: 178 60% 52.9%;
 }
 
-/* Text Gradient */
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400;
-}
-
 /* Dashboard-specific backgrounds */
 .dashboard-background {
   background-image: 
