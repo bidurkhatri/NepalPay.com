@@ -12,7 +12,7 @@ import {
   transactionFeeSchema,
 } from "../shared/schema";
 import { z } from "zod";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { ethers } from "ethers";
 
 // Stripe initialization
@@ -22,7 +22,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-10-16",
+      apiVersion: "2023-10-16" as any,
     })
   : null;
 
@@ -249,8 +249,8 @@ export function registerRoutes(app: Express): Server {
       // Create activity record
       await storage.createActivity({
         user_id: req.user!.id,
-        type: "transaction",
-        description: `Transaction created: ${transaction.type} of ${transaction.amount} ${transaction.asset}`,
+        action: "transaction",
+        description: `Transaction created: ${transaction.type} of ${transaction.amount} ${transaction.currency}`,
       });
       
       res.status(201).json(transaction);
@@ -350,7 +350,7 @@ export function registerRoutes(app: Express): Server {
       // Create activity record for loan request
       await storage.createActivity({
         user_id: req.user!.id,
-        type: "loan",
+        action: "loan",
         description: `Loan requested: ${loan.amount} with collateral: ${collateral.type} ${collateral.amount}`,
       });
       
@@ -391,7 +391,7 @@ export function registerRoutes(app: Express): Server {
       // Create activity record for loan status change
       await storage.createActivity({
         user_id: loan.user_id,
-        type: "loan",
+        action: "loan",
         description: `Loan ID ${loanId} status changed to: ${req.body.status}`,
       });
       
@@ -627,18 +627,18 @@ export function registerRoutes(app: Express): Server {
           await storage.createTransaction({
             type: "deposit",
             amount: (paymentIntent.amount / 100).toString(), // Convert from cents
-            asset: "NPT",
+            currency: "NPT",
             status: "completed",
             receiver_id: userId,
             sender_id: null, // System transaction
-            hash: paymentIntent.id,
+            tx_hash: paymentIntent.id,
             description: `Deposit via Stripe payment`,
           });
           
           // Create activity record
           await storage.createActivity({
             user_id: userId,
-            type: "transaction",
+            action: "transaction",
             description: `Deposit of ${paymentIntent.amount / 100} via Stripe payment`,
           });
         }
@@ -655,7 +655,7 @@ export function registerRoutes(app: Express): Server {
           // Create activity record for failed payment
           await storage.createActivity({
             user_id: userId,
-            type: "transaction",
+            action: "transaction",
             description: `Failed payment via Stripe: ${failedPaymentIntent.id}`,
           });
         }
@@ -672,7 +672,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/admin/users", isAdmin, async (req: Request, res: Response) => {
     try {
       // In a real application, this would include pagination
-      const allUsers = await db.select().from(users).execute();
+      const allUsers = await storage.getAllUsers();
       
       // Remove sensitive information
       const safeUsers = allUsers.map(user => {
@@ -693,13 +693,7 @@ export function registerRoutes(app: Express): Server {
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
       // Get all transactions with pagination
-      const allTransactions = await db
-        .select()
-        .from(transactions)
-        .orderBy(desc(transactions.created_at))
-        .limit(limit)
-        .offset(offset)
-        .execute();
+      const allTransactions = await storage.getAllTransactions(limit, offset);
       
       res.status(200).json(allTransactions);
     } catch (error) {
@@ -714,13 +708,7 @@ export function registerRoutes(app: Express): Server {
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
       // Get all loans with pagination
-      const allLoans = await db
-        .select()
-        .from(loans)
-        .orderBy(desc(loans.created_at))
-        .limit(limit)
-        .offset(offset)
-        .execute();
+      const allLoans = await storage.getAllLoans(limit, offset);
       
       res.status(200).json(allLoans);
     } catch (error) {

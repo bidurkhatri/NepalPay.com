@@ -7,6 +7,7 @@ import {
   varchar,
   boolean,
   integer,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -62,16 +63,18 @@ export const walletsRelations = relations(wallets, ({ one }) => ({
 // Transaction model
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
-  type: varchar("type", { length: 50 }).notNull(), // deposit, withdrawal, transfer, payment, fee, loan, collateral
-  amount: varchar("amount", { length: 50 }).notNull(),
-  asset: varchar("asset", { length: 20 }).notNull().default("NPT"),
-  hash: varchar("hash", { length: 66 }).unique(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, completed, failed
-  description: text("description"),
   sender_id: integer("sender_id").references(() => users.id, { onDelete: "set null" }),
   receiver_id: integer("receiver_id").references(() => users.id, { onDelete: "set null" }),
-  created_at: timestamp("created_at").defaultNow(),
+  amount: text("amount").notNull(),
+  type: text("type").notNull(),
+  status: text("status").notNull().default("COMPLETED"),
+  note: text("note"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  tx_hash: text("tx_hash"),
+  stripe_payment_id: text("stripe_payment_id"),
+  currency: text("currency").default("NPT"),
   updated_at: timestamp("updated_at").defaultNow(),
+  description: text("description"),
 });
 
 // Transaction relations
@@ -94,9 +97,11 @@ export const activities = pgTable("activities", {
   user_id: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 20 }).notNull(), // loan, collateral, login, wallet_connect, transaction, kyc_update, account_update
+  action: text("action").notNull(),
   description: text("description"),
-  created_at: timestamp("created_at").defaultNow(),
+  ip_address: text("ip_address"),
+  created_at: timestamp("created_at").notNull().defaultNow(),
+  user_agent: text("user_agent"),
 });
 
 // Activity relations
@@ -179,28 +184,22 @@ export const adsRelations = relations(ads, ({ one }) => ({
 }));
 
 // Zod schema for user insertion
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  created_at: true,
-  updated_at: true,
-});
+export const insertUserSchema = createInsertSchema(users);
 
 // Zod schema for wallet insertion
-export const insertWalletSchema = createInsertSchema(wallets).omit({
-  id: true,
-  user_id: true,
-  is_primary: true,
-  created_at: true,
-  updated_at: true,
+export const insertWalletSchema = createInsertSchema(wallets).extend({
+  is_primary: z.boolean().optional().default(false),
 });
 
 // Zod schema for transaction insertion
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
-  id: true,
-  sender_id: true,
-  status: true,
-  created_at: true,
-  updated_at: true,
+export const insertTransactionSchema = createInsertSchema(transactions).extend({
+  type: z.string().optional(),
+  status: z.string().optional().default("COMPLETED"),
+  amount: z.string().optional(),
+  currency: z.string().optional().default("NPT"),
+  tx_hash: z.string().optional(),
+  description: z.string().optional(),
+  receiver_id: z.number().optional(),
 });
 
 // Zod schema for transaction with fees
@@ -210,36 +209,24 @@ export const transactionFeeSchema = insertTransactionSchema.extend({
 });
 
 // Zod schema for activity insertion
-export const insertActivitySchema = createInsertSchema(activities).omit({
-  id: true,
-  created_at: true,
+export const insertActivitySchema = createInsertSchema(activities).extend({
+  description: z.string().optional(),
 });
 
 // Zod schema for collateral insertion
-export const insertCollateralSchema = createInsertSchema(collaterals).omit({
-  id: true,
-  user_id: true,
-  loan_id: true,
-  created_at: true,
-  updated_at: true,
+export const insertCollateralSchema = createInsertSchema(collaterals).extend({
+  type: z.string().optional(),
 });
 
 // Zod schema for loan insertion
-export const insertLoanSchema = createInsertSchema(loans).omit({
-  id: true,
-  user_id: true,
-  status: true,
-  created_at: true,
-  updated_at: true,
+export const insertLoanSchema = createInsertSchema(loans).extend({
+  status: z.string().optional().default("pending"),
 });
 
 // Zod schema for ad insertion
-export const insertAdSchema = createInsertSchema(ads).omit({
-  id: true,
-  user_id: true,
-  status: true,
-  created_at: true,
-  updated_at: true,
+export const insertAdSchema = createInsertSchema(ads).extend({
+  status: z.string().optional().default("active"),
+  expires_at: z.date().optional().default(() => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
 });
 
 // TypeScript types

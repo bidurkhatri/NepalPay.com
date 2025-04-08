@@ -36,6 +36,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByWalletAddress(walletAddress: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(insertUser: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<Omit<User, "id">>): Promise<User | undefined>;
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
@@ -144,6 +145,15 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting user by wallet address:", error);
       return undefined;
+    }
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      return [];
     }
   }
 
@@ -322,7 +332,7 @@ export class DatabaseStorage implements IStorage {
       const [transaction] = await db
         .select()
         .from(transactions)
-        .where(eq(transactions.hash, hash));
+        .where(eq(transactions.tx_hash, hash));
       return transaction;
     } catch (error) {
       console.error("Error getting transaction by hash:", error);
@@ -373,6 +383,20 @@ export class DatabaseStorage implements IStorage {
         .offset(offset);
     } catch (error) {
       console.error("Error getting transactions by receiver id:", error);
+      return [];
+    }
+  }
+  
+  async getAllTransactions(limit = 50, offset = 0): Promise<Transaction[]> {
+    try {
+      return await db
+        .select()
+        .from(transactions)
+        .orderBy(desc(transactions.created_at))
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      console.error("Error getting all transactions:", error);
       return [];
     }
   }
@@ -549,6 +573,20 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(loans.user_id, userId), eq(loans.status, "active")));
     } catch (error) {
       console.error("Error getting active loans by user id:", error);
+      return [];
+    }
+  }
+  
+  async getAllLoans(limit = 50, offset = 0): Promise<Loan[]> {
+    try {
+      return await db
+        .select()
+        .from(loans)
+        .orderBy(desc(loans.created_at))
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      console.error("Error getting all loans:", error);
       return [];
     }
   }

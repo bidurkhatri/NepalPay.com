@@ -29,8 +29,8 @@ async function startServer() {
     // Register API routes
     httpServer = registerRoutes(app);
 
-    // Start server on port 3000 or environment variable PORT
-    const PORT = parseInt(process.env.PORT || "3000");
+    // Start server on port 5000 or environment variable PORT
+    const PORT = parseInt(process.env.PORT || "5000");
     httpServer.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://0.0.0.0:${PORT}`);
     });
