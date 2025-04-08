@@ -112,7 +112,7 @@ const Dashboard: React.FC = () => {
             {/* Page Heading with NPT Token */}
             <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
+                <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
                 <p className="text-gray-400 mt-1">Welcome back, manage your finances with blockchain security</p>
               </div>
               <div className="mt-4 md:mt-0 flex items-center space-x-2">

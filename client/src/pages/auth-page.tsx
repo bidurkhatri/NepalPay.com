@@ -72,7 +72,7 @@ const AuthPage = () => {
       <div className="w-full md:w-1/2 p-6 md:p-12 flex items-center justify-center bg-background">
         <Card className="w-full max-w-md backdrop-blur-md bg-card/30 border border-border/30 shadow-lg">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">
+            <CardTitle className="text-2xl font-bold text-primary">
               NepaliPay
             </CardTitle>
             <CardDescription>
@@ -193,7 +193,7 @@ const AuthPage = () => {
         <div className="max-w-lg mx-auto space-y-8">
           <div className="text-center md:text-left">
             <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">NepaliPay</span>
+              Welcome to <span className="text-primary">NepaliPay</span>
             </h1>
             <p className="text-muted-foreground mb-8">
               The next-generation blockchain-based payment platform for Nepal.
