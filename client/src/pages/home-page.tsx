@@ -24,7 +24,7 @@ const HomePage = () => {
               </Link>
             ) : (
               <Link href="/auth">
-                <Button>Get Started <ArrowRight className="ml-1 h-4 w-4" /></Button>
+                <Button>Login / Create Account <ArrowRight className="ml-1 h-4 w-4" /></Button>
               </Link>
             )}
           </div>
@@ -46,7 +46,7 @@ const HomePage = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/auth">
                   <Button size="lg" className="w-full sm:w-auto">
-                    Create Account
+                    Login / Create Account
                   </Button>
                 </Link>
                 <Link href="/support">
@@ -116,7 +116,7 @@ const HomePage = () => {
                 <Button variant="ghost" size="sm" className="text-foreground/90">Support</Button>
               </Link>
               <Link href="/auth">
-                <Button variant="ghost" size="sm" className="text-foreground/90">Login</Button>
+                <Button variant="ghost" size="sm" className="text-foreground/90">Login / Create Account</Button>
               </Link>
             </div>
           </div>
