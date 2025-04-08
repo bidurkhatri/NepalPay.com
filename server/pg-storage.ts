@@ -2,9 +2,10 @@ import { IStorage } from './storage';
 import { db, pgPool, getSchemaDetails } from './db';
 import connectPgSimple from 'connect-pg-simple';
 import session from 'express-session';
-import { eq, and, or, desc } from 'drizzle-orm';
+import { eq, and, or, desc, sql } from 'drizzle-orm';
 import * as schema from '../shared/schema';
 
+// Import schemas
 const {
   users,
   wallets,
@@ -12,7 +13,9 @@ const {
   activities,
   collaterals,
   loans,
-  ads
+  ads,
+  tokenPurchases,
+  transactionFees
 } = schema;
 
 type User = typeof schema.users.$inferSelect;
@@ -29,6 +32,10 @@ type Loan = typeof schema.loans.$inferSelect;
 type InsertLoan = typeof schema.insertLoanSchema._type;
 type Ad = typeof schema.ads.$inferSelect;
 type InsertAd = typeof schema.insertAdSchema._type;
+type TokenPurchase = typeof schema.tokenPurchases.$inferSelect;
+type InsertTokenPurchase = typeof schema.insertTokenPurchaseSchema._type;
+type TransactionFee = typeof schema.transactionFees.$inferSelect;
+type InsertTransactionFee = typeof schema.insertTransactionFeeSchema._type;
 
 /**
  * PostgreSQL Storage Implementation
@@ -457,6 +464,142 @@ export class PgStorage implements IStorage {
       .where(eq(ads.id, id))
       .returning();
     return result[0];
+  }
+  
+  // ====== Token Purchase Methods ======
+
+  async getTokenPurchase(id: number): Promise<TokenPurchase | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(tokenPurchases).where(eq(tokenPurchases.id, id));
+    return result[0];
+  }
+
+  async getTokenPurchaseByPaymentIntent(paymentIntentId: string): Promise<TokenPurchase | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.select().from(tokenPurchases).where(eq(tokenPurchases.stripePaymentIntentId, paymentIntentId));
+    return result[0];
+  }
+
+  async getTokenPurchasesByUserId(userId: number): Promise<TokenPurchase[]> {
+    await this.ensureDbInitialized();
+    return await db.select().from(tokenPurchases).where(eq(tokenPurchases.userId, userId));
+  }
+
+  async createTokenPurchase(purchaseData: InsertTokenPurchase): Promise<TokenPurchase> {
+    await this.ensureDbInitialized();
+    const result = await db.insert(tokenPurchases).values(purchaseData).returning();
+    return result[0];
+  }
+
+  async updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.update(tokenPurchases)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase | undefined> {
+    await this.ensureDbInitialized();
+    const result = await db.update(tokenPurchases)
+      .set({
+        txHash,
+        updatedAt: new Date()
+      })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // ====== Transaction Fee Methods ======
+
+  async getTransactionFee(): Promise<TransactionFee | undefined> {
+    await this.ensureDbInitialized();
+    // Get the most recent transaction fee
+    const result = await db.select().from(transactionFees)
+      .orderBy(desc(transactionFees.updatedAt))
+      .limit(1);
+    return result[0];
+  }
+
+  async upsertTransactionFee(feeData: InsertTransactionFee): Promise<TransactionFee> {
+    await this.ensureDbInitialized();
+    
+    // Check if a record exists for this token amount
+    const existingFee = await db.select().from(transactionFees)
+      .where(eq(transactionFees.tokenAmount, feeData.tokenAmount));
+    
+    if (existingFee.length > 0) {
+      // Update existing record
+      const result = await db.update(transactionFees)
+        .set({
+          ...feeData,
+          updatedAt: new Date()
+        })
+        .where(eq(transactionFees.id, existingFee[0].id))
+        .returning();
+      return result[0];
+    } else {
+      // Insert new record
+      const result = await db.insert(transactionFees).values(feeData).returning();
+      return result[0];
+    }
+  }
+
+  // ====== Additional Helper Methods ======
+
+  async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
+    await this.ensureDbInitialized();
+    return await this.getUserTransactions(userId);
+  }
+
+  async updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined> {
+    await this.ensureDbInitialized();
+    return await this.updateTransaction(id, { status });
+  }
+
+  async getActivitiesByUserId(userId: number): Promise<Activity[]> {
+    await this.ensureDbInitialized();
+    return await this.getUserActivities(userId);
+  }
+
+  async getLoansByUserId(userId: number): Promise<Loan[]> {
+    await this.ensureDbInitialized();
+    return await this.getUserLoans(userId);
+  }
+
+  async updateLoanStatus(id: number, status: string): Promise<Loan | undefined> {
+    await this.ensureDbInitialized();
+    return await this.updateLoan(id, { status });
+  }
+
+  async updateLoanRepaidAmount(id: number, repaidAmount: number): Promise<Loan | undefined> {
+    await this.ensureDbInitialized();
+    return await this.updateLoan(id, { repaidAmount });
+  }
+
+  async getCollateralsByUserId(userId: number): Promise<Collateral[]> {
+    await this.ensureDbInitialized();
+    return await this.getUserCollaterals(userId);
+  }
+
+  async updateCollateralLockStatus(id: number, isLocked: boolean): Promise<Collateral | undefined> {
+    await this.ensureDbInitialized();
+    return await this.updateCollateral(id, { isLocked });
+  }
+
+  async getAdsByUserId(userId: number): Promise<Ad[]> {
+    await this.ensureDbInitialized();
+    return await this.getUserAds(userId);
+  }
+
+  async updateAdStatus(id: number, isActive: boolean): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    return await this.updateAd(id, { isActive });
   }
   
   // ====== Demo Data ======
