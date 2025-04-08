@@ -1,82 +1,75 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient } from "@tanstack/react-query";
 
-// Default retry function that excludes 401, 403 errors and others that shouldn't be retried
-function defaultRetryFn(failureCount: number, error: unknown) {
-  if (
-    error instanceof Error &&
-    typeof error.message === 'string' &&
-    (error.message.includes('401') || error.message.includes('403'))
-  ) {
-    return false;
+/**
+ * Creates a new client-side API request
+ * 
+ * @param method The HTTP method to use
+ * @param path The API path
+ * @param body The request body, if any
+ * @param options Additional fetch options
+ * @returns A promise resolving to the fetch response
+ */
+export async function apiRequest(
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  path: string,
+  body?: any,
+  options: RequestInit = {}
+): Promise<Response> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  const config: RequestInit = {
+    method,
+    headers,
+    credentials: "include",
+    ...options,
+  };
+
+  if (body !== undefined) {
+    config.body = JSON.stringify(body);
   }
-  return failureCount < 3;
+
+  return fetch(path, config);
 }
 
-// Create a client with global defaults
+/**
+ * Function for fetching data in TanStack Query
+ * Handles API error responses and provides typed data
+ */
+export const defaultFetcher = async ({ 
+  queryKey,
+  signal
+}: {
+  queryKey: readonly unknown[];
+  signal?: AbortSignal;
+}) => {
+  if (!Array.isArray(queryKey) || !queryKey.length) {
+    throw new Error("Invalid queryKey");
+  }
+
+  const endpoint = queryKey[0] as string;
+  const res = await apiRequest("GET", endpoint, undefined, { signal });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || `Error ${res.status}: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
+/**
+ * TanStack Query client with default configuration
+ */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: defaultRetryFn,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5 // 5 minutes
+      queryFn: defaultFetcher,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      retryDelay: 1000,
     },
-    mutations: {
-      retry: defaultRetryFn
-    }
-  }
+  },
 });
-
-/**
- * The apiRequest is a wrapper around fetch that sets the
- * credentials and headers correctly.
- */
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown
-): Promise<Response> {
-  const options: RequestInit = {
-    method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  };
-
-  if (data && method !== 'GET') {
-    options.body = JSON.stringify(data);
-  }
-
-  const response = await fetch(url, options);
-  
-  if (response.status === 401) {
-    throw new Error('401: Unauthorized');
-  }
-  
-  if (response.status === 403) {
-    throw new Error('403: Forbidden');
-  }
-  
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({ message: 'Unknown error' }));
-    throw new Error(`${response.status}: ${errorJson.message || 'Unknown error'}`);
-  }
-  
-  return response;
-}
-
-// QueryFn that uses apiRequest 
-export function getQueryFn({ on401 = 'throw' }: { on401?: 'throw' | 'returnNull' } = {}) {
-  return async ({ queryKey }: { queryKey: string | string[] }) => {
-    try {
-      const url = Array.isArray(queryKey) ? queryKey[0] : queryKey;
-      const response = await apiRequest('GET', url);
-      return await response.json();
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('401') && on401 === 'returnNull') {
-        return null;
-      }
-      throw error;
-    }
-  };
-}

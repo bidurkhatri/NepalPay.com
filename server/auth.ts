@@ -1,87 +1,92 @@
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import { Express } from 'express';
-import session from 'express-session';
-import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
-import { promisify } from 'util';
-import { storage } from './storage';
-import { User as SelectUser } from '@shared/schema';
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Express, Request, Response, NextFunction } from "express";
+import session from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { storage } from "./storage";
+import { User } from "../shared/schema";
+import dotenv from "dotenv";
 
+// Load environment variables
+dotenv.config();
+
+// Extend Express types to include user
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends User {}
   }
 }
 
+// Convert callback-based scrypt to Promise-based
 const scryptAsync = promisify(scrypt);
 
 /**
  * Hash a password using scrypt with a random salt
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString('hex');
+  const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString('hex')}.${salt}`;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
 /**
- * Compare a password against a stored hash
- * Only processes properly hashed passwords for security (format: "hash.salt")
+ * Compare a provided password against a stored hash
  */
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  try {
-    // Ensure we're only dealing with properly hashed passwords
-    if (!stored.includes('.')) {
-      console.error('Security warning: Stored password is not properly hashed');
-      return false;
-    }
-    
-    // Handle properly hashed passwords
-    const [hashed, salt] = stored.split('.');
-    const hashedBuf = Buffer.from(hashed, 'hex');
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } catch (error) {
-    console.error('Password comparison error:', error);
-    return false;
+  if (!stored || !stored.includes('.')) {
+    return false; // Malformed stored password
   }
+
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 /**
- * Set up authentication routes and passport configuration
+ * Set up authentication middleware and routes
  */
 export function setupAuth(app: Express): void {
-  // Configure session middleware
+  // Session configuration
+  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString("hex");
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'nepalipay-session-secret',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
   };
 
+  // Set up session middleware
+  app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure passport to use local strategy
+  // Configure passport with local strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // Find user by username
         const user = await storage.getUserByUsername(username);
+        
         if (!user) {
-          return done(null, false, { message: 'Invalid username or password' });
+          return done(null, false, { message: "Invalid username or password" });
         }
         
-        const isPasswordValid = await comparePasswords(password, user.password);
-        if (!isPasswordValid) {
-          return done(null, false, { message: 'Invalid username or password' });
+        // Verify password
+        const passwordValid = await comparePasswords(password, user.password);
+        
+        if (!passwordValid) {
+          return done(null, false, { message: "Invalid username or password" });
         }
         
+        // Authentication successful
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -89,125 +94,176 @@ export function setupAuth(app: Express): void {
     })
   );
 
-  // Configure serialization and deserialization of users
+  // Serialize user to session
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
+  // Deserialize user from session
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
-      }
       done(null, user);
     } catch (error) {
-      done(error, null);
+      done(error);
     }
   });
 
-  // Authentication routes
-  app.post('/api/register', async (req, res, next) => {
+  // === Authentication Routes ===
+
+  // Register new user
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, email, password, firstName, lastName, walletAddress } = req.body;
-      
-      // Validate required fields
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
-      }
-      
-      // Check if username is already taken
-      const existingUser = await storage.getUserByUsername(username);
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
+        return res.status(400).json({ error: "Username already exists" });
       }
-      
-      // Check if email is already taken (if provided)
-      if (email) {
-        const existingEmail = await storage.getUserByEmail(email);
-        if (existingEmail) {
-          return res.status(400).json({ message: 'Email already in use' });
-        }
+
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(req.body.email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "Email already exists" });
       }
-      
+
       // Hash the password
-      const hashedPassword = await hashPassword(password);
-      
-      // Create the user
-      const newUser = await storage.createUser({
-        username,
-        email,
+      const hashedPassword = await hashPassword(req.body.password);
+
+      // Create new user with hashed password
+      const user = await storage.createUser({
+        ...req.body,
         password: hashedPassword,
-        firstName,
-        lastName,
-        walletAddress,
-        role: 'user'
+        role: "user", // Default role for new users
       });
-      
-      // Log in the user after registration
-      req.login(newUser, (err) => {
-        if (err) {
-          return next(err);
-        }
+
+      // Remove password from response
+      const userResponse = { ...user, password: undefined };
+
+      // Log in the newly registered user
+      req.login(user, (err) => {
+        if (err) return next(err);
         
-        // Return user data without password
-        const { password, ...userWithoutPassword } = newUser;
-        res.status(201).json(userWithoutPassword);
+        // Create activity record for registration
+        storage.createActivity({
+          userId: user.id,
+          action: "register",
+          details: "User registration",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"] || "",
+        }).catch(console.error);
+        
+        return res.status(201).json(userResponse);
       });
-    } catch (error) {
-      console.error('Registration error:', error);
-      res.status(500).json({ message: 'Failed to register user' });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      return res.status(500).json({ error: "Registration failed: " + error.message });
     }
   });
 
-  app.post('/api/login', (req, res, next) => {
-    passport.authenticate('local', (err: any, user: Express.User | false, info: { message?: string } | undefined) => {
+  // Login
+  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", (err: Error | null, user: User | false, info: any) => {
       if (err) {
         return next(err);
       }
       
       if (!user) {
-        return res.status(401).json({
-          message: info?.message || 'Invalid username or password'
-        });
+        return res.status(401).json({ error: info?.message || "Authentication failed" });
       }
       
-      req.login(user, (err: any) => {
-        if (err) {
-          return next(err);
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
         }
         
-        // Return user data without password
-        const { password, ...userWithoutPassword } = user;
-        return res.json(userWithoutPassword);
+        // Create activity record for login
+        storage.createActivity({
+          userId: user.id,
+          action: "login",
+          details: "User login",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"] || "",
+        }).catch(console.error);
+        
+        // Remove password from response
+        const userResponse = { ...user, password: undefined };
+        
+        return res.status(200).json(userResponse);
       });
     })(req, res, next);
   });
 
-  app.post('/api/logout', (req, res) => {
+  // Logout
+  app.post("/api/logout", (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+      const userId = req.user?.id;
+      
+      // Create activity record for logout
+      if (userId) {
+        storage.createActivity({
+          userId,
+          action: "logout",
+          details: "User logout",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"] || "",
+        }).catch(console.error);
+      }
+    }
+    
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to logout' });
+        return res.status(500).json({ error: "Logout failed" });
       }
-      
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Failed to destroy session' });
-        }
-        
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out successfully' });
+      req.session.destroy((sessionErr) => {
+        res.clearCookie("connect.sid");
+        return res.status(200).json({ message: "Logged out successfully" });
       });
     });
   });
 
-  app.get('/api/user', (req, res) => {
+  // Get current user
+  app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ error: "Not authenticated" });
     }
     
-    // Return user data without password
-    const { password, ...userWithoutPassword } = req.user;
-    res.json(userWithoutPassword);
+    // Remove password from response
+    const userResponse = { ...req.user, password: undefined };
+    
+    return res.status(200).json(userResponse);
   });
+}
+
+// Middleware for protecting routes
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  next();
+}
+
+// Middleware for requiring admin role
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+    return res.status(403).json({ error: "Admin privileges required" });
+  }
+  
+  next();
+}
+
+// Middleware for requiring superadmin role
+export function requireSuperadmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  if (req.user?.role !== "superadmin") {
+    return res.status(403).json({ error: "Superadmin privileges required" });
+  }
+  
+  next();
 }

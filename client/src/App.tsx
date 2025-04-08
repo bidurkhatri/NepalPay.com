@@ -1,146 +1,103 @@
 import { Route, Switch } from 'wouter';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/queryClient';
-import { Toaster } from './components/ui/toaster';
-import { AuthProvider } from './hooks/use-auth';
-import { RealTimeProvider } from './contexts/real-time-context';
-import { BlockchainProvider } from './contexts/blockchain-context';
-import { ProtectedRoute } from './lib/protected-route';
-import DashboardLayout from './components/dashboard-layout';
+import { Toaster } from '@/components/ui/toaster';
 
 // Pages
-import AuthPage from './pages/auth-page';
-import LoginPage from './pages/login';
-import BuyTokensPage from './pages/buy-tokens';
-import PaymentSuccessPage from './pages/payment-success';
-import NotFoundPage from './pages/not-found';
-import HomePage from './pages/home-page';
-import AdvancedLandingPage from './pages/advanced-landing-page';
-import WalletPage from './pages/wallet';
-import SendPage from './pages/send-page';
-import TransactionsPage from './pages/transactions';
-import RewardsPage from './pages/rewards-page'; 
-import BorrowPage from './pages/borrow-page';
-import AdBazaarPage from './pages/ad-bazaar-page';
-import ProfilePage from './pages/profile';
-import SettingsPage from './pages/settings';
+import HomePage from '@/pages/home-page';
+import AuthPage from '@/pages/auth-page';
+import DashboardPage from '@/pages/dashboard';
+import WalletPage from '@/pages/wallet';
+import TransactionsPage from '@/pages/transactions';
+import LoansPage from '@/pages/loans';
+import CollateralsPage from '@/pages/collaterals';
+import AdsPage from '@/pages/ads';
+import NotFoundPage from '@/pages/not-found';
+import SupportPage from '@/pages/support';
+import SupportFAQPage from '@/pages/support/faq';
+import SupportKnowledgeBasePage from '@/pages/support/knowledgebase';
+import SupportContactPage from '@/pages/support/contact';
 
-// Support Pages
-import SupportPage from './pages/support/support-page';
-import FAQPage from './pages/support/faq-page';
-import KnowledgebasePage from './pages/support/knowledgebase-page';
-import ContactPage from './pages/support/contact-page';
+// Layouts and Components
+import { ProtectedRoute } from '@/components/protected-route';
+import DashboardLayout from '@/components/layouts/dashboard-layout';
+import SupportLayout from '@/components/layouts/support-layout';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BlockchainProvider>
-          <RealTimeProvider>
-            <Switch>
-              <Route path="/">
-                <AdvancedLandingPage />
-              </Route>
-              <Route path="/auth">
-                <AuthPage />
-              </Route>
-              <Route path="/login">
-                <LoginPage />
-              </Route>
-            
-              {/* Protected routes with Dashboard Layout */}
-              <ProtectedRoute path="/dashboard">
-                <DashboardLayout>
-                  <HomePage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/wallet">
-                <DashboardLayout>
-                  <WalletPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/send">
-                <DashboardLayout>
-                  <SendPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/transactions">
-                <DashboardLayout>
-                  <TransactionsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/rewards">
-                <DashboardLayout>
-                  <RewardsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/referrals">
-                <DashboardLayout>
-                  <RewardsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/borrow">
-                <DashboardLayout>
-                  <BorrowPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/ad-bazaar">
-                <DashboardLayout>
-                  <AdBazaarPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/profile">
-                <DashboardLayout>
-                  <ProfilePage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/settings">
-                <DashboardLayout>
-                  <SettingsPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/buy-tokens">
-                <DashboardLayout>
-                  <BuyTokensPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/payment-success">
-                <DashboardLayout>
-                  <PaymentSuccessPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              
-              {/* Support Routes */}
-              <ProtectedRoute path="/support">
-                <DashboardLayout>
-                  <SupportPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/support/faq">
-                <DashboardLayout>
-                  <FAQPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/support/knowledgebase">
-                <DashboardLayout>
-                  <KnowledgebasePage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              <ProtectedRoute path="/support/contact">
-                <DashboardLayout>
-                  <ContactPage />
-                </DashboardLayout>
-              </ProtectedRoute>
-              
-              <Route>
-                <NotFoundPage />
-              </Route>
-            </Switch>
-            <Toaster />
-          </RealTimeProvider>
-        </BlockchainProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <>
+      <Switch>
+        {/* Public Routes */}
+        <Route path="/" component={HomePage} />
+        <Route path="/auth" component={AuthPage} />
+
+        {/* Protected Dashboard Routes */}
+        <ProtectedRoute path="/dashboard">
+          <DashboardLayout>
+            <DashboardPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <ProtectedRoute path="/wallet">
+          <DashboardLayout>
+            <WalletPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <ProtectedRoute path="/transactions">
+          <DashboardLayout>
+            <TransactionsPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <ProtectedRoute path="/loans">
+          <DashboardLayout>
+            <LoansPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <ProtectedRoute path="/collaterals">
+          <DashboardLayout>
+            <CollateralsPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <ProtectedRoute path="/ads">
+          <DashboardLayout>
+            <AdsPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        {/* Support Routes */}
+        <Route path="/support">
+          <SupportLayout>
+            <SupportPage />
+          </SupportLayout>
+        </Route>
+
+        <Route path="/support/faq">
+          <SupportLayout>
+            <SupportFAQPage />
+          </SupportLayout>
+        </Route>
+
+        <Route path="/support/knowledgebase">
+          <SupportLayout>
+            <SupportKnowledgeBasePage />
+          </SupportLayout>
+        </Route>
+
+        <Route path="/support/contact">
+          <SupportLayout>
+            <SupportContactPage />
+          </SupportLayout>
+        </Route>
+
+        {/* 404 Route */}
+        <Route component={NotFoundPage} />
+      </Switch>
+
+      {/* Toast notifications */}
+      <Toaster />
+    </>
   );
 }
 
