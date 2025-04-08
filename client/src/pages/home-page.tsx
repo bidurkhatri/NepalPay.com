@@ -55,14 +55,14 @@ const HomePage = () => {
                 </Link>
               </div>
             </div>
-            <div className="backdrop-blur-md bg-card/20 border border-border/30 rounded-xl p-6 shadow-lg">
-              <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
+            <div className="backdrop-blur-md bg-card/50 border border-border/40 rounded-xl p-6 shadow-lg">
+              <div className="aspect-[4/3] bg-gradient-to-br from-primary/30 to-primary/10 rounded-lg flex items-center justify-center">
                 <div className="text-center p-8">
-                  <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <div className="w-20 h-20 mx-auto bg-primary/20 rounded-full flex items-center justify-center mb-4 shadow-inner">
                     <Wallet className="h-10 w-10 text-primary" />
                   </div>
                   <h3 className="text-2xl font-bold mb-2">NPT Token</h3>
-                  <p className="text-muted-foreground">The future of financial transactions in Nepal</p>
+                  <p className="text-foreground/80">The future of financial transactions in Nepal</p>
                 </div>
               </div>
             </div>
