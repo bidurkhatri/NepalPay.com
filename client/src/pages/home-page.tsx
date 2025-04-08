@@ -24,7 +24,7 @@ const HomePage = () => {
               </Link>
             ) : (
               <Link href="/auth">
-                <Button>Login / Create Account <ArrowRight className="ml-1 h-4 w-4" /></Button>
+                <Button>Get Started <ArrowRight className="ml-1 h-4 w-4" /></Button>
               </Link>
             )}
           </div>
