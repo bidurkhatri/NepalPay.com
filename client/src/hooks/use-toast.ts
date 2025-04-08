@@ -1,23 +1,56 @@
 import { 
-  Toast,
-  ToastActionElement,
-  ToastProps
+  type ToastActionElement, 
+  type ToastProps 
 } from "@/components/ui/toast";
-import {
-  useToast as useToastOriginal,
-} from "@/components/ui/use-toast";
+import * as React from "react";
 
-export type ToastVariant = "default" | "destructive" | "success" | "warning" | "info";
+type ToastType = ToastProps & {
+  id: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  action?: ToastActionElement;
+};
 
-type ToastOptions = Partial<
-  Pick<Toast, "id" | "duration" | "className"> & {
-    variant: ToastVariant;
-    action: ToastActionElement;
+type ToastContextType = {
+  toasts: ToastType[];
+  toast: (props: Omit<ToastType, "id">) => void;
+  dismiss: (toastId: string) => void;
+};
+
+const ToastContext = React.createContext<ToastContextType | null>(null);
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = React.useState<ToastType[]>([]);
+
+  function toast(props: Omit<ToastType, "id">) {
+    const id = Math.random().toString(36).slice(2, 9);
+    setToasts((prev) => [...prev, { id, ...props }]);
+    
+    // Auto dismiss after 5 seconds unless it's an error
+    if (props.variant !== 'destructive') {
+      setTimeout(() => {
+        dismiss(id);
+      }, 5000);
+    }
   }
->;
 
-// Re-export the toast hook from shadcn
-export const useToast = useToastOriginal;
+  function dismiss(toastId: string) {
+    setToasts((prev) => prev.filter((toast) => toast.id !== toastId));
+  }
 
-// Add custom variants - we'll implement these in the toast component
-export type { Toast, ToastProps, ToastOptions };
+  return (
+    <ToastContext.Provider value={{ toasts, toast, dismiss }}>
+      {children}
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast() {
+  const context = React.useContext(ToastContext);
+  
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  
+  return context;
+}

@@ -1,31 +1,51 @@
 import { QueryClient } from "@tanstack/react-query";
 
-type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+type RequestOptions = {
+  on401?: "returnNull" | "throw" | "redirect";
+};
 
-interface FetchOptions {
-  on401?: "throw" | "returnNull";
+export type HTTPMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+/**
+ * Create a query function that handles common API request patterns
+ */
+export function getQueryFn(options: RequestOptions = {}) {
+  return async <T>({ queryKey }: { queryKey: string[] }): Promise<T> => {
+    const [path] = queryKey;
+    try {
+      const response = await fetch(path);
+
+      // Handle 401 Unauthorized based on options
+      if (response.status === 401) {
+        if (options.on401 === "redirect") {
+          window.location.href = "/auth";
+          return null as T;
+        } else if (options.on401 === "returnNull") {
+          return null as T;
+        } else {
+          throw new Error("Unauthorized");
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching ${path}:`, error);
+      throw error;
+    }
+  };
 }
 
 /**
- * Create a query client with default settings
- */
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60, // 1 minute
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-/**
- * Make an API request with proper error handling
+ * Make an API request with the specified method
  */
 export async function apiRequest(
-  method: RequestMethod,
-  endpoint: string,
-  body?: any,
+  method: HTTPMethod,
+  url: string,
+  data?: any,
   headers?: HeadersInit
 ) {
   const options: RequestInit = {
@@ -34,60 +54,33 @@ export async function apiRequest(
       "Content-Type": "application/json",
       ...headers,
     },
-    credentials: "include",
+    credentials: "include", // Include cookies for authentication
   };
 
-  if (body && method !== "GET") {
-    options.body = JSON.stringify(body);
+  if (data && method !== "GET") {
+    options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(endpoint, options);
+  const response = await fetch(url, options);
 
   if (!response.ok) {
     const errorText = await response.text();
-    let errorMessage;
-
-    try {
-      const errorJson = JSON.parse(errorText);
-      errorMessage = errorJson.message || errorJson.error || `Error: ${response.status}`;
-    } catch (e) {
-      errorMessage = errorText || `Error: ${response.status}`;
-    }
-
-    const error = new Error(errorMessage);
-    (error as any).status = response.status;
-    throw error;
-  }
-
-  // Check if response is empty or not JSON
-  const contentType = response.headers.get("content-type");
-  if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
-    return response;
+    throw new Error(errorText || `Request failed with status: ${response.status}`);
   }
 
   return response;
 }
 
 /**
- * Create a query function with error handling
+ * Create and configure the QueryClient
  */
-export function getQueryFn({ on401 = "throw" }: FetchOptions = {}) {
-  return async ({ queryKey }: { queryKey: string[] }) => {
-    const [endpoint] = queryKey;
-
-    try {
-      const response = await apiRequest("GET", endpoint);
-      
-      if (response.status === 204) {
-        return null;
-      }
-      
-      return await response.json();
-    } catch (error: any) {
-      if (error.status === 401 && on401 === "returnNull") {
-        return null;
-      }
-      throw error;
-    }
-  };
-}
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+      queryFn: getQueryFn({ on401: "redirect" }),
+    },
+  },
+});

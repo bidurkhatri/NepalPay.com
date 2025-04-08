@@ -4,14 +4,24 @@ import { json } from "express";
 import { registerRoutes } from "./routes";
 import { initializeDatabase } from "./db";
 import path from "path";
+import { setupVite, serveStatic } from "./vite";
+import { setupAuth } from "./auth";
 
 async function startServer() {
   // Create Express application
   const app = express();
   
   // Configure middleware
-  app.use(cors());
+  app.use(cors({
+    origin: process.env.NODE_ENV === 'production' 
+      ? 'https://nepalipay.com' 
+      : ['http://localhost:3000', 'http://localhost:5173'],
+    credentials: true
+  }));
   app.use(json());
+  
+  // Set up authentication
+  setupAuth(app);
   
   // Initialize database
   try {
@@ -31,6 +41,13 @@ async function startServer() {
   
   // Register API routes
   const server = await registerRoutes(app);
+
+  // Set up Vite for development or serve static files for production
+  if (process.env.NODE_ENV === 'production') {
+    serveStatic(app);
+  } else {
+    await setupVite(app, server);
+  }
   
   // Determine port
   const PORT = process.env.PORT || 3000;

@@ -17,7 +17,7 @@ import SupportKnowledgeBasePage from '@/pages/support/knowledgebase';
 import SupportContactPage from '@/pages/support/contact';
 
 // Layouts and Components
-import { ProtectedRoute } from '@/components/protected-route';
+import { ProtectedRoute } from '@/lib/protected-route';
 import DashboardLayout from '@/components/layouts/dashboard-layout';
 import SupportLayout from '@/components/layouts/support-layout';
 

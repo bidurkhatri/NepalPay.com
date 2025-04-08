@@ -291,31 +291,31 @@ export const sessions = pgTable("session", {
  ************************************************/
 
 // Users
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 
 // Wallets
-export const insertWalletSchema = createInsertSchema(wallets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertWalletSchema = createInsertSchema(wallets);
 export const selectWalletSchema = createSelectSchema(wallets);
 
 // Transactions
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTransactionSchema = createInsertSchema(transactions);
 export const selectTransactionSchema = createSelectSchema(transactions);
 
 // Activities
-export const insertActivitySchema = createInsertSchema(activities).omit({ id: true, createdAt: true });
+export const insertActivitySchema = createInsertSchema(activities);
 export const selectActivitySchema = createSelectSchema(activities);
 
 // Collaterals
-export const insertCollateralSchema = createInsertSchema(collaterals).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCollateralSchema = createInsertSchema(collaterals);
 export const selectCollateralSchema = createSelectSchema(collaterals);
 
 // Loans
-export const insertLoanSchema = createInsertSchema(loans).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertLoanSchema = createInsertSchema(loans);
 export const selectLoanSchema = createSelectSchema(loans);
 
 // Ads
-export const insertAdSchema = createInsertSchema(ads).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAdSchema = createInsertSchema(ads);
 export const selectAdSchema = createSelectSchema(ads);
 
 /************************************************

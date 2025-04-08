@@ -1,72 +1,80 @@
-import { createContext, ReactNode, useContext, useEffect } from "react";
+import React, { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
   useMutation,
-  UseQueryResult,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User, InsertUser } from "../../shared/schema";
-import { useToast } from "../hooks/use-toast";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
-// Types
-type LoginCredentials = {
+// TODO: Update with actual user schema from shared/schema.ts
+type User = {
+  id: number;
   username: string;
+  email: string;
+  walletAddress?: string;
+  role: string;
+  created_at: string;
+  kyc_status?: string;
+};
+
+type LoginData = {
+  username: string;
+  password: string;
+};
+
+type RegisterData = {
+  username: string;
+  email: string;
   password: string;
 };
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
-  loginMutation: UseMutationResult<User, Error, LoginCredentials>;
-  registerMutation: UseMutationResult<User, Error, InsertUser>;
+  error: Error | null;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  userQuery: UseQueryResult<User | null, Error>;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-// Create context
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Provider component
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-
-  // Fetch current user
-  const userQuery = useQuery<User | null, Error>({
+  
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("GET", "/api/user");
-        return await response.json();
-      } catch (error: any) {
-        if (error.status === 401) {
-          // Not authenticated, return null instead of throwing
-          return null;
-        }
-        throw error;
+        const res = await fetch("/api/user");
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error("Failed to fetch user data");
+        return await res.json();
+      } catch (err) {
+        console.error("Auth fetch error:", err);
+        return null;
       }
     },
-    retry: false,
   });
 
-  // Login mutation
-  const loginMutation = useMutation<User, Error, LoginCredentials>({
-    mutationFn: async (credentials) => {
-      const response = await apiRequest("POST", "/api/login", credentials);
-      return await response.json();
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginData) => {
+      const res = await apiRequest("POST", "/api/login", credentials);
+      return await res.json();
     },
-    onSuccess: (user) => {
-      // Update cache with user data
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
-        variant: "success",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Login failed",
         description: error.message || "Invalid username or password",
@@ -75,79 +83,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  // Register mutation
-  const registerMutation = useMutation<User, Error, InsertUser>({
-    mutationFn: async (userData) => {
-      const response = await apiRequest("POST", "/api/register", userData);
-      return await response.json();
+  const registerMutation = useMutation({
+    mutationFn: async (userData: RegisterData) => {
+      const res = await apiRequest("POST", "/api/register", userData);
+      return await res.json();
     },
-    onSuccess: (user) => {
-      // Update cache with user data
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      
       toast({
         title: "Registration successful",
-        description: `Welcome to NepaliPay, ${user.username}!`,
-        variant: "success",
+        description: "Your account has been created successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message || "Failed to create account",
+        description: error.message || "Unable to create account",
         variant: "destructive",
       });
     },
   });
 
-  // Logout mutation
-  const logoutMutation = useMutation<void, Error, void>({
+  const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      // Clear user from cache
       queryClient.setQueryData(["/api/user"], null);
-      
-      // Invalidate queries that depend on authentication
-      queryClient.invalidateQueries({ queryKey: ["/api/wallet"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
-      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out",
-        variant: "info",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Logout failed",
-        description: error.message || "Failed to log out",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Context value
-  const value: AuthContextType = {
-    user: userQuery.data || null,
-    isLoading: userQuery.isLoading,
-    isAuthenticated: !!userQuery.data,
-    loginMutation,
-    registerMutation,
-    logoutMutation,
-    userQuery,
-  };
+  return (
+    <AuthContext.Provider
+      value={{
+        user: user ?? null,
+        isLoading,
+        error,
+        loginMutation,
+        logoutMutation,
+        registerMutation,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-// Hook for using the auth context
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+}
