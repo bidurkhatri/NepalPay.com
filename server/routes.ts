@@ -591,6 +591,119 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // NPT token purchase endpoint
+  app.post("/api/purchase-npt", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+      
+      const { 
+        nptAmount, // Amount of NPT tokens to purchase
+        walletAddress, // User's blockchain wallet address
+        includeGasFee = true // Whether to include gas fee in the payment
+      } = req.body;
+      
+      if (!nptAmount || nptAmount <= 0) {
+        return res.status(400).json({ message: "Invalid token amount" });
+      }
+      
+      if (!walletAddress) {
+        return res.status(400).json({ message: "Wallet address is required" });
+      }
+      
+      // Calculate price in USD (this would typically use an exchange rate API)
+      // For now, using a fixed rate of 1 NPT = 0.01 USD (1 cent)
+      const exchangeRate = 0.01; 
+      let amountUsd = nptAmount * exchangeRate;
+      
+      // Add gas fee if requested (estimated)
+      const gasFeeUsd = includeGasFee ? 0.5 : 0; // $0.50 for gas fee
+      
+      // Add service fee (2% of token cost)
+      const serviceFeeUsd = amountUsd * 0.02;
+      
+      // Total amount to charge in USD
+      const totalAmountUsd = amountUsd + gasFeeUsd + serviceFeeUsd;
+      
+      // Create a PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(totalAmountUsd * 100), // Convert to cents
+        currency: "usd",
+        payment_method_types: ["card"],
+        metadata: {
+          user_id: req.user!.id.toString(),
+          npt_amount: nptAmount.toString(),
+          wallet_address: walletAddress,
+          token_purchase: "true",
+          gas_fee_included: includeGasFee.toString(),
+          service_fee: serviceFeeUsd.toFixed(2)
+        },
+      });
+      
+      res.status(200).json({
+        clientSecret: paymentIntent.client_secret,
+        total: totalAmountUsd,
+        breakdown: {
+          tokenCost: amountUsd,
+          gasFee: gasFeeUsd,
+          serviceFee: serviceFeeUsd
+        }
+      });
+    } catch (error) {
+      console.error("Error creating NPT purchase intent:", error);
+      res.status(500).json({ message: "Failed to create NPT purchase intent" });
+    }
+  });
+  
+  // Get payment information for success page
+  app.get("/api/payment/:paymentIntentId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+      
+      const { paymentIntentId } = req.params;
+      
+      // Retrieve the payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      // Only return payment details if the payment intent belongs to the authenticated user
+      if (paymentIntent.metadata?.user_id !== req.user!.id.toString()) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Get the transaction record from our database if exists
+      let txHash = paymentIntentId;
+      try {
+        const transaction = await storage.getTransactionByHash(paymentIntentId);
+        if (transaction?.tx_hash) {
+          txHash = transaction.tx_hash;
+        }
+      } catch (error) {
+        console.error("Error fetching transaction:", error);
+        // Continue without transaction data
+      }
+      
+      const responseData = {
+        id: paymentIntent.id,
+        amount: paymentIntent.amount,
+        status: paymentIntent.status,
+        tokenAmount: paymentIntent.metadata?.npt_amount || "0",
+        walletAddress: paymentIntent.metadata?.wallet_address || "",
+        txHash
+      };
+      
+      res.status(200).json(responseData);
+    } catch (error) {
+      console.error("Error retrieving payment information:", error);
+      res.status(500).json({ 
+        message: "Failed to retrieve payment information",
+        error: error.message
+      });
+    }
+  });
+
   // Stripe webhook handler
   app.post("/api/stripe-webhook", async (req: Request, res: Response) => {
     if (!stripe) {
@@ -623,24 +736,71 @@ export function registerRoutes(app: Express): Server {
         if (paymentIntent.metadata && paymentIntent.metadata.user_id) {
           const userId = parseInt(paymentIntent.metadata.user_id);
           
-          // Create a transaction record
-          await storage.createTransaction({
-            type: "deposit",
-            amount: (paymentIntent.amount / 100).toString(), // Convert from cents
-            currency: "NPT",
-            status: "completed",
-            receiver_id: userId,
-            sender_id: null, // System transaction
-            tx_hash: paymentIntent.id,
-            description: `Deposit via Stripe payment`,
-          });
-          
-          // Create activity record
-          await storage.createActivity({
-            user_id: userId,
-            action: "transaction",
-            description: `Deposit of ${paymentIntent.amount / 100} via Stripe payment`,
-          });
+          // Check if this is a token purchase
+          if (paymentIntent.metadata.token_purchase === "true") {
+            const nptAmount = paymentIntent.metadata.npt_amount;
+            const walletAddress = paymentIntent.metadata.wallet_address;
+            
+            // In a real implementation, you would:
+            // 1. Connect to the blockchain using ethers.js
+            // 2. Call the token contract's transfer method to send tokens from treasury to user
+            // 3. Wait for the transaction to be mined
+            // 4. Store the transaction hash
+            
+            // For now, we'll simulate this with a transaction record
+            console.log(`Processing NPT token purchase: ${nptAmount} NPT to wallet ${walletAddress}`);
+            
+            // Create a transaction record for the token purchase
+            await storage.createTransaction({
+              type: "token_purchase",
+              amount: nptAmount,
+              currency: "NPT",
+              status: "completed",
+              receiver_id: userId,
+              sender_id: null, // System/Treasury transaction
+              tx_hash: paymentIntent.id, // In real implementation, this would be the blockchain tx hash
+              description: `Purchase of ${nptAmount} NPT tokens via Stripe payment`,
+            });
+            
+            // Create activity record
+            await storage.createActivity({
+              user_id: userId,
+              action: "token_purchase",
+              description: `Purchased ${nptAmount} NPT tokens to wallet ${walletAddress}`,
+            });
+            
+            // Update user's wallet NPT balance (in a real implementation, this would be fetched from blockchain)
+            const wallet = await storage.getWalletByAddress(walletAddress);
+            if (wallet) {
+              // If we have this wallet in our database, update the balance
+              const currentBalance = parseFloat(wallet.npt_balance || "0");
+              const newBalance = currentBalance + parseFloat(nptAmount);
+              
+              await storage.updateWallet(wallet.id, {
+                npt_balance: newBalance.toString()
+              });
+            }
+          } else {
+            // Regular payment (not a token purchase)
+            // Create a transaction record
+            await storage.createTransaction({
+              type: "deposit",
+              amount: (paymentIntent.amount / 100).toString(), // Convert from cents
+              currency: "NPT",
+              status: "completed",
+              receiver_id: userId,
+              sender_id: null, // System transaction
+              tx_hash: paymentIntent.id,
+              description: `Deposit via Stripe payment`,
+            });
+            
+            // Create activity record
+            await storage.createActivity({
+              user_id: userId,
+              action: "transaction",
+              description: `Deposit of ${paymentIntent.amount / 100} via Stripe payment`,
+            });
+          }
         }
         break;
       

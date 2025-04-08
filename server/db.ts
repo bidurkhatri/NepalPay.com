@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 // Create postgres client
 const connectionString = process.env.DATABASE_URL;
 const client = postgres(connectionString, {
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  ssl: { rejectUnauthorized: false }, // Accept self-signed certificates
   max: 10, // Connection pool size
   idle_timeout: 30, // Max seconds a client can be idle before being removed
 });

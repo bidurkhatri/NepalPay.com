@@ -15,16 +15,20 @@ import { z } from "zod";
 // User model
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: varchar("username", { length: 100 }).notNull().unique(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
-  full_name: varchar("full_name", { length: 255 }),
-  phone: varchar("phone", { length: 20 }),
-  kyc_status: varchar("kyc_status", { length: 20 }).default("none"),
-  role: varchar("role", { length: 20 }).default("user"),
-  wallet_address: varchar("wallet_address", { length: 42 }),
-  stripe_customer_id: varchar("stripe_customer_id", { length: 255 }),
-  stripe_subscription_id: varchar("stripe_subscription_id", { length: 255 }),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  first_name: text("first_name"),
+  last_name: text("last_name"),
+  phone_number: text("phone_number"),
+  finapi_user_id: text("finapi_user_id"),
+  kyc_status: text("kyc_status").default("PENDING"),
+  kyc_verification_id: text("kyc_verification_id"),
+  kyc_verified_at: timestamp("kyc_verified_at"),
+  role: text("role").default("user"),
+  wallet_address: text("wallet_address"),
+  stripe_customer_id: text("stripe_customer_id"),
+  stripe_subscription_id: text("stripe_subscription_id"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -46,7 +50,12 @@ export const wallets = pgTable("wallets", {
   user_id: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  address: varchar("address", { length: 42 }).notNull().unique(),
+  balance: decimal("balance", { precision: 18, scale: 8 }).default("0").notNull(),
+  currency: text("currency").default("NPR"),
+  last_updated: timestamp("last_updated").defaultNow(),
+  address: text("address").notNull(),
+  npt_balance: text("npt_balance").default("0"),
+  bnb_balance: text("bnb_balance").default("0"),
   is_primary: boolean("is_primary").default(false),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
@@ -187,8 +196,8 @@ export const adsRelations = relations(ads, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users);
 
 // Zod schema for wallet insertion
-export const insertWalletSchema = createInsertSchema(wallets).extend({
-  is_primary: z.boolean().optional().default(false),
+export const insertWalletSchema = createInsertSchema(wallets).omit({ id: true }).extend({
+  is_primary: z.boolean().optional().default(false)
 });
 
 // Zod schema for transaction insertion
@@ -209,8 +218,12 @@ export const transactionFeeSchema = insertTransactionSchema.extend({
 });
 
 // Zod schema for activity insertion
-export const insertActivitySchema = createInsertSchema(activities).extend({
+export const insertActivitySchema = createInsertSchema(activities).omit({ id: true }).extend({
+  user_id: z.number(),
+  action: z.string(),
   description: z.string().optional(),
+  ip_address: z.string().optional(),
+  user_agent: z.string().optional()
 });
 
 // Zod schema for collateral insertion

@@ -139,10 +139,10 @@ export default function BuyTokensPage() {
     }
 
     try {
-      const response = await apiRequest('POST', '/api/create-payment-intent', {
+      const response = await apiRequest('POST', '/api/purchase-npt', {
         amount: totalCost, // The server will handle conversion to cents
         walletAddress,
-        tokenAmount,
+        nptAmount: tokenAmount,
       });
 
       const data = await response.json();

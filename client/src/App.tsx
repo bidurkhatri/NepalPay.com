@@ -10,6 +10,8 @@ import TransactionsPage from '@/pages/transactions';
 import LoansPage from '@/pages/loans';
 import CollateralsPage from '@/pages/collaterals';
 import AdsPage from '@/pages/ads';
+import BuyTokensPage from '@/pages/buy-tokens';
+import PaymentSuccessPage from '@/pages/payment-success';
 import NotFoundPage from '@/pages/not-found';
 import SupportPage from '@/pages/support';
 import SupportFAQPage from '@/pages/support/faq';
@@ -65,6 +67,18 @@ function App() {
             <AdsPage />
           </DashboardLayout>
         </ProtectedRoute>
+
+        <ProtectedRoute path="/buy-tokens">
+          <DashboardLayout>
+            <BuyTokensPage />
+          </DashboardLayout>
+        </ProtectedRoute>
+
+        <Route path="/payment/success">
+          <DashboardLayout>
+            <PaymentSuccessPage />
+          </DashboardLayout>
+        </Route>
 
         {/* Support Routes */}
         <Route path="/support">
