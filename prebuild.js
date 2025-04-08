@@ -58,13 +58,13 @@ async function main() {
     copyFile('client/index.html', 'index.html');
   }
 
-  // Make sure client/index.html has the original path
+  // Make sure client/index.html has the correct path for development
   if (fs.existsSync('client/index.html')) {
     const content = fs.readFileSync('client/index.html', 'utf8');
-    // Make sure the script tag points to /src/main.tsx 
+    // Make sure the script tag points to ./src/main.tsx as specified in the vite config
     const updatedContent = content.replace(
       /<script type="module" src=".*\/main.tsx.*"><\/script>/,
-      '<script type="module" src="/src/main.tsx"></script>'
+      '<script type="module" src="./src/main.tsx"></script>'
     );
     fs.writeFileSync('client/index.html', updatedContent);
     console.log('Updated client/index.html with correct path to main.tsx');
