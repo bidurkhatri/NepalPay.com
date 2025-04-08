@@ -1,75 +1,64 @@
 import express from "express";
 import cors from "cors";
-import { json } from "express";
+import { config } from "dotenv";
+import { Server } from "http";
+import { setupAuth, isAuthenticated, isAdmin, isSuperAdmin } from "./auth";
 import { registerRoutes } from "./routes";
-import { initializeDatabase } from "./db";
-import path from "path";
-import { setupVite, serveStatic } from "./vite";
-import { setupAuth } from "./auth";
+import bodyParser from "body-parser";
 
+// Load environment variables
+config();
+
+// Create Express app
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Setup authentication
+setupAuth(app);
+
+// Initialize server variable
+let httpServer: Server;
+
+// Start server function
 async function startServer() {
-  // Create Express application
-  const app = express();
-  
-  // Configure middleware
-  app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? 'https://nepalipay.com' 
-      : ['http://localhost:3000', 'http://localhost:5173'],
-    credentials: true
-  }));
-  app.use(json());
-  
-  // Set up authentication
-  setupAuth(app);
-  
-  // Initialize database
   try {
-    console.log("Initializing database...");
-    const dbInitialized = await initializeDatabase();
-    
-    if (!dbInitialized) {
-      console.error("Failed to initialize database. Exiting...");
-      process.exit(1);
-    }
-    
-    console.log("Database initialized successfully.");
+    // Register API routes
+    httpServer = registerRoutes(app);
+
+    // Start server on port 3000 or environment variable PORT
+    const PORT = parseInt(process.env.PORT || "3000");
+    httpServer.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://0.0.0.0:${PORT}`);
+    });
+
+    // Handle shutdown gracefully
+    process.on("SIGTERM", shutdownServer);
+    process.on("SIGINT", shutdownServer);
   } catch (error) {
-    console.error("Error initializing database:", error);
+    console.error("Failed to start server:", error);
     process.exit(1);
   }
-  
-  // Register API routes
-  const server = await registerRoutes(app);
+}
 
-  // Set up Vite for development or serve static files for production
-  if (process.env.NODE_ENV === 'production') {
-    serveStatic(app);
-  } else {
-    await setupVite(app, server);
-  }
-  
-  // Determine port
-  const PORT = process.env.PORT || 3000;
-  
-  // Start server
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api`);
-  });
-  
-  // Handle shutdown gracefully
-  process.on("SIGINT", () => {
-    console.log("Shutting down server...");
-    server.close(() => {
-      console.log("Server shut down successfully");
+// Shutdown server function
+function shutdownServer() {
+  console.log("Shutting down server...");
+  if (httpServer) {
+    httpServer.close(() => {
+      console.log("Server closed");
       process.exit(0);
     });
-  });
+  } else {
+    process.exit(0);
+  }
 }
 
 // Start the server
-startServer().catch((error) => {
-  console.error("Failed to start server:", error);
-  process.exit(1);
-});
+startServer();
+
+// Export for testing
+export { app, isAuthenticated, isAdmin, isSuperAdmin };
