@@ -1,8 +1,8 @@
-@import './styles/glass-morphic.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import './styles/glass-morphic.css';
 
 @layer base {
   :root {
