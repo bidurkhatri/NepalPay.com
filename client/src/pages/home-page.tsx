@@ -8,7 +8,7 @@ const HomePage = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="w-full py-4 px-6 backdrop-blur-sm bg-background/30 border-b border-border/40 fixed top-0 z-10">
         <div className="container mx-auto flex justify-between items-center">
