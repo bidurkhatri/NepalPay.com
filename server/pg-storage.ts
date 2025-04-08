@@ -491,7 +491,7 @@ export class PgStorage implements IStorage {
     return result[0];
   }
 
-  async updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase | undefined> {
+  async updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase> {
     await this.ensureDbInitialized();
     const result = await db.update(tokenPurchases)
       .set({
@@ -503,7 +503,7 @@ export class PgStorage implements IStorage {
     return result[0];
   }
 
-  async updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase | undefined> {
+  async updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase> {
     await this.ensureDbInitialized();
     const result = await db.update(tokenPurchases)
       .set({
