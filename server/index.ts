@@ -1,45 +1,58 @@
 import express from "express";
 import cors from "cors";
+import { json } from "express";
 import { registerRoutes } from "./routes";
 import { initializeDatabase } from "./db";
-import dotenv from "dotenv";
 import path from "path";
 
-// Load environment variables
-dotenv.config();
-
-// Create Express app
-const app = express();
-
-// Set up middleware
-app.use(cors());
-app.use(express.json());
-
-// API routes will be registered by the registerRoutes function
-const httpServer = registerRoutes(app);
-
-// Initialize database and start server
-const PORT = process.env.PORT || 3001;
-
-async function start() {
+async function startServer() {
+  // Create Express application
+  const app = express();
+  
+  // Configure middleware
+  app.use(cors());
+  app.use(json());
+  
+  // Initialize database
   try {
-    // Initialize database
+    console.log("Initializing database...");
     const dbInitialized = await initializeDatabase();
-
+    
     if (!dbInitialized) {
       console.error("Failed to initialize database. Exiting...");
       process.exit(1);
     }
-
-    // Start server
-    httpServer.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    
+    console.log("Database initialized successfully.");
   } catch (error) {
-    console.error("Error starting server:", error);
+    console.error("Error initializing database:", error);
     process.exit(1);
   }
+  
+  // Register API routes
+  const server = await registerRoutes(app);
+  
+  // Determine port
+  const PORT = process.env.PORT || 3000;
+  
+  // Start server
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api`);
+  });
+  
+  // Handle shutdown gracefully
+  process.on("SIGINT", () => {
+    console.log("Shutting down server...");
+    server.close(() => {
+      console.log("Server shut down successfully");
+      process.exit(0);
+    });
+  });
 }
 
 // Start the server
-start();
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});

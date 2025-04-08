@@ -1,493 +1,461 @@
-import express, { Express, Request, Response } from "express";
-import { createServer, Server as HttpServer } from "http";
-import { WebSocketServer } from "ws";
-import Stripe from "stripe";
+import { Express } from "express";
+import { createServer, Server } from "http";
+import { setupAuth, isAuthenticated, isAdmin, isSuperAdmin } from "./auth";
 import { storage } from "./storage";
-import { setupAuth, requireAuth, requireAdmin, requireSuperadmin } from "./auth";
-import { eq } from "drizzle-orm";
-import { ethers } from "ethers";
-import { transactions, users, wallets } from "../shared/schema";
-import { randomBytes } from "crypto";
+import Stripe from "stripe";
+import { WebSocketServer } from "ws";
+import { db } from "./db";
+import { eq, sql } from "drizzle-orm";
+import * as crypto from "crypto";
+import { users, wallets, transactions, activities, collaterals, loans, ads } from "../shared/schema";
 
 // Check for Stripe API key
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn("Warning: STRIPE_SECRET_KEY is not set. Stripe payment features will not work.");
+  console.warn("Warning: STRIPE_SECRET_KEY not provided. Stripe payments will not work.");
 }
 
-// Initialize Stripe with fallback for development
+// Initialize Stripe if API key is available
 const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
-  : undefined;
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" as any })
+  : null;
 
-export function registerRoutes(app: Express): HttpServer {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
-
-  // Initialize demo data
-  app.get("/api/init-demo", async (req: Request, res: Response) => {
-    try {
-      await storage.initializeDemoData();
-      return res.status(200).json({ message: "Demo data initialized successfully" });
-    } catch (error: any) {
-      console.error("Error initializing demo data:", error);
-      return res.status(500).json({ error: "Failed to initialize demo data: " + error.message });
-    }
-  });
-
-  // === User API ===
   
-  // Get user profile
-  app.get("/api/profile", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Remove sensitive data
-      const { password, ...userProfile } = user;
-      
-      return res.status(200).json(userProfile);
-    } catch (error: any) {
-      console.error("Error fetching user profile:", error);
-      return res.status(500).json({ error: "Failed to fetch profile: " + error.message });
-    }
-  });
-  
-  // Update user profile
-  app.patch("/api/profile", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const { password, role, ...updateData } = req.body; // Prevent changing sensitive fields
-      
-      const updatedUser = await storage.updateUser(userId, updateData);
-      
-      if (!updatedUser) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Remove sensitive data
-      const { password: _, ...userProfile } = updatedUser;
-      
-      return res.status(200).json(userProfile);
-    } catch (error: any) {
-      console.error("Error updating user profile:", error);
-      return res.status(500).json({ error: "Failed to update profile: " + error.message });
-    }
-  });
-
-  // === Wallet API ===
-  
-  // Get user wallet
-  app.get("/api/wallet", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const wallet = await storage.getWalletByUserId(userId);
-      
-      if (!wallet) {
-        // Create a new wallet if not exists
-        const newWallet = ethers.Wallet.createRandom();
-        
-        const createdWallet = await storage.createWallet({
-          userId,
-          address: newWallet.address,
-          encryptedPrivateKey: "encrypted", // In a real app, we would encrypt this properly
-          balance: "0",
-        });
-        
-        return res.status(200).json(createdWallet);
-      }
-      
-      // Remove sensitive data
-      const { encryptedPrivateKey, ...safeWallet } = wallet;
-      
-      return res.status(200).json(safeWallet);
-    } catch (error: any) {
-      console.error("Error fetching wallet:", error);
-      return res.status(500).json({ error: "Failed to fetch wallet: " + error.message });
-    }
-  });
-
-  // === Transaction API ===
-  
-  // Get user transactions
-  app.get("/api/transactions", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = req.user!.id;
-      const userTransactions = await storage.getUserTransactions(userId);
-      
-      return res.status(200).json(userTransactions);
-    } catch (error: any) {
-      console.error("Error fetching transactions:", error);
-      return res.status(500).json({ error: "Failed to fetch transactions: " + error.message });
-    }
-  });
-  
-  // Create a new transaction (transfer)
-  app.post("/api/transactions/transfer", requireAuth, async (req: Request, res: Response) => {
-    try {
-      const { recipientAddress, amount, description } = req.body;
-      
-      if (!recipientAddress || !amount) {
-        return res.status(400).json({ error: "Recipient address and amount are required" });
-      }
-      
-      // Get sender wallet
-      const senderId = req.user!.id;
-      const senderWallet = await storage.getWalletByUserId(senderId);
-      
-      if (!senderWallet) {
-        return res.status(404).json({ error: "Sender wallet not found" });
-      }
-      
-      // Check if sender has enough balance
-      if (parseFloat(senderWallet.balance.toString()) < parseFloat(amount)) {
-        return res.status(400).json({ error: "Insufficient balance" });
-      }
-      
-      // Find recipient user by wallet address
-      const recipientUser = await storage.getAllUsers().then(users => 
-        users.find(user => user.walletAddress === recipientAddress)
-      );
-      
-      if (!recipientUser) {
-        return res.status(404).json({ error: "Recipient not found" });
-      }
-      
-      // Get recipient wallet
-      const recipientWallet = await storage.getWalletByUserId(recipientUser.id);
-      
-      if (!recipientWallet) {
-        return res.status(404).json({ error: "Recipient wallet not found" });
-      }
-      
-      // Create transaction
-      const newTransaction = await storage.createTransaction({
-        senderId,
-        receiverId: recipientUser.id,
-        amount: amount.toString(),
-        type: "transfer",
-        status: "completed",
-        description: description || "Transfer",
-        txHash: `0x${randomBytes(32).toString("hex")}`, // In a real app, this would be a real blockchain transaction hash
-      });
-      
-      // Update sender balance
-      const newSenderBalance = (parseFloat(senderWallet.balance.toString()) - parseFloat(amount)).toString();
-      await storage.updateWallet(senderWallet.id, { balance: newSenderBalance });
-      
-      // Update recipient balance
-      const newRecipientBalance = (parseFloat(recipientWallet.balance.toString()) + parseFloat(amount)).toString();
-      await storage.updateWallet(recipientWallet.id, { balance: newRecipientBalance });
-      
-      // Record activity
-      await storage.createActivity({
-        userId: senderId,
-        action: "transfer",
-        details: `Transferred ${amount} NPT to ${recipientAddress}`,
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"] || "",
-      });
-      
-      return res.status(201).json(newTransaction);
-    } catch (error: any) {
-      console.error("Error creating transfer:", error);
-      return res.status(500).json({ error: "Failed to create transfer: " + error.message });
-    }
-  });
-
-  // === Stripe Integration ===
-  
-  // Create a payment intent for purchasing NPT tokens
-  app.post("/api/create-payment-intent", requireAuth, async (req: Request, res: Response) => {
-    try {
-      if (!stripe) {
-        return res.status(500).json({ error: "Stripe is not configured" });
-      }
-      
-      const { amount } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ error: "Valid amount is required" });
-      }
-      
-      // Calculate fees (in a real app, this would be more sophisticated)
-      const nptPrice = 1; // 1 USD per NPT
-      const gasFee = 0.5; // $0.50 gas fee
-      const serviceFee = amount * 0.02; // 2% service fee
-      
-      const totalAmount = amount * nptPrice + gasFee + serviceFee;
-      
-      // Create a payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(totalAmount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          userId: req.user!.id.toString(),
-          nptAmount: amount.toString(),
-          gasFee: gasFee.toString(),
-          serviceFee: serviceFee.toString(),
-        },
-      });
-      
-      // Return client secret
-      return res.status(200).json({
-        clientSecret: paymentIntent.client_secret,
-        amount: totalAmount,
-        nptAmount: amount,
-        gasFee,
-        serviceFee,
-      });
-    } catch (error: any) {
-      console.error("Error creating payment intent:", error);
-      return res.status(500).json({ error: "Failed to create payment intent: " + error.message });
-    }
-  });
-  
-  // Webhook for Stripe events
-  app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), async (req: Request, res: Response) => {
-    if (!stripe) {
-      return res.status(500).json({ error: "Stripe is not configured" });
-    }
-    
-    const sig = req.headers["stripe-signature"] as string;
-    
-    if (!sig) {
-      return res.status(400).json({ error: "Missing Stripe signature" });
-    }
-    
-    // In a real app, this would be a secret from your environment
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_test";
-    
-    let event;
-    
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    } catch (error: any) {
-      console.error("Webhook signature verification failed:", error.message);
-      return res.status(400).json({ error: `Webhook Error: ${error.message}` });
-    }
-    
-    // Handle the event
-    if (event.type === "payment_intent.succeeded") {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
-      // Get user ID from metadata
-      const userId = parseInt(paymentIntent.metadata.userId || "0");
-      const nptAmount = parseFloat(paymentIntent.metadata.nptAmount || "0");
-      
-      if (userId && nptAmount) {
-        try {
-          // Get treasury wallet (superadmin's wallet)
-          const superadmin = await storage.getAllUsers().then(users => 
-            users.find(user => user.role === "superadmin")
-          );
-          
-          if (!superadmin) {
-            console.error("Superadmin not found for token transfer");
-            return res.status(500).json({ error: "Superadmin not found" });
-          }
-          
-          const treasuryWallet = await storage.getWalletByUserId(superadmin.id);
-          
-          if (!treasuryWallet) {
-            console.error("Treasury wallet not found");
-            return res.status(500).json({ error: "Treasury wallet not found" });
-          }
-          
-          // Get user wallet
-          const userWallet = await storage.getWalletByUserId(userId);
-          
-          if (!userWallet) {
-            console.error(`User wallet not found for user ID ${userId}`);
-            return res.status(404).json({ error: "User wallet not found" });
-          }
-          
-          // Create a transaction record
-          await storage.createTransaction({
-            senderId: superadmin.id,
-            receiverId: userId,
-            amount: nptAmount.toString(),
-            type: "deposit",
-            status: "completed",
-            description: "Token purchase",
-            stripePaymentId: paymentIntent.id,
-            txHash: `0x${randomBytes(32).toString("hex")}`, // In a real app, this would be a real blockchain transaction hash
-          });
-          
-          // Update treasury wallet balance
-          const newTreasuryBalance = (parseFloat(treasuryWallet.balance.toString()) - nptAmount).toString();
-          await storage.updateWallet(treasuryWallet.id, { balance: newTreasuryBalance });
-          
-          // Update user wallet balance
-          const newUserBalance = (parseFloat(userWallet.balance.toString()) + nptAmount).toString();
-          await storage.updateWallet(userWallet.id, { balance: newUserBalance });
-          
-          // Record activity
-          await storage.createActivity({
-            userId,
-            action: "purchase",
-            details: `Purchased ${nptAmount} NPT tokens`,
-            ipAddress: req.ip,
-            userAgent: req.headers["user-agent"] || "",
-          });
-          
-          console.log(`Successfully processed payment for ${nptAmount} NPT tokens for user ${userId}`);
-        } catch (error: any) {
-          console.error("Error processing payment:", error.message);
-          return res.status(500).json({ error: `Error processing payment: ${error.message}` });
-        }
-      }
-    }
-    
-    // Return a response to acknowledge receipt of the event
-    return res.status(200).json({ received: true });
-  });
-
-  // === Admin API ===
-  
-  // Get all users (admin only)
-  app.get("/api/admin/users", requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const allUsers = await storage.getAllUsers();
-      
-      // Remove sensitive data
-      const safeUsers = allUsers.map(user => {
-        const { password, ...safeUser } = user;
-        return safeUser;
-      });
-      
-      return res.status(200).json(safeUsers);
-    } catch (error: any) {
-      console.error("Error fetching users:", error);
-      return res.status(500).json({ error: "Failed to fetch users: " + error.message });
-    }
-  });
-  
-  // Get all transactions (admin only)
-  app.get("/api/admin/transactions", requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const allTransactions = await storage.getAllTransactions();
-      return res.status(200).json(allTransactions);
-    } catch (error: any) {
-      console.error("Error fetching transactions:", error);
-      return res.status(500).json({ error: "Failed to fetch transactions: " + error.message });
-    }
-  });
-  
-  // Approve or reject a transaction (admin only)
-  app.patch("/api/admin/transactions/:id/status", requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      
-      if (!status || !["pending", "completed", "failed"].includes(status)) {
-        return res.status(400).json({ error: "Valid status is required" });
-      }
-      
-      const transaction = await storage.getTransaction(parseInt(id));
-      
-      if (!transaction) {
-        return res.status(404).json({ error: "Transaction not found" });
-      }
-      
-      // Update transaction status
-      const updatedTransaction = await storage.updateTransaction(parseInt(id), { status });
-      
-      return res.status(200).json(updatedTransaction);
-    } catch (error: any) {
-      console.error("Error updating transaction status:", error);
-      return res.status(500).json({ error: "Failed to update transaction status: " + error.message });
-    }
-  });
-
-  // === SuperAdmin API ===
-  
-  // Mint new NPT tokens (superadmin only)
-  app.post("/api/superadmin/mint", requireSuperadmin, async (req: Request, res: Response) => {
-    try {
-      const { amount } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ error: "Valid amount is required" });
-      }
-      
-      // Get treasury wallet (superadmin's wallet)
-      const superadminId = req.user!.id;
-      const treasuryWallet = await storage.getWalletByUserId(superadminId);
-      
-      if (!treasuryWallet) {
-        return res.status(404).json({ error: "Treasury wallet not found" });
-      }
-      
-      // Update treasury wallet balance
-      const newBalance = (parseFloat(treasuryWallet.balance.toString()) + parseFloat(amount)).toString();
-      const updatedWallet = await storage.updateWallet(treasuryWallet.id, { balance: newBalance });
-      
-      // Create a mint transaction
-      const mintTransaction = await storage.createTransaction({
-        senderId: null,
-        receiverId: superadminId,
-        amount: amount.toString(),
-        type: "mint",
-        status: "completed",
-        description: "Token minting",
-        txHash: `0x${randomBytes(32).toString("hex")}`, // In a real app, this would be a real blockchain transaction hash
-      });
-      
-      // Record activity
-      await storage.createActivity({
-        userId: superadminId,
-        action: "mint",
-        details: `Minted ${amount} NPT tokens`,
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"] || "",
-      });
-      
-      return res.status(200).json({
-        transaction: mintTransaction,
-        wallet: updatedWallet,
-      });
-    } catch (error: any) {
-      console.error("Error minting tokens:", error);
-      return res.status(500).json({ error: "Failed to mint tokens: " + error.message });
-    }
-  });
-
-  // === WebSocket Server ===
+  // Create HTTP server
   const httpServer = createServer(app);
   
   // Create WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   
-  wss.on("connection", (socket) => {
+  // Handle WebSocket connections
+  wss.on("connection", (ws) => {
     console.log("WebSocket client connected");
     
-    // Send initial data
-    socket.send(JSON.stringify({ type: "connected", message: "Connected to NepaliPay WebSocket" }));
+    // Send initial connection message
+    ws.send(JSON.stringify({ type: "connection", message: "Connected to NepaliPay server" }));
     
-    // Handle messages
-    socket.on("message", (message) => {
+    // Handle messages from clients
+    ws.on("message", async (message) => {
       try {
+        // Parse incoming message
         const data = JSON.parse(message.toString());
-        console.log("Received message:", data);
         
-        // Echo back the message for testing
-        if (socket.readyState === socket.OPEN) {
-          socket.send(JSON.stringify({ type: "echo", data }));
+        // Handle different message types
+        switch (data.type) {
+          case "ping":
+            ws.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
+            break;
+            
+          default:
+            ws.send(JSON.stringify({ type: "error", message: "Unknown message type" }));
         }
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        console.error("WebSocket message error:", error);
+        ws.send(JSON.stringify({ type: "error", message: "Invalid message format" }));
       }
     });
     
-    // Handle close
-    socket.on("close", () => {
+    // Handle connection close
+    ws.on("close", () => {
       console.log("WebSocket client disconnected");
     });
   });
-
+  
+  // Broadcast to all connected clients
+  function broadcastToAll(data: any) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(data));
+      }
+    });
+  }
+  
+  // API routes
+  
+  // Wallet routes
+  app.get("/api/wallet", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const wallet = await storage.getWalletByUserId(userId);
+      
+      if (!wallet) {
+        return res.status(404).json({ message: "Wallet not found" });
+      }
+      
+      res.status(200).json(wallet);
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create wallet
+  app.post("/api/wallet", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // Check if user already has a wallet
+      const existingWallet = await storage.getWalletByUserId(userId);
+      if (existingWallet) {
+        return res.status(400).json({ message: "User already has a wallet" });
+      }
+      
+      // Generate wallet address
+      const address = crypto.randomBytes(20).toString("hex");
+      
+      // Create wallet
+      const wallet = await storage.createWallet({
+        userId,
+        address,
+        balance: "0",
+        privateKey: null
+      });
+      
+      // Log activity
+      await storage.createActivity({
+        userId,
+        action: "wallet_created",
+        details: "Wallet created",
+        ipAddress: req.ip || null,
+        userAgent: req.headers["user-agent"] || null
+      });
+      
+      res.status(201).json(wallet);
+    } catch (error) {
+      console.error("Error creating wallet:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Transaction routes
+  app.get("/api/transactions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const transactions = await storage.getTransactionsByUserId(userId);
+      
+      res.status(200).json(transactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Activity routes
+  app.get("/api/activities", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const activities = await storage.getActivitiesByUserId(userId);
+      
+      res.status(200).json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Collateral routes
+  app.get("/api/collaterals", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const collaterals = await storage.getCollateralsByUserId(userId);
+      
+      res.status(200).json(collaterals);
+    } catch (error) {
+      console.error("Error fetching collaterals:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Loan routes
+  app.get("/api/loans", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const loans = await storage.getLoansByUserId(userId);
+      
+      res.status(200).json(loans);
+    } catch (error) {
+      console.error("Error fetching loans:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Ad routes (p2p marketplace)
+  app.get("/api/ads", async (req, res) => {
+    try {
+      // Public endpoint to get all active ads
+      const ads = await storage.getActiveAds();
+      
+      res.status(200).json(ads);
+    } catch (error) {
+      console.error("Error fetching ads:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get("/api/ads/my", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const ads = await storage.getAdsByUserId(userId);
+      
+      res.status(200).json(ads);
+    } catch (error) {
+      console.error("Error fetching user ads:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Create ad
+  app.post("/api/ads", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { type, assetType, amount, price, paymentMethod, title, description, location } = req.body;
+      
+      // Set expiration date (7 days from now)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      // Create ad
+      const ad = await storage.createAd({
+        userId,
+        type,
+        assetType,
+        amount,
+        price,
+        paymentMethod,
+        title,
+        description: description || null,
+        location: location || null,
+        status: 'active',
+        expiresAt
+      });
+      
+      // Log activity
+      await storage.createActivity({
+        userId,
+        action: "ad_created",
+        details: `Created ${type} ad for ${amount} ${assetType}`,
+        ipAddress: req.ip || null,
+        userAgent: req.headers["user-agent"] || null
+      });
+      
+      res.status(201).json(ad);
+    } catch (error) {
+      console.error("Error creating ad:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Stripe payment integration
+  if (stripe) {
+    // Create payment intent for token purchase
+    app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
+      try {
+        const { amount, currency = "usd" } = req.body;
+        
+        if (!amount || isNaN(parseFloat(amount))) {
+          return res.status(400).json({ message: "Invalid amount" });
+        }
+        
+        // Convert to cents for Stripe
+        const amountInCents = Math.round(parseFloat(amount) * 100);
+        
+        // Create payment intent
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amountInCents,
+          currency,
+          metadata: {
+            userId: req.user?.id.toString(),
+            purpose: "token_purchase"
+          }
+        });
+        
+        res.status(200).json({
+          clientSecret: paymentIntent.client_secret
+        });
+      } catch (error) {
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ message: "Error creating payment intent" });
+      }
+    });
+    
+    // Webhook for handling Stripe events
+    app.post("/api/stripe-webhook", async (req, res) => {
+      const signature = req.headers["stripe-signature"];
+      
+      if (!process.env.STRIPE_WEBHOOK_SECRET || !signature) {
+        return res.status(400).json({ message: "Missing Stripe webhook secret or signature" });
+      }
+      
+      try {
+        const event = stripe.webhooks.constructEvent(
+          req.body,
+          signature,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+        
+        // Handle different event types
+        switch (event.type) {
+          case "payment_intent.succeeded": {
+            const paymentIntent = event.data.object;
+            const userId = parseInt(paymentIntent.metadata.userId);
+            const purpose = paymentIntent.metadata.purpose;
+            
+            if (purpose === "token_purchase" && !isNaN(userId)) {
+              // Process token purchase
+              const amountInDollars = paymentIntent.amount / 100;
+              
+              // Get user wallet
+              const wallet = await storage.getWalletByUserId(userId);
+              
+              if (wallet) {
+                // Update wallet balance (simplified - in real world would involve blockchain transaction)
+                const newBalance = (parseFloat(wallet.balance) + amountInDollars).toString();
+                await storage.updateWalletBalance(wallet.id, newBalance);
+                
+                // Create transaction record
+                const transaction = await storage.createTransaction({
+                  userId,
+                  type: "deposit",
+                  amount: amountInDollars.toString(),
+                  hash: paymentIntent.id,
+                  status: "completed",
+                  fromAddress: "stripe",
+                  toAddress: wallet.address,
+                  fee: "0",
+                  description: "Token purchase via Stripe"
+                });
+                
+                // Log activity
+                await storage.createActivity({
+                  userId,
+                  action: "token_purchase",
+                  details: `Purchased tokens worth $${amountInDollars}`,
+                  ipAddress: null,
+                  userAgent: null
+                });
+                
+                // Notify connected clients via WebSocket
+                broadcastToAll({
+                  type: "transaction",
+                  data: transaction
+                });
+              }
+            }
+            break;
+          }
+          
+          // Handle other event types as needed
+        }
+        
+        res.status(200).json({ received: true });
+      } catch (error) {
+        console.error("Stripe webhook error:", error);
+        res.status(400).json({ message: "Webhook error" });
+      }
+    });
+  }
+  
+  // Admin routes
+  // Get all users
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      // This would normally use a paginated query
+      const userList = await db.select().from(users);
+      res.status(200).json(userList);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get user details
+  app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(200).json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Update user status
+  app.patch("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { isActive, kycStatus } = req.body;
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user
+      const updatedUser = await storage.updateUser(userId, {
+        isActive: isActive !== undefined ? isActive : user.isActive,
+        kycStatus: kycStatus || user.kycStatus,
+        updatedAt: new Date()
+      });
+      
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // SuperAdmin routes
+  // System status
+  app.get("/api/superadmin/system", isSuperAdmin, async (req, res) => {
+    try {
+      // Get total user count
+      const userCount = await db.select({ count: sql`count(*)` }).from(users);
+      
+      // Get total transaction count
+      const txCount = await db.select({ count: sql`count(*)` }).from(transactions);
+      
+      // Get active loan count
+      const activeLoanCount = await db.select({ count: sql`count(*)` }).from(loans).where(eq(loans.status, 'active'));
+      
+      // Get today's new users
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const newUserCount = await db.select({ count: sql`count(*)` })
+        .from(users)
+        .where(sql`created_at >= ${today.toISOString()}`);
+      
+      res.status(200).json({
+        userCount: userCount[0].count,
+        transactionCount: txCount[0].count,
+        activeLoanCount: activeLoanCount[0].count,
+        newUsersToday: newUserCount[0].count,
+        serverUptime: process.uptime()
+      });
+    } catch (error) {
+      console.error("Error getting system status:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Return the HTTP server
   return httpServer;
 }

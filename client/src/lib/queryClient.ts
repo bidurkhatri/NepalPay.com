@@ -1,75 +1,93 @@
 import { QueryClient } from "@tanstack/react-query";
 
-/**
- * Creates a new client-side API request
- * 
- * @param method The HTTP method to use
- * @param path The API path
- * @param body The request body, if any
- * @param options Additional fetch options
- * @returns A promise resolving to the fetch response
- */
-export async function apiRequest(
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
-  path: string,
-  body?: any,
-  options: RequestInit = {}
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
+type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-  const config: RequestInit = {
-    method,
-    headers,
-    credentials: "include",
-    ...options,
-  };
-
-  if (body !== undefined) {
-    config.body = JSON.stringify(body);
-  }
-
-  return fetch(path, config);
+interface FetchOptions {
+  on401?: "throw" | "returnNull";
 }
 
 /**
- * Function for fetching data in TanStack Query
- * Handles API error responses and provides typed data
- */
-export const defaultFetcher = async ({ 
-  queryKey,
-  signal
-}: {
-  queryKey: readonly unknown[];
-  signal?: AbortSignal;
-}) => {
-  if (!Array.isArray(queryKey) || !queryKey.length) {
-    throw new Error("Invalid queryKey");
-  }
-
-  const endpoint = queryKey[0] as string;
-  const res = await apiRequest("GET", endpoint, undefined, { signal });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || `Error ${res.status}: ${res.statusText}`);
-  }
-
-  return res.json();
-};
-
-/**
- * TanStack Query client with default configuration
+ * Create a query client with default settings
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: defaultFetcher,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60, // 1 minute
       retry: 1,
-      retryDelay: 1000,
+      refetchOnWindowFocus: false,
     },
   },
 });
+
+/**
+ * Make an API request with proper error handling
+ */
+export async function apiRequest(
+  method: RequestMethod,
+  endpoint: string,
+  body?: any,
+  headers?: HeadersInit
+) {
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+    credentials: "include",
+  };
+
+  if (body && method !== "GET") {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(endpoint, options);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.message || errorJson.error || `Error: ${response.status}`;
+    } catch (e) {
+      errorMessage = errorText || `Error: ${response.status}`;
+    }
+
+    const error = new Error(errorMessage);
+    (error as any).status = response.status;
+    throw error;
+  }
+
+  // Check if response is empty or not JSON
+  const contentType = response.headers.get("content-type");
+  if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
+    return response;
+  }
+
+  return response;
+}
+
+/**
+ * Create a query function with error handling
+ */
+export function getQueryFn({ on401 = "throw" }: FetchOptions = {}) {
+  return async ({ queryKey }: { queryKey: string[] }) => {
+    const [endpoint] = queryKey;
+
+    try {
+      const response = await apiRequest("GET", endpoint);
+      
+      if (response.status === 204) {
+        return null;
+      }
+      
+      return await response.json();
+    } catch (error: any) {
+      if (error.status === 401 && on401 === "returnNull") {
+        return null;
+      }
+      throw error;
+    }
+  };
+}

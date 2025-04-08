@@ -1,20 +1,28 @@
-import * as React from "react";
-import { Route, Redirect } from "wouter";
+import React from "react";
 import { Loader2 } from "lucide-react";
+import { Redirect, Route, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
 
 interface ProtectedRouteProps {
-  path: string;
   component: React.ComponentType;
+  admin?: boolean;
+  superadmin?: boolean;
+  path: string;
 }
 
-export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  component: Component,
+  admin = false,
+  superadmin = false,
+  path,
+}) => {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Route>
@@ -29,5 +37,21 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
     );
   }
 
+  if (admin && user.role !== "admin" && user.role !== "superadmin") {
+    return (
+      <Route path={path}>
+        <Redirect to="/" />
+      </Route>
+    );
+  }
+
+  if (superadmin && user.role !== "superadmin") {
+    return (
+      <Route path={path}>
+        <Redirect to="/" />
+      </Route>
+    );
+  }
+
   return <Route path={path} component={Component} />;
-}
+};

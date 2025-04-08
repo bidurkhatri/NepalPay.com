@@ -1,96 +1,265 @@
-import React from 'react';
-import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { WalletIcon, CardIcon, PaymentIcon, SendIcon, getInitials } from '@/lib/icons';
-import { 
-  Coins, 
-  LayoutDashboard, 
-  BarChart3, 
-  User, 
-  Settings, 
-  LogOut, 
-  BadgePercent, 
-  Store
-} from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { useBlockchain } from "@/contexts/blockchain-context";
+import { truncateAddress } from "@/lib/utils";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Wallet,
+  ArrowLeftRight,
+  FileText,
+  Landmark,
+  ShieldCheck,
+  BarChart3,
+  UserIcon,
+  LogOut,
+  Settings,
+  HelpCircle,
+  PlusCircle,
+  Bell,
+  CreditCard,
+  Home,
+} from "lucide-react";
 
-const Sidebar: React.FC = () => {
-  const { user, logoutMutation } = useAuth();
+export const Sidebar: React.FC = () => {
+  const [expanded, setExpanded] = useState(true);
   const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  const { account } = useBlockchain();
+  const { toast } = useToast();
 
   if (!user) return null;
 
-  const initials = getInitials(user.firstName || '', user.lastName || '');
-
-  const menuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" />, label: 'Dashboard' },
-    { href: '/buy-tokens', icon: <Coins className="mr-2 h-5 w-5" />, label: 'Buy NPT Tokens' },
-    { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
-    { href: '/transactions', icon: <PaymentIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
-    { href: '/send', icon: <SendIcon className="mr-2 h-5 w-5" />, label: 'Send Money' },
-    { href: '/borrow', icon: <CardIcon className="mr-2 h-5 w-5" />, label: 'Borrow NPT' },
-    { href: '/rewards', icon: <BadgePercent className="mr-2 h-5 w-5" />, label: 'Rewards' },
-    { href: '/ad-bazaar', icon: <Store className="mr-2 h-5 w-5" />, label: 'Ad Bazaar' },
-    { href: '/profile', icon: <User className="mr-2 h-5 w-5" />, label: 'Profile' },
-    { href: '/settings', icon: <Settings className="mr-2 h-5 w-5" />, label: 'Settings' },
-    { href: '/support', icon: <BarChart3 className="mr-2 h-5 w-5" />, label: 'Support' },
-  ];
+  const isAdmin = user.role === "admin" || user.role === "superadmin";
+  const isSuperadmin = user.role === "superadmin";
 
   const handleLogout = async () => {
-    logoutMutation.mutate();
+    try {
+      await logoutMutation.mutateAsync();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
+  const userNavigation = [
+    { href: "/", label: "Dashboard", icon: Home },
+    { href: "/wallet", label: "Wallet", icon: Wallet },
+    { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+    { href: "/loans", label: "Loans", icon: Landmark },
+    { href: "/collaterals", label: "Collaterals", icon: ShieldCheck },
+    { href: "/ads", label: "Ads", icon: CreditCard },
+  ];
+
+  const adminNavigation = [
+    { href: "/admin", label: "Admin Dashboard", icon: BarChart3 },
+    { href: "/admin/users", label: "Users", icon: UserIcon },
+    { href: "/admin/transactions", label: "Transactions", icon: FileText },
+  ];
+
+  const superadminNavigation = [
+    { href: "/superadmin", label: "Owner Dashboard", icon: BarChart3 },
+    { href: "/superadmin/treasury", label: "Treasury", icon: Landmark },
+    { href: "/superadmin/settings", label: "Settings", icon: Settings },
+  ];
+
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-black/80 border-r border-primary/20 h-screen sticky top-0 cyber-card">
-      <div className="p-6 border-b border-primary/30 animated-border">
-        <div className="flex items-center justify-center">
-          <h1 className="font-bold text-2xl gradient-text">
-            <span>Nepal</span>Pay
-          </h1>
+    <aside
+      className={cn(
+        "relative flex h-screen flex-col border-r bg-card/20 backdrop-blur-lg transition-all duration-300",
+        expanded ? "w-64" : "w-20"
+      )}
+    >
+      <div className="flex items-center justify-between p-4">
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300",
+            expanded ? "w-auto opacity-100" : "w-0 opacity-0"
+          )}
+        >
+          <h1 className="text-xl font-bold text-primary">NepaliPay</h1>
+        </div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="rounded-full bg-primary/10 p-2 text-primary transition-colors hover:bg-primary/20"
+        >
+          {expanded ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <ChevronRight className="h-5 w-5" />
+          )}
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center border-t border-b p-4">
+        <div className="mb-2 h-12 w-12 rounded-full bg-primary/10 p-2">
+          <UserIcon className="h-8 w-8 text-primary" />
+        </div>
+        <div
+          className={cn(
+            "text-center transition-all duration-300",
+            expanded ? "block" : "hidden"
+          )}
+        >
+          <p className="font-medium">{user.username}</p>
+          {account && (
+            <p className="text-xs text-muted-foreground">
+              {truncateAddress(account)}
+            </p>
+          )}
         </div>
       </div>
-      
-      {/* User info */}
-      <div className="px-6 py-4 border-b border-primary/30">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/30 flex items-center justify-center glow">
-            <span className="text-white font-semibold">{initials}</span>
-          </div>
-          <div>
-            <p className="font-medium text-white">{`${user.firstName} ${user.lastName}`}</p>
-            <p className="text-xs text-primary/80">{user.email}</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        {menuItems.map((item) => (
-          <Link key={item.href} 
-            href={item.href}
-            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md cursor-pointer backdrop-blur-sm transition-all duration-300 ${
-              location === item.href 
-                ? 'bg-primary/20 text-white glow' 
-                : 'text-gray-300 hover:bg-primary/10 hover:text-white'
-            }`}
+
+      <div className="flex-1 overflow-y-auto p-2">
+        <nav className="space-y-1">
+          <p
+            className={cn(
+              "px-4 py-2 text-xs font-semibold uppercase text-muted-foreground",
+              !expanded && "sr-only"
+            )}
           >
-            {item.icon}
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      
-      {/* Logout */}
-      <div className="px-6 py-4 border-t border-primary/30">
-        <button 
+            General
+          </p>
+          {userNavigation.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <a
+                className={cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  location === item.href
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+                )}
+              >
+                <item.icon className="mr-2 h-5 w-5" />
+                <span
+                  className={cn(
+                    "transition-all duration-300",
+                    expanded ? "opacity-100" : "hidden w-0 opacity-0"
+                  )}
+                >
+                  {item.label}
+                </span>
+              </a>
+            </Link>
+          ))}
+
+          {isAdmin && (
+            <>
+              <p
+                className={cn(
+                  "mt-6 px-4 py-2 text-xs font-semibold uppercase text-muted-foreground",
+                  !expanded && "sr-only"
+                )}
+              >
+                Admin
+              </p>
+              {adminNavigation.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <a
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      location === item.href
+                        ? "bg-blue-600 text-white"
+                        : "text-muted-foreground hover:bg-blue-600/10 hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="mr-2 h-5 w-5" />
+                    <span
+                      className={cn(
+                        "transition-all duration-300",
+                        expanded ? "opacity-100" : "hidden w-0 opacity-0"
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </a>
+                </Link>
+              ))}
+            </>
+          )}
+
+          {isSuperadmin && (
+            <>
+              <p
+                className={cn(
+                  "mt-6 px-4 py-2 text-xs font-semibold uppercase text-muted-foreground",
+                  !expanded && "sr-only"
+                )}
+              >
+                Owner
+              </p>
+              {superadminNavigation.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <a
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      location === item.href
+                        ? "bg-teal-600 text-white"
+                        : "text-muted-foreground hover:bg-teal-600/10 hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="mr-2 h-5 w-5" />
+                    <span
+                      className={cn(
+                        "transition-all duration-300",
+                        expanded ? "opacity-100" : "hidden w-0 opacity-0"
+                      )}
+                    >
+                      {item.label}
+                    </span>
+                  </a>
+                </Link>
+              ))}
+            </>
+          )}
+        </nav>
+      </div>
+
+      <div className="border-t p-2">
+        <Link href="/support">
+          <a
+            className={cn(
+              "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-primary/10 hover:text-foreground"
+            )}
+          >
+            <HelpCircle className="mr-2 h-5 w-5" />
+            <span
+              className={cn(
+                "transition-all duration-300",
+                expanded ? "opacity-100" : "hidden w-0 opacity-0"
+              )}
+            >
+              Help & Support
+            </span>
+          </a>
+        </Link>
+        <button
           onClick={handleLogout}
-          className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
+          className={cn(
+            "flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-red-600/10 hover:text-red-600"
+          )}
         >
           <LogOut className="mr-2 h-5 w-5" />
-          Logout
+          <span
+            className={cn(
+              "transition-all duration-300",
+              expanded ? "opacity-100" : "hidden w-0 opacity-0"
+            )}
+          >
+            Logout
+          </span>
         </button>
       </div>
     </aside>
   );
 };
-
-export default Sidebar;
