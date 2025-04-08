@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronRight, Wallet, Shield, Gift, CreditCard } from 'lucide-react';
@@ -35,11 +36,11 @@ const HomePage = () => {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
                 Your Gateway to Nepal's
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70"> Digital Financial Future</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80"> Digital Financial Future</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-lg text-foreground/90 mb-8">
                 Experience the power of blockchain technology with NepaliPay - a secure, transparent and efficient platform for all your digital financial needs.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -75,26 +76,26 @@ const HomePage = () => {
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-background/60 backdrop-blur-md p-6 rounded-xl border border-border/40 shadow-sm">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
                 <Wallet className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Digital Wallet</h3>
-              <p className="text-muted-foreground">Securely store, send, and receive NPT tokens with our intuitive digital wallet.</p>
+              <h3 className="text-xl font-bold mb-2 text-foreground">Digital Wallet</h3>
+              <p className="text-foreground/80">Securely store, send, and receive NPT tokens with our intuitive digital wallet.</p>
             </div>
-            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-background/60 backdrop-blur-md p-6 rounded-xl border border-border/40 shadow-sm">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Collateralized Loans</h3>
-              <p className="text-muted-foreground">Get instant loans backed by your cryptocurrency collateral with competitive rates.</p>
+              <h3 className="text-xl font-bold mb-2 text-foreground">Collateralized Loans</h3>
+              <p className="text-foreground/80">Get instant loans backed by your cryptocurrency collateral with competitive rates.</p>
             </div>
-            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <div className="bg-background/60 backdrop-blur-md p-6 rounded-xl border border-border/40 shadow-sm">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Buy NPT Tokens</h3>
-              <p className="text-muted-foreground">Easily purchase NPT tokens using your credit or debit card via secure Stripe payment.</p>
+              <h3 className="text-xl font-bold mb-2 text-foreground">Buy NPT Tokens</h3>
+              <p className="text-foreground/80">Easily purchase NPT tokens using your credit or debit card via secure Stripe payment.</p>
             </div>
           </div>
         </div>
@@ -105,21 +106,21 @@ const HomePage = () => {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">
+              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80">
                 NepaliPay
               </h2>
-              <p className="text-sm text-muted-foreground">Empowering Nepal's Digital Financial Future</p>
+              <p className="text-sm text-foreground/80">Empowering Nepal's Digital Financial Future</p>
             </div>
             <div className="flex flex-col md:flex-row gap-4">
               <Link href="/support">
-                <Button variant="ghost" size="sm">Support</Button>
+                <Button variant="ghost" size="sm" className="text-foreground/90">Support</Button>
               </Link>
               <Link href="/auth">
-                <Button variant="ghost" size="sm">Login</Button>
+                <Button variant="ghost" size="sm" className="text-foreground/90">Login</Button>
               </Link>
             </div>
           </div>
-          <div className="mt-8 pt-4 border-t border-border/30 text-center text-sm text-muted-foreground">
+          <div className="mt-8 pt-4 border-t border-border/30 text-center text-sm text-foreground/80">
             © {new Date().getFullYear()} NepaliPay. All rights reserved.
           </div>
         </div>
