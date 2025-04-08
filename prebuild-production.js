@@ -49,9 +49,18 @@ async function main() {
   // Copy all files from client/src to src
   await copyDir('client/src', 'src');
   
-  // Copy index.html to root (if it exists in client directory)
+  // Make sure client/index.html has the correct path for production before copying
   if (fs.existsSync('client/index.html')) {
-    copyFile('client/index.html', 'index.html');
+    const content = fs.readFileSync('client/index.html', 'utf8');
+    // Make sure the script tag points to /src/main.tsx for production
+    const updatedContent = content.replace(
+      /<script type="module" src=".*\/main.tsx.*"><\/script>/,
+      '<script type="module" src="/src/main.tsx"></script>'
+    );
+    
+    // Write the updated index.html directly to root for production build
+    fs.writeFileSync('index.html', updatedContent);
+    console.log('Created production-ready index.html with correct path to main.tsx');
   }
 
   // Create a production-ready vite.config.js in the root directory
