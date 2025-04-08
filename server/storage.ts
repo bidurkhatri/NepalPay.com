@@ -1,707 +1,393 @@
-import { db } from "./db";
-import {
-  users,
-  wallets,
-  transactions,
-  activities,
-  collaterals,
-  loans,
-  ads,
-  User,
-  InsertUser,
-  Wallet,
-  InsertWallet,
-  Transaction,
-  InsertTransaction,
-  Activity,
-  InsertActivity,
-  Collateral,
-  InsertCollateral,
-  Loan,
-  InsertLoan,
-  Ad,
-  InsertAd,
-} from "../shared/schema";
-import { eq, and, desc, or } from "drizzle-orm";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
+import { 
+  User, InsertUser, users,
+  Wallet, InsertWallet, wallets,
+  Transaction, InsertTransaction, transactions,
+  Activity, InsertActivity, activities,
+  Loan, InsertLoan, loans,
+  Collateral, InsertCollateral, collaterals,
+  Ad, InsertAd, ads,
+  TokenPurchase, InsertTokenPurchase, tokenPurchases,
+  TransactionFee, InsertTransactionFee, transactionFees
+} from '../shared/schema';
+import { db } from './db';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import { client } from './db';
 
-// Setup PostgreSQL session store
 const PostgresSessionStore = connectPg(session);
 
-// Storage interface
 export interface IStorage {
-  // User methods
+  // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByWalletAddress(walletAddress: string): Promise<User | undefined>;
-  getAllUsers(): Promise<User[]>;
-  createUser(insertUser: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<Omit<User, "id">>): Promise<User | undefined>;
-  updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
-  updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<Omit<User, 'id'>>): Promise<User>;
+  updateStripeCustomerId(id: number, customerId: string): Promise<User>;
+  updateUserStripeInfo(id: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User>;
   
-  // Wallet methods
+  // Wallet operations
   getWallet(id: number): Promise<Wallet | undefined>;
+  getWalletByUserId(userId: number): Promise<Wallet | undefined>;
   getWalletByAddress(address: string): Promise<Wallet | undefined>;
-  getWalletsByUserId(userId: number): Promise<Wallet[]>;
-  getPrimaryWalletByUserId(userId: number): Promise<Wallet | undefined>;
-  createWallet(insertWallet: InsertWallet & { user_id: number }): Promise<Wallet>;
-  updateWallet(id: number, updates: Partial<Omit<Wallet, "id">>): Promise<Wallet | undefined>;
-  deleteWallet(id: number): Promise<boolean>;
+  createWallet(wallet: InsertWallet): Promise<Wallet>;
+  updateWalletBalance(id: number, newBalance: number): Promise<Wallet>;
   
-  // Transaction methods
+  // Transaction operations
   getTransaction(id: number): Promise<Transaction | undefined>;
-  getTransactionByHash(hash: string): Promise<Transaction | undefined>;
-  getTransactionsByUserId(userId: number, limit?: number, offset?: number): Promise<Transaction[]>;
-  getTransactionsBySenderId(senderId: number, limit?: number, offset?: number): Promise<Transaction[]>;
-  getTransactionsByReceiverId(receiverId: number, limit?: number, offset?: number): Promise<Transaction[]>;
-  createTransaction(insertTransaction: InsertTransaction & { sender_id?: number }): Promise<Transaction>;
-  updateTransaction(id: number, updates: Partial<Omit<Transaction, "id">>): Promise<Transaction | undefined>;
+  getTransactionsByUserId(userId: number, limit?: number): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransactionStatus(id: number, status: 'pending' | 'completed' | 'failed'): Promise<Transaction>;
   
-  // Activity methods
+  // Activity operations
   getActivity(id: number): Promise<Activity | undefined>;
-  getActivitiesByUserId(userId: number, limit?: number, offset?: number): Promise<Activity[]>;
-  createActivity(insertActivity: InsertActivity): Promise<Activity>;
+  getActivitiesByUserId(userId: number, limit?: number): Promise<Activity[]>;
+  createActivity(activity: InsertActivity): Promise<Activity>;
   
-  // Collateral methods
+  // Loan operations
+  getLoan(id: number): Promise<Loan | undefined>;
+  getLoansByUserId(userId: number): Promise<Loan[]>;
+  createLoan(loan: InsertLoan): Promise<Loan>;
+  updateLoanStatus(id: number, status: 'pending' | 'approved' | 'active' | 'repaid' | 'defaulted' | 'rejected'): Promise<Loan>;
+  updateLoanRepaidAmount(id: number, repaidAmount: number): Promise<Loan>;
+  
+  // Collateral operations
   getCollateral(id: number): Promise<Collateral | undefined>;
   getCollateralsByUserId(userId: number): Promise<Collateral[]>;
-  getCollateralByLoanId(loanId: number): Promise<Collateral | undefined>;
-  createCollateral(insertCollateral: InsertCollateral & { user_id: number; loan_id: number }): Promise<Collateral>;
-  updateCollateral(id: number, updates: Partial<Omit<Collateral, "id">>): Promise<Collateral | undefined>;
+  createCollateral(collateral: InsertCollateral): Promise<Collateral>;
+  updateCollateralLockStatus(id: number, isLocked: boolean): Promise<Collateral>;
   
-  // Loan methods
-  getLoan(id: number): Promise<Loan | undefined>;
-  getLoansByUserId(userId: number, limit?: number, offset?: number): Promise<Loan[]>;
-  getActiveLoansByUserId(userId: number): Promise<Loan[]>;
-  createLoan(insertLoan: InsertLoan & { user_id: number }): Promise<Loan>;
-  updateLoan(id: number, updates: Partial<Omit<Loan, "id">>): Promise<Loan | undefined>;
-  
-  // Ad methods
+  // Ad operations
   getAd(id: number): Promise<Ad | undefined>;
-  getAdsByUserId(userId: number, limit?: number, offset?: number): Promise<Ad[]>;
-  getActiveAds(limit?: number, offset?: number): Promise<Ad[]>;
-  createAd(insertAd: InsertAd & { user_id: number }): Promise<Ad>;
-  updateAd(id: number, updates: Partial<Omit<Ad, "id">>): Promise<Ad | undefined>;
-  deleteAd(id: number): Promise<boolean>;
+  getAdsByUserId(userId: number): Promise<Ad[]>;
+  getActiveAds(limit?: number): Promise<Ad[]>;
+  createAd(ad: InsertAd): Promise<Ad>;
+  updateAdStatus(id: number, isActive: boolean): Promise<Ad>;
   
-  // Session store
-  sessionStore: session.Store;
+  // Token purchase operations
+  getTokenPurchase(id: number): Promise<TokenPurchase | undefined>;
+  getTokenPurchaseByPaymentIntent(paymentIntentId: string): Promise<TokenPurchase | undefined>;
+  getTokenPurchasesByUserId(userId: number): Promise<TokenPurchase[]>;
+  createTokenPurchase(purchase: InsertTokenPurchase): Promise<TokenPurchase>;
+  updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase>;
+  updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase>;
+  
+  // Transaction fee operations
+  getTransactionFee(): Promise<TransactionFee | undefined>;
+  upsertTransactionFee(fee: InsertTransactionFee): Promise<TransactionFee>;
+  
+  // Session store for authentication
+  sessionStore: session.SessionStore;
 }
 
-// Database Storage Implementation
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.Store;
-
+  sessionStore: session.SessionStore;
+  
   constructor() {
-    // Create session store
     this.sessionStore = new PostgresSessionStore({
-      conObject: {
-        connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-      },
-      createTableIfMissing: true,
+      pool: client,
+      createTableIfMissing: true
     });
   }
-
-  // User methods
+  
+  // User operations
   async getUser(id: number): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user;
-    } catch (error) {
-      console.error("Error getting user:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
-
+  
   async getUserByUsername(username: string): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.username, username));
-      return user;
-    } catch (error) {
-      console.error("Error getting user by username:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
-
+  
   async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
-    } catch (error) {
-      console.error("Error getting user by email:", error);
-      return undefined;
-    }
-  }
-
-  async getUserByWalletAddress(walletAddress: string): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.wallet_address, walletAddress));
-      return user;
-    } catch (error) {
-      console.error("Error getting user by wallet address:", error);
-      return undefined;
-    }
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
   
-  async getAllUsers(): Promise<User[]> {
-    try {
-      return await db.select().from(users);
-    } catch (error) {
-      console.error("Error getting all users:", error);
-      return [];
-    }
+  async createUser(user: InsertUser): Promise<User> {
+    const [createdUser] = await db.insert(users).values(user).returning();
+    return createdUser;
   }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    try {
-      const [user] = await db.insert(users).values(insertUser).returning();
-      return user;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw error;
-    }
+  
+  async updateUser(id: number, updates: Partial<Omit<User, 'id'>>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
-
-  async updateUser(id: number, updates: Partial<Omit<User, "id">>): Promise<User | undefined> {
-    try {
-      const [updatedUser] = await db
-        .update(users)
-        .set(updates)
-        .where(eq(users.id, id))
-        .returning();
-      return updatedUser;
-    } catch (error) {
-      console.error("Error updating user:", error);
-      return undefined;
-    }
+  
+  async updateStripeCustomerId(id: number, customerId: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ stripeCustomerId: customerId })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
-
-  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
-    return this.updateUser(userId, { stripe_customer_id: customerId });
+  
+  async updateUserStripeInfo(id: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        stripeCustomerId: stripeInfo.stripeCustomerId,
+        stripeSubscriptionId: stripeInfo.stripeSubscriptionId
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
-
-  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
-    return this.updateUser(userId, { stripe_subscription_id: subscriptionId });
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    try {
-      const [deletedUser] = await db
-        .delete(users)
-        .where(eq(users.id, id))
-        .returning();
-      return !!deletedUser;
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      return false;
-    }
-  }
-
-  // Wallet methods
+  
+  // Wallet operations
   async getWallet(id: number): Promise<Wallet | undefined> {
-    try {
-      const [wallet] = await db.select().from(wallets).where(eq(wallets.id, id));
-      return wallet;
-    } catch (error) {
-      console.error("Error getting wallet:", error);
-      return undefined;
-    }
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, id));
+    return wallet;
   }
-
+  
+  async getWalletByUserId(userId: number): Promise<Wallet | undefined> {
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, userId));
+    return wallet;
+  }
+  
   async getWalletByAddress(address: string): Promise<Wallet | undefined> {
-    try {
-      const [wallet] = await db.select().from(wallets).where(eq(wallets.address, address));
-      return wallet;
-    } catch (error) {
-      console.error("Error getting wallet by address:", error);
-      return undefined;
-    }
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.address, address));
+    return wallet;
   }
-
-  async getWalletsByUserId(userId: number): Promise<Wallet[]> {
-    try {
-      return await db.select().from(wallets).where(eq(wallets.user_id, userId));
-    } catch (error) {
-      console.error("Error getting wallets by user id:", error);
-      return [];
-    }
+  
+  async createWallet(wallet: InsertWallet): Promise<Wallet> {
+    const [createdWallet] = await db.insert(wallets).values(wallet).returning();
+    return createdWallet;
   }
-
-  async getPrimaryWalletByUserId(userId: number): Promise<Wallet | undefined> {
-    try {
-      const [wallet] = await db
-        .select()
-        .from(wallets)
-        .where(and(eq(wallets.user_id, userId), eq(wallets.is_primary, true)));
-      return wallet;
-    } catch (error) {
-      console.error("Error getting primary wallet by user id:", error);
-      return undefined;
-    }
+  
+  async updateWalletBalance(id: number, newBalance: number): Promise<Wallet> {
+    const [updatedWallet] = await db
+      .update(wallets)
+      .set({ balance: newBalance, updatedAt: new Date() })
+      .where(eq(wallets.id, id))
+      .returning();
+    return updatedWallet;
   }
-
-  async createWallet(insertWallet: InsertWallet & { user_id: number }): Promise<Wallet> {
-    try {
-      // If this is the first wallet, make it primary
-      const existingWallets = await this.getWalletsByUserId(insertWallet.user_id);
-      const isPrimary = existingWallets.length === 0;
-
-      const [wallet] = await db
-        .insert(wallets)
-        .values({ ...insertWallet, is_primary: isPrimary })
-        .returning();
-      return wallet;
-    } catch (error) {
-      console.error("Error creating wallet:", error);
-      throw error;
-    }
-  }
-
-  async updateWallet(id: number, updates: Partial<Omit<Wallet, "id">>): Promise<Wallet | undefined> {
-    try {
-      // If making this wallet primary, update all other wallets to non-primary
-      if (updates.is_primary) {
-        const wallet = await this.getWallet(id);
-        if (wallet) {
-          await db
-            .update(wallets)
-            .set({ is_primary: false })
-            .where(and(eq(wallets.user_id, wallet.user_id), eq(wallets.is_primary, true)));
-        }
-      }
-
-      const [updatedWallet] = await db
-        .update(wallets)
-        .set(updates)
-        .where(eq(wallets.id, id))
-        .returning();
-      return updatedWallet;
-    } catch (error) {
-      console.error("Error updating wallet:", error);
-      return undefined;
-    }
-  }
-
-  async deleteWallet(id: number): Promise<boolean> {
-    try {
-      // Check if this is a primary wallet
-      const wallet = await this.getWallet(id);
-      if (!wallet) return false;
-
-      const [deletedWallet] = await db
-        .delete(wallets)
-        .where(eq(wallets.id, id))
-        .returning();
-
-      // If deleted wallet was primary, make another wallet primary if available
-      if (deletedWallet.is_primary) {
-        const remainingWallets = await this.getWalletsByUserId(deletedWallet.user_id);
-        if (remainingWallets.length > 0) {
-          await this.updateWallet(remainingWallets[0].id, { is_primary: true });
-        }
-      }
-
-      return !!deletedWallet;
-    } catch (error) {
-      console.error("Error deleting wallet:", error);
-      return false;
-    }
-  }
-
-  // Transaction methods
+  
+  // Transaction operations
   async getTransaction(id: number): Promise<Transaction | undefined> {
-    try {
-      const [transaction] = await db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.id, id));
-      return transaction;
-    } catch (error) {
-      console.error("Error getting transaction:", error);
-      return undefined;
-    }
-  }
-
-  async getTransactionByHash(hash: string): Promise<Transaction | undefined> {
-    try {
-      const [transaction] = await db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.tx_hash, hash));
-      return transaction;
-    } catch (error) {
-      console.error("Error getting transaction by hash:", error);
-      return undefined;
-    }
-  }
-
-  async getTransactionsByUserId(userId: number, limit = 10, offset = 0): Promise<Transaction[]> {
-    try {
-      return await db
-        .select()
-        .from(transactions)
-        .where(
-          or(eq(transactions.sender_id, userId), eq(transactions.receiver_id, userId))
-        )
-        .orderBy(desc(transactions.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting transactions by user id:", error);
-      return [];
-    }
-  }
-
-  async getTransactionsBySenderId(senderId: number, limit = 10, offset = 0): Promise<Transaction[]> {
-    try {
-      return await db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.sender_id, senderId))
-        .orderBy(desc(transactions.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting transactions by sender id:", error);
-      return [];
-    }
-  }
-
-  async getTransactionsByReceiverId(receiverId: number, limit = 10, offset = 0): Promise<Transaction[]> {
-    try {
-      return await db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.receiver_id, receiverId))
-        .orderBy(desc(transactions.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting transactions by receiver id:", error);
-      return [];
-    }
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction;
   }
   
-  async getAllTransactions(limit = 50, offset = 0): Promise<Transaction[]> {
-    try {
-      return await db
-        .select()
-        .from(transactions)
-        .orderBy(desc(transactions.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting all transactions:", error);
-      return [];
-    }
+  async getTransactionsByUserId(userId: number, limit: number = 50): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(
+        sql`${transactions.senderId} = ${userId} OR ${transactions.receiverId} = ${userId}`
+      )
+      .orderBy(desc(transactions.createdAt))
+      .limit(limit);
   }
-
-  async createTransaction(insertTransaction: InsertTransaction & { sender_id?: number }): Promise<Transaction> {
-    try {
-      const [transaction] = await db
-        .insert(transactions)
-        .values(insertTransaction)
-        .returning();
-      return transaction;
-    } catch (error) {
-      console.error("Error creating transaction:", error);
-      throw error;
-    }
+  
+  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
+    const [createdTransaction] = await db.insert(transactions).values(transaction).returning();
+    return createdTransaction;
   }
-
-  async updateTransaction(id: number, updates: Partial<Omit<Transaction, "id">>): Promise<Transaction | undefined> {
-    try {
-      const [updatedTransaction] = await db
-        .update(transactions)
-        .set(updates)
-        .where(eq(transactions.id, id))
-        .returning();
-      return updatedTransaction;
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      return undefined;
-    }
+  
+  async updateTransactionStatus(id: number, status: 'pending' | 'completed' | 'failed'): Promise<Transaction> {
+    const [updatedTransaction] = await db
+      .update(transactions)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(transactions.id, id))
+      .returning();
+    return updatedTransaction;
   }
-
-  // Activity methods
+  
+  // Activity operations
   async getActivity(id: number): Promise<Activity | undefined> {
-    try {
-      const [activity] = await db
-        .select()
-        .from(activities)
-        .where(eq(activities.id, id));
-      return activity;
-    } catch (error) {
-      console.error("Error getting activity:", error);
-      return undefined;
-    }
-  }
-
-  async getActivitiesByUserId(userId: number, limit = 10, offset = 0): Promise<Activity[]> {
-    try {
-      return await db
-        .select()
-        .from(activities)
-        .where(eq(activities.user_id, userId))
-        .orderBy(desc(activities.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting activities by user id:", error);
-      return [];
-    }
-  }
-
-  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    try {
-      const [activity] = await db
-        .insert(activities)
-        .values(insertActivity)
-        .returning();
-      return activity;
-    } catch (error) {
-      console.error("Error creating activity:", error);
-      throw error;
-    }
-  }
-
-  // Collateral methods
-  async getCollateral(id: number): Promise<Collateral | undefined> {
-    try {
-      const [collateral] = await db
-        .select()
-        .from(collaterals)
-        .where(eq(collaterals.id, id));
-      return collateral;
-    } catch (error) {
-      console.error("Error getting collateral:", error);
-      return undefined;
-    }
-  }
-
-  async getCollateralsByUserId(userId: number): Promise<Collateral[]> {
-    try {
-      return await db
-        .select()
-        .from(collaterals)
-        .where(eq(collaterals.user_id, userId));
-    } catch (error) {
-      console.error("Error getting collaterals by user id:", error);
-      return [];
-    }
-  }
-
-  async getCollateralByLoanId(loanId: number): Promise<Collateral | undefined> {
-    try {
-      const [collateral] = await db
-        .select()
-        .from(collaterals)
-        .where(eq(collaterals.loan_id, loanId));
-      return collateral;
-    } catch (error) {
-      console.error("Error getting collateral by loan id:", error);
-      return undefined;
-    }
-  }
-
-  async createCollateral(insertCollateral: InsertCollateral & { user_id: number; loan_id: number }): Promise<Collateral> {
-    try {
-      const [collateral] = await db
-        .insert(collaterals)
-        .values(insertCollateral)
-        .returning();
-      return collateral;
-    } catch (error) {
-      console.error("Error creating collateral:", error);
-      throw error;
-    }
-  }
-
-  async updateCollateral(id: number, updates: Partial<Omit<Collateral, "id">>): Promise<Collateral | undefined> {
-    try {
-      const [updatedCollateral] = await db
-        .update(collaterals)
-        .set(updates)
-        .where(eq(collaterals.id, id))
-        .returning();
-      return updatedCollateral;
-    } catch (error) {
-      console.error("Error updating collateral:", error);
-      return undefined;
-    }
-  }
-
-  // Loan methods
-  async getLoan(id: number): Promise<Loan | undefined> {
-    try {
-      const [loan] = await db
-        .select()
-        .from(loans)
-        .where(eq(loans.id, id));
-      return loan;
-    } catch (error) {
-      console.error("Error getting loan:", error);
-      return undefined;
-    }
-  }
-
-  async getLoansByUserId(userId: number, limit = 10, offset = 0): Promise<Loan[]> {
-    try {
-      return await db
-        .select()
-        .from(loans)
-        .where(eq(loans.user_id, userId))
-        .orderBy(desc(loans.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting loans by user id:", error);
-      return [];
-    }
-  }
-
-  async getActiveLoansByUserId(userId: number): Promise<Loan[]> {
-    try {
-      return await db
-        .select()
-        .from(loans)
-        .where(and(eq(loans.user_id, userId), eq(loans.status, "active")));
-    } catch (error) {
-      console.error("Error getting active loans by user id:", error);
-      return [];
-    }
+    const [activity] = await db.select().from(activities).where(eq(activities.id, id));
+    return activity;
   }
   
-  async getAllLoans(limit = 50, offset = 0): Promise<Loan[]> {
-    try {
-      return await db
-        .select()
-        .from(loans)
-        .orderBy(desc(loans.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting all loans:", error);
-      return [];
-    }
+  async getActivitiesByUserId(userId: number, limit: number = 50): Promise<Activity[]> {
+    return await db
+      .select()
+      .from(activities)
+      .where(eq(activities.userId, userId))
+      .orderBy(desc(activities.createdAt))
+      .limit(limit);
   }
-
-  async createLoan(insertLoan: InsertLoan & { user_id: number }): Promise<Loan> {
-    try {
-      const [loan] = await db
-        .insert(loans)
-        .values(insertLoan)
-        .returning();
-      return loan;
-    } catch (error) {
-      console.error("Error creating loan:", error);
-      throw error;
-    }
+  
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    const [createdActivity] = await db.insert(activities).values(activity).returning();
+    return createdActivity;
   }
-
-  async updateLoan(id: number, updates: Partial<Omit<Loan, "id">>): Promise<Loan | undefined> {
-    try {
-      const [updatedLoan] = await db
-        .update(loans)
-        .set(updates)
-        .where(eq(loans.id, id))
-        .returning();
-      return updatedLoan;
-    } catch (error) {
-      console.error("Error updating loan:", error);
-      return undefined;
-    }
+  
+  // Loan operations
+  async getLoan(id: number): Promise<Loan | undefined> {
+    const [loan] = await db.select().from(loans).where(eq(loans.id, id));
+    return loan;
   }
-
-  // Ad methods
+  
+  async getLoansByUserId(userId: number): Promise<Loan[]> {
+    return await db
+      .select()
+      .from(loans)
+      .where(eq(loans.userId, userId))
+      .orderBy(desc(loans.createdAt));
+  }
+  
+  async createLoan(loan: InsertLoan): Promise<Loan> {
+    const [createdLoan] = await db.insert(loans).values(loan).returning();
+    return createdLoan;
+  }
+  
+  async updateLoanStatus(id: number, status: 'pending' | 'approved' | 'active' | 'repaid' | 'defaulted' | 'rejected'): Promise<Loan> {
+    const [updatedLoan] = await db
+      .update(loans)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(loans.id, id))
+      .returning();
+    return updatedLoan;
+  }
+  
+  async updateLoanRepaidAmount(id: number, repaidAmount: number): Promise<Loan> {
+    const [updatedLoan] = await db
+      .update(loans)
+      .set({ repaidAmount, updatedAt: new Date() })
+      .where(eq(loans.id, id))
+      .returning();
+    return updatedLoan;
+  }
+  
+  // Collateral operations
+  async getCollateral(id: number): Promise<Collateral | undefined> {
+    const [collateral] = await db.select().from(collaterals).where(eq(collaterals.id, id));
+    return collateral;
+  }
+  
+  async getCollateralsByUserId(userId: number): Promise<Collateral[]> {
+    return await db
+      .select()
+      .from(collaterals)
+      .where(eq(collaterals.userId, userId))
+      .orderBy(desc(collaterals.createdAt));
+  }
+  
+  async createCollateral(collateral: InsertCollateral): Promise<Collateral> {
+    const [createdCollateral] = await db.insert(collaterals).values(collateral).returning();
+    return createdCollateral;
+  }
+  
+  async updateCollateralLockStatus(id: number, isLocked: boolean): Promise<Collateral> {
+    const [updatedCollateral] = await db
+      .update(collaterals)
+      .set({ isLocked, updatedAt: new Date() })
+      .where(eq(collaterals.id, id))
+      .returning();
+    return updatedCollateral;
+  }
+  
+  // Ad operations
   async getAd(id: number): Promise<Ad | undefined> {
-    try {
-      const [ad] = await db
-        .select()
-        .from(ads)
-        .where(eq(ads.id, id));
-      return ad;
-    } catch (error) {
-      console.error("Error getting ad:", error);
-      return undefined;
-    }
+    const [ad] = await db.select().from(ads).where(eq(ads.id, id));
+    return ad;
   }
-
-  async getAdsByUserId(userId: number, limit = 10, offset = 0): Promise<Ad[]> {
-    try {
-      return await db
-        .select()
-        .from(ads)
-        .where(eq(ads.user_id, userId))
-        .orderBy(desc(ads.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting ads by user id:", error);
-      return [];
-    }
+  
+  async getAdsByUserId(userId: number): Promise<Ad[]> {
+    return await db
+      .select()
+      .from(ads)
+      .where(eq(ads.userId, userId))
+      .orderBy(desc(ads.createdAt));
   }
-
-  async getActiveAds(limit = 10, offset = 0): Promise<Ad[]> {
-    try {
-      return await db
-        .select()
-        .from(ads)
-        .where(eq(ads.status, "active"))
-        .orderBy(desc(ads.created_at))
-        .limit(limit)
-        .offset(offset);
-    } catch (error) {
-      console.error("Error getting active ads:", error);
-      return [];
-    }
+  
+  async getActiveAds(limit: number = 50): Promise<Ad[]> {
+    return await db
+      .select()
+      .from(ads)
+      .where(eq(ads.isActive, true))
+      .orderBy(desc(ads.createdAt))
+      .limit(limit);
   }
-
-  async createAd(insertAd: InsertAd & { user_id: number }): Promise<Ad> {
-    try {
-      const [ad] = await db
-        .insert(ads)
-        .values(insertAd)
-        .returning();
-      return ad;
-    } catch (error) {
-      console.error("Error creating ad:", error);
-      throw error;
-    }
+  
+  async createAd(ad: InsertAd): Promise<Ad> {
+    const [createdAd] = await db.insert(ads).values(ad).returning();
+    return createdAd;
   }
-
-  async updateAd(id: number, updates: Partial<Omit<Ad, "id">>): Promise<Ad | undefined> {
-    try {
-      const [updatedAd] = await db
-        .update(ads)
-        .set(updates)
-        .where(eq(ads.id, id))
-        .returning();
-      return updatedAd;
-    } catch (error) {
-      console.error("Error updating ad:", error);
-      return undefined;
-    }
+  
+  async updateAdStatus(id: number, isActive: boolean): Promise<Ad> {
+    const [updatedAd] = await db
+      .update(ads)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(ads.id, id))
+      .returning();
+    return updatedAd;
   }
-
-  async deleteAd(id: number): Promise<boolean> {
-    try {
-      const [deletedAd] = await db
-        .delete(ads)
-        .where(eq(ads.id, id))
-        .returning();
-      return !!deletedAd;
-    } catch (error) {
-      console.error("Error deleting ad:", error);
-      return false;
-    }
+  
+  // Token purchase operations
+  async getTokenPurchase(id: number): Promise<TokenPurchase | undefined> {
+    const [purchase] = await db.select().from(tokenPurchases).where(eq(tokenPurchases.id, id));
+    return purchase;
+  }
+  
+  async getTokenPurchaseByPaymentIntent(paymentIntentId: string): Promise<TokenPurchase | undefined> {
+    const [purchase] = await db
+      .select()
+      .from(tokenPurchases)
+      .where(eq(tokenPurchases.stripePaymentIntentId, paymentIntentId));
+    return purchase;
+  }
+  
+  async getTokenPurchasesByUserId(userId: number): Promise<TokenPurchase[]> {
+    return await db
+      .select()
+      .from(tokenPurchases)
+      .where(eq(tokenPurchases.userId, userId))
+      .orderBy(desc(tokenPurchases.createdAt));
+  }
+  
+  async createTokenPurchase(purchase: InsertTokenPurchase): Promise<TokenPurchase> {
+    const [createdPurchase] = await db.insert(tokenPurchases).values(purchase).returning();
+    return createdPurchase;
+  }
+  
+  async updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase> {
+    const [updatedPurchase] = await db
+      .update(tokenPurchases)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return updatedPurchase;
+  }
+  
+  async updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase> {
+    const [updatedPurchase] = await db
+      .update(tokenPurchases)
+      .set({ txHash, updatedAt: new Date() })
+      .where(eq(tokenPurchases.id, id))
+      .returning();
+    return updatedPurchase;
+  }
+  
+  // Transaction fee operations
+  async getTransactionFee(): Promise<TransactionFee | undefined> {
+    const [fee] = await db
+      .select()
+      .from(transactionFees)
+      .orderBy(desc(transactionFees.updatedAt))
+      .limit(1);
+    return fee;
+  }
+  
+  async upsertTransactionFee(fee: InsertTransactionFee): Promise<TransactionFee> {
+    // Delete any existing fee
+    await db.delete(transactionFees);
+    
+    // Insert the new fee
+    const [createdFee] = await db.insert(transactionFees).values(fee).returning();
+    return createdFee;
   }
 }
 
-// Export a singleton instance of the storage service
 export const storage = new DatabaseStorage();

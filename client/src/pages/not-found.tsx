@@ -1,25 +1,28 @@
 import React from 'react';
 import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { HomeIcon } from '@/lib/icons';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 
-const NotFound = () => {
+const NotFound: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12 bg-background">
-      <div className="max-w-md w-full text-center space-y-6">
-        <h1 className="text-6xl font-bold text-primary">404</h1>
-        <h2 className="text-2xl font-semibold text-foreground">Page Not Found</h2>
-        <p className="text-muted-foreground">
-          The page you were looking for doesn't exist or has been moved.
-        </p>
-        <div className="pt-6">
-          <Link href="/">
-            <Button className="inline-flex items-center">
-              <HomeIcon className="mr-2 h-4 w-4" />
-              Return to Home
-            </Button>
-          </Link>
+    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+      <div className="text-center">
+        <div className="flex justify-center mb-6">
+          <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
+            <AlertTriangle className="h-12 w-12 text-primary" />
+          </div>
         </div>
+        <h1 className="text-6xl font-bold mb-4">404</h1>
+        <h2 className="text-2xl font-semibold mb-4">Page Not Found</h2>
+        <p className="text-muted-foreground max-w-md mx-auto mb-8">
+          The page you are looking for might have been removed, had its name
+          changed, or is temporarily unavailable.
+        </p>
+        <Link href="/">
+          <a className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-primary-foreground font-medium">
+            <ArrowLeft size={18} />
+            Back to Home
+          </a>
+        </Link>
       </div>
     </div>
   );

@@ -1,90 +1,73 @@
-import * as React from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from 'react';
 import {
-  useMutation,
   useQuery,
-} from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+  useMutation,
+} from '@tanstack/react-query';
+import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
-// Define types for the user and authentication context
-export interface User {
+// Define User type based on your schema
+interface User {
   id: number;
   username: string;
   email: string;
-  role: "user" | "admin" | "superadmin";
-  kyc_status: "none" | "pending" | "approved" | "rejected";
-  created_at: string;
-  wallet_address?: string;
+  fullName?: string;
+  profileImage?: string;
+  role?: 'user' | 'admin' | 'superadmin';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface LoginData {
+type LoginData = {
   username: string;
   password: string;
-}
+};
 
-export interface RegisterData {
+type RegisterData = {
   username: string;
   email: string;
   password: string;
-}
+  fullName?: string;
+};
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
   loginMutation: ReturnType<typeof useLoginMutation>;
-  logoutMutation: ReturnType<typeof useLogoutMutation>;
   registerMutation: ReturnType<typeof useRegisterMutation>;
+  logoutMutation: ReturnType<typeof useLogoutMutation>;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
 };
 
-// Define the context
-const AuthContext = React.createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Custom hooks for authentication operations
+// Auth mutations
 function useLoginMutation() {
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await apiRequest('POST', '/api/login', credentials);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Login failed');
+      }
+      return await res.json() as User;
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(['/api/user'], user);
       toast({
-        title: "Login successful",
+        title: 'Login successful',
         description: `Welcome back, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: 'Login failed',
         description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-}
-
-function useLogoutMutation() {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -95,62 +78,111 @@ function useRegisterMutation() {
 
   return useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", userData);
-      return await res.json();
+      const res = await apiRequest('POST', '/api/register', userData);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Registration failed');
+      }
+      return await res.json() as User;
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(['/api/user'], user);
       toast({
-        title: "Registration successful",
+        title: 'Registration successful',
         description: `Welcome, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: 'Registration failed',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
 }
 
-// Provider component
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+function useLogoutMutation() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/logout');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Logout failed');
+      }
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['/api/user'], null);
+      queryClient.clear();
+      toast({
+        title: 'Logged out successfully',
+        description: 'You have been logged out.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Logout failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
-    queryKey: ["/api/user"],
-    retry: false,
+    refetch,
+  } = useQuery<User | null>({
+    queryKey: ['/api/user'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const loginMutation = useLoginMutation();
-  const logoutMutation = useLogoutMutation();
   const registerMutation = useRegisterMutation();
+  const logoutMutation = useLogoutMutation();
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user: user ?? null,
-        isLoading,
-        error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  // Determine if the user has admin or superadmin roles
+  const isAdmin = !!user && (user.role === 'admin' || user.role === 'superadmin');
+  const isSuperAdmin = !!user && user.role === 'superadmin';
+
+  // Refresh user data when mutations complete
+  useEffect(() => {
+    if (loginMutation.isSuccess || registerMutation.isSuccess || logoutMutation.isSuccess) {
+      refetch();
+    }
+  }, [
+    loginMutation.isSuccess,
+    registerMutation.isSuccess, 
+    logoutMutation.isSuccess,
+    refetch
+  ]);
+
+  const value: AuthContextType = {
+    user: user || null,
+    isLoading,
+    error: error as Error | null,
+    loginMutation,
+    registerMutation,
+    logoutMutation,
+    isAdmin,
+    isSuperAdmin,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Hook to use the auth context
 export function useAuth() {
-  const context = React.useContext(AuthContext);
+  const context = useContext(AuthContext);
+  
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 }

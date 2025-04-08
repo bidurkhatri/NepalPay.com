@@ -7,24 +7,20 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as UserType } from "../shared/schema";
 
-// Extend Express User interface to use our User type
 declare global {
   namespace Express {
     interface User extends UserType {}
   }
 }
 
-// Helper functions for password handling
 const scryptAsync = promisify(scrypt);
 
-// Hash password function
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
-// Compare passwords function
 async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
@@ -32,43 +28,40 @@ async function comparePasswords(supplied: string, stored: string): Promise<boole
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-// Check if user is authenticated
 export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.status(401).json({ message: "Unauthorized: Please login" });
+  res.status(401).json({ message: "Unauthorized" });
 }
 
-// Check if user is an admin
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && (req.user.role === "admin" || req.user.role === "superadmin")) {
+  if (req.isAuthenticated() && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
     return next();
   }
-  res.status(403).json({ message: "Forbidden: Admin access required" });
+  res.status(403).json({ message: "Access denied" });
 }
 
-// Check if user is a superadmin
 export function isSuperAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user.role === "superadmin") {
+  if (req.isAuthenticated() && req.user.role === 'superadmin') {
     return next();
   }
-  res.status(403).json({ message: "Forbidden: SuperAdmin access required" });
+  res.status(403).json({ message: "Access denied" });
 }
 
-// Setup authentication with Passport
 export function setupAuth(app: Express) {
-  // Configure session
+  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "nepalipay-secret-key",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
     cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      sameSite: 'lax',
     },
+    store: storage.sessionStore,
   };
 
   app.set("trust proxy", 1);
@@ -76,180 +69,147 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure Local Strategy for username/password authentication
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Find user by username
         const user = await storage.getUserByUsername(username);
-        
-        // If user not found or password doesn't match
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Invalid username or password" });
         }
-        
-        // Success
         return done(null, user);
       } catch (error) {
         return done(error);
       }
-    })
+    }),
   );
 
-  // Serialize user for session
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
-  // Deserialize user from session
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
-      }
       done(null, user);
     } catch (error) {
       done(error);
     }
   });
 
-  // Register API route for user registration
   app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { username, email, password } = req.body;
-
-      // Check if required fields are provided
-      if (!username || !email || !password) {
-        return res.status(400).json({ message: "Username, email, and password are required" });
-      }
-
       // Check if user already exists
-      const existingUserByUsername = await storage.getUserByUsername(username);
-      if (existingUserByUsername) {
-        return res.status(409).json({ message: "Username already exists" });
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
       }
 
-      const existingUserByEmail = await storage.getUserByEmail(email);
-      if (existingUserByEmail) {
-        return res.status(409).json({ message: "Email already exists" });
+      const existingEmail = await storage.getUserByEmail(req.body.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
       }
 
       // Create user with hashed password
-      const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        username,
-        email,
-        password: hashedPassword,
-        full_name: req.body.full_name || "",
-        phone: req.body.phone || "",
-        kyc_status: "none",
-        role: "user",
-        wallet_address: req.body.wallet_address || "",
-        stripe_customer_id: "",
-        stripe_subscription_id: "",
+        ...req.body,
+        password: await hashPassword(req.body.password),
       });
 
-      // Login the user after registration
+      // Create a wallet for the user
+      await storage.createWallet({
+        userId: user.id,
+        address: `0x${randomBytes(20).toString('hex')}`, // Mock address, should be replaced with real wallet address
+        balance: 0,
+      });
+
+      // Log activity
+      await storage.createActivity({
+        userId: user.id,
+        type: 'login',
+        details: 'User registered and logged in',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] || '',
+      });
+
+      // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
-        // Return user info without sensitive data
-        return res.status(201).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          wallet_address: user.wallet_address,
-        });
+        // Don't send password to client
+        const { password, ...userWithoutPassword } = user;
+        return res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
-      console.error("Registration error:", error);
-      return res.status(500).json({ message: "Registration failed" });
+      next(error);
     }
   });
 
-  // Login API route
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate("local", (err: Error, user: UserType, info: { message: string }) => {
-      if (err) {
-        return next(err);
-      }
-      
-      if (!user) {
-        return res.status(401).json({ message: info?.message || "Login failed" });
-      }
-      
-      req.login(user, (loginErr) => {
-        if (loginErr) {
-          return next(loginErr);
+      if (err) return next(err);
+      if (!user) return res.status(400).json({ message: info.message || "Invalid credentials" });
+
+      req.login(user, async (loginErr) => {
+        if (loginErr) return next(loginErr);
+
+        try {
+          // Log activity
+          await storage.createActivity({
+            userId: user.id,
+            type: 'login',
+            details: 'User logged in',
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'] || '',
+          });
+
+          // Don't send password to client
+          const { password, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        } catch (activityError) {
+          console.error("Failed to log login activity:", activityError);
+          // Still return success even if activity logging fails
+          const { password, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
         }
-        
-        // Log the login activity
-        storage.createActivity({
-          user_id: user.id,
-          type: "login",
-          description: `User ${user.username} logged in`,
-        }).catch(console.error);
-        
-        // Return user info without sensitive data
-        return res.status(200).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          wallet_address: user.wallet_address,
-        });
       });
     })(req, res, next);
   });
 
-  // Logout API route
   app.post("/api/logout", (req: Request, res: Response) => {
     const userId = req.user?.id;
-    const username = req.user?.username;
     
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: "Logout failed" });
+        return res.status(500).json({ message: "Failed to logout" });
       }
-      
-      // Log the logout activity if user was logged in
-      if (userId && username) {
+
+      if (userId) {
+        // Log activity (don't await to avoid blocking logout)
         storage.createActivity({
-          user_id: userId,
-          type: "login",
-          description: `User ${username} logged out`,
-        }).catch(console.error);
+          userId,
+          type: 'login',
+          details: 'User logged out',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'] || '',
+        }).catch(err => console.error("Failed to log logout activity:", err));
       }
-      
-      req.session.destroy((sessionErr) => {
-        if (sessionErr) {
-          console.error("Session destruction error:", sessionErr);
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Error destroying session:", err);
         }
-        res.clearCookie("connect.sid");
-        return res.status(200).json({ message: "Logout successful" });
+        res.clearCookie('connect.sid');
+        return res.sendStatus(200);
       });
     });
   });
 
-  // Get current user API route
   app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     
-    // Return user info without password
-    const userInfo = {
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      full_name: req.user.full_name,
-      phone: req.user.phone,
-      role: req.user.role,
-      kyc_status: req.user.kyc_status,
-      wallet_address: req.user.wallet_address,
-    };
-    
-    return res.status(200).json(userInfo);
+    // Don't send password to client
+    const { password, ...userWithoutPassword } = req.user;
+    res.json(userWithoutPassword);
   });
 }

@@ -1,65 +1,79 @@
 import React, { createContext, useContext, useState } from 'react';
 
-type ToastVariant = 'default' | 'destructive' | 'success';
+type ToastVariant = 'default' | 'destructive';
 
-interface Toast {
-  id: string;
-  title: string;
+type ToastProps = {
+  title?: string;
   description?: string;
+  duration?: number;
   variant?: ToastVariant;
-}
+  onClose?: () => void;
+};
 
-interface ToastContextType {
+type Toast = {
+  id: string;
+  title?: string;
+  description?: string;
+  duration: number;
+  variant: ToastVariant;
+  onClose?: () => void;
+};
+
+type ToasterContextType = {
   toasts: Toast[];
-  toast: (props: Omit<Toast, 'id'>) => void;
+  toast: (props: ToastProps) => void;
   dismiss: (id: string) => void;
-  dismissAll: () => void;
-}
+};
 
-const ToastContext = createContext<ToastContextType | null>(null);
+const ToastContext = createContext<ToasterContextType | null>(null);
 
-function ToastProvider({ children }: { children: React.ReactNode }) {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = ({ title, description, variant = 'default' }: Omit<Toast, 'id'>) => {
-    const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, title, description, variant }]);
-    setTimeout(() => dismiss(id), 5000);
+  const toast = (props: ToastProps) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const newToast: Toast = {
+      id,
+      title: props.title,
+      description: props.description,
+      duration: props.duration || 5000,
+      variant: props.variant || 'default',
+      onClose: props.onClose,
+    };
+
+    setToasts((prevToasts) => [...prevToasts, newToast]);
+
+    // Auto dismiss after duration
+    setTimeout(() => {
+      dismiss(id);
+    }, newToast.duration);
+
+    return id;
   };
 
   const dismiss = (id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const dismissAll = () => {
-    setToasts([]);
+    setToasts((prevToasts) => {
+      const toast = prevToasts.find((t) => t.id === id);
+      if (toast?.onClose) {
+        toast.onClose();
+      }
+      return prevToasts.filter((t) => t.id !== id);
+    });
   };
 
   return (
-    <ToastContext.Provider value={{ toasts, toast, dismiss, dismissAll }}>
+    <ToastContext.Provider value={{ toasts, toast, dismiss }}>
       {children}
-      {/* Render toasts here */}
-      <div className="toast-container">
-        {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.variant}`}>
-            <div className="toast-title">{t.title}</div>
-            {t.description && <div className="toast-description">{t.description}</div>}
-            <button onClick={() => dismiss(t.id)}>Dismiss</button>
-          </div>
-        ))}
-      </div>
     </ToastContext.Provider>
   );
-}
+};
 
-function useToast() {
+export const useToast = () => {
   const context = useContext(ToastContext);
+  
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
+  
   return context;
-}
-
-// Export the functions and types
-export { ToastProvider, useToast, ToastContext };
-export type { Toast, ToastVariant, ToastContextType };
+};

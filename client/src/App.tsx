@@ -15,14 +15,34 @@ import BuyTokensPage from '@/pages/buy-tokens';
 import PaymentSuccessPage from '@/pages/payment-success';
 import NotFoundPage from '@/pages/not-found';
 import SupportPage from '@/pages/support';
-import SupportFAQPage from '@/pages/support/faq';
-import SupportKnowledgeBasePage from '@/pages/support/knowledgebase';
-import SupportContactPage from '@/pages/support/contact';
+import FAQPage from '@/pages/support/faq';
+import KnowledgeBasePage from '@/pages/support/knowledgebase';
+import ContactPage from '@/pages/support/contact';
 
-// Layouts and Components
+// Components
 import { ProtectedRoute } from '@/lib/protected-route';
 import DashboardLayout from '@/components/layouts/dashboard-layout';
 import SupportLayout from '@/components/layouts/support-layout';
+
+// Define the dashboard routes that use the dashboard layout
+const dashboardRoutes = [
+  { path: '/dashboard', component: DashboardPage },
+  { path: '/wallet', component: WalletPage },
+  { path: '/transactions', component: TransactionsPage },
+  { path: '/loans', component: LoansPage },
+  { path: '/collaterals', component: CollateralsPage },
+  { path: '/ads', component: AdsPage },
+  { path: '/buy-tokens', component: BuyTokensPage },
+  { path: '/payment-success', component: PaymentSuccessPage },
+];
+
+// Define the support routes that use the support layout
+const supportRoutes = [
+  { path: '/support', component: SupportPage, exact: true },
+  { path: '/support/faq', component: FAQPage },
+  { path: '/support/knowledgebase', component: KnowledgeBasePage },
+  { path: '/support/contact', component: ContactPage },
+];
 
 function App() {
   return (
@@ -32,85 +52,36 @@ function App() {
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
 
-        {/* Protected Dashboard Routes */}
-        <ProtectedRoute path="/dashboard">
-          <DashboardLayout>
-            <DashboardPage />
-          </DashboardLayout>
-        </ProtectedRoute>
+        {/* Dashboard Routes - Protected with layout */}
+        {dashboardRoutes.map(({ path, component }) => (
+          <ProtectedRoute
+            key={path}
+            path={path}
+            component={() => (
+              <DashboardLayout>
+                {React.createElement(component)}
+              </DashboardLayout>
+            )}
+          />
+        ))}
 
-        <ProtectedRoute path="/wallet">
-          <DashboardLayout>
-            <WalletPage />
-          </DashboardLayout>
-        </ProtectedRoute>
+        {/* Support Routes - Protected with layout */}
+        {supportRoutes.map(({ path, component, exact }) => (
+          <ProtectedRoute
+            key={path}
+            path={path}
+            component={() => (
+              <SupportLayout>
+                {React.createElement(component)}
+              </SupportLayout>
+            )}
+          />
+        ))}
 
-        <ProtectedRoute path="/transactions">
-          <DashboardLayout>
-            <TransactionsPage />
-          </DashboardLayout>
-        </ProtectedRoute>
-
-        <ProtectedRoute path="/loans">
-          <DashboardLayout>
-            <LoansPage />
-          </DashboardLayout>
-        </ProtectedRoute>
-
-        <ProtectedRoute path="/collaterals">
-          <DashboardLayout>
-            <CollateralsPage />
-          </DashboardLayout>
-        </ProtectedRoute>
-
-        <ProtectedRoute path="/ads">
-          <DashboardLayout>
-            <AdsPage />
-          </DashboardLayout>
-        </ProtectedRoute>
-
-        <ProtectedRoute path="/buy-tokens">
-          <DashboardLayout>
-            <BuyTokensPage />
-          </DashboardLayout>
-        </ProtectedRoute>
-
-        <Route path="/payment/success">
-          <DashboardLayout>
-            <PaymentSuccessPage />
-          </DashboardLayout>
-        </Route>
-
-        {/* Support Routes */}
-        <Route path="/support">
-          <SupportLayout>
-            <SupportPage />
-          </SupportLayout>
-        </Route>
-
-        <Route path="/support/faq">
-          <SupportLayout>
-            <SupportFAQPage />
-          </SupportLayout>
-        </Route>
-
-        <Route path="/support/knowledgebase">
-          <SupportLayout>
-            <SupportKnowledgeBasePage />
-          </SupportLayout>
-        </Route>
-
-        <Route path="/support/contact">
-          <SupportLayout>
-            <SupportContactPage />
-          </SupportLayout>
-        </Route>
-
-        {/* 404 Route */}
+        {/* 404 Page */}
         <Route component={NotFoundPage} />
       </Switch>
 
-      {/* Toast notifications */}
       <Toaster />
     </>
   );
