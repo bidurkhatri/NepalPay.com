@@ -39,10 +39,10 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   return (
     <Link href={href}>
       <a
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg apple-transition ${
           active
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'hover:bg-primary/5 text-foreground/80'
+            ? 'bg-primary/15 text-primary font-medium backdrop-blur-sm'
+            : 'hover:bg-primary/5 text-foreground/80 hover:text-foreground'
         }`}
         onClick={onClick}
       >
@@ -83,28 +83,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const ThemeIcon = theme === 'dark' ? Sun : theme === 'light' ? Moon : Monitor;
 
+  // Apply the appropriate theme class based on user role
+  const roleClass = user?.role === 'admin' 
+    ? 'admin-theme' 
+    : user?.role === 'superadmin' 
+      ? 'superadmin-theme' 
+      : '';
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className={`flex h-screen overflow-hidden bg-background dashboard-background ${roleClass}`}>
       {/* Mobile sidebar backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-md lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:static ${
+        className={`glass-sidebar dark:glass-sidebar-dark fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 lg:translate-x-0 lg:static ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center justify-between p-4 border-b border-border/30">
             <Link href="/">
               <a className="flex items-center gap-2">
-                <div className="text-primary font-bold text-xl">NepaliPay</div>
+                <div className="gradient-text font-bold text-xl">NepaliPay</div>
               </a>
             </Link>
             <button
@@ -169,13 +176,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </nav>
 
           {/* Wallet connection status */}
-          <div className="p-3 border-t border-border">
+          <div className="p-3 border-t border-border/30">
             <button
               onClick={handleWalletConnection}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`glass-button w-full flex items-center justify-center gap-2 apple-transition ${
                 connectedWallet
-                  ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                  : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  ? 'bg-green-500/15 text-green-500 hover:bg-green-500/25 backdrop-blur-sm'
+                  : 'glass-button-primary'
               }`}
             >
               <Wallet size={16} />
@@ -189,8 +196,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </button>
 
             {connectedWallet && (
-              <div className="mt-2 text-center text-sm text-muted-foreground">
-                <div>Balance: {Number(tokenBalance).toLocaleString()} {tokenSymbol}</div>
+              <div className="mt-2 text-center text-sm">
+                <div className="gradient-text font-semibold">{Number(tokenBalance).toLocaleString()} {tokenSymbol}</div>
               </div>
             )}
           </div>
@@ -200,7 +207,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 h-16 border-b border-border bg-card">
+        <header className="glass-navbar dark:glass-navbar-dark sticky top-0 z-30 flex items-center justify-between px-4 h-16">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="p-2 rounded-md hover:bg-muted lg:hidden"
@@ -212,7 +219,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+              className="p-2 rounded-full hover:bg-primary/10 apple-transition"
               title={`Switch to ${theme === 'dark' ? 'light' : theme === 'light' ? 'dark' : 'system'} theme`}
             >
               <ThemeIcon size={20} />
@@ -222,9 +229,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <div className="relative">
               <button
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center gap-2 p-2 rounded-full hover:bg-muted"
+                className="flex items-center gap-2 p-2 rounded-full hover:bg-primary/10 apple-transition"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden">
                   {user?.profileImage ? (
                     <img
                       src={user.profileImage}
@@ -236,21 +243,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   )}
                 </div>
                 <span className="hidden md:block font-medium">{user?.username}</span>
-                <ChevronDown size={16} className="text-muted-foreground" />
+                <ChevronDown size={16} />
               </button>
 
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
-                  <div className="p-2 border-b border-border">
+                <div className="glass-morphic dark:glass-morphic-dark absolute right-0 mt-2 w-48 rounded-xl shadow-lg overflow-hidden z-50">
+                  <div className="p-3 border-b border-border/30">
                     <div className="font-medium">{user?.username}</div>
                     <div className="text-sm text-muted-foreground truncate">
                       {user?.email}
                     </div>
                   </div>
-                  <div className="p-1">
+                  <div className="p-2">
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted rounded-md"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md apple-transition"
                     >
                       <LogOut size={16} />
                       <span>Log out</span>
@@ -264,7 +271,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          {children}
+          <div className="container mx-auto py-6 px-4 md:px-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -1,188 +1,126 @@
-import React from 'react';
 import { Link } from 'wouter';
-import { Wallet, ArrowRight, Shield, DownloadCloud, CreditCard, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, ChevronRight, Wallet, Shield, Gift, CreditCard } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) => {
-  return (
-    <div className="glass-card p-6 rounded-xl">
-      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
-    </div>
-  );
-};
-
-const HomePage: React.FC = () => {
+const HomePage = () => {
   const { user } = useAuth();
-  
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+      {/* Header */}
+      <header className="w-full py-4 px-6 backdrop-blur-sm bg-background/30 border-b border-border/40 fixed top-0 z-10">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">
+              NepaliPay
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <Link href="/dashboard">
+                <Button variant="ghost">Dashboard <ChevronRight className="ml-1 h-4 w-4" /></Button>
+              </Link>
+            ) : (
+              <Link href="/auth">
+                <Button>Get Started <ArrowRight className="ml-1 h-4 w-4" /></Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background pt-16 pb-24">
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="pt-32 pb-20 px-6">
+        <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-5xl sm:text-6xl font-bold leading-tight">
-                Nepal's Digital <span className="text-gradient">Financial</span> Future
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+                Your Gateway to Nepal's
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70"> Digital Financial Future</span>
               </h1>
-              <p className="mt-4 text-xl text-muted-foreground max-w-xl">
-                NepaliPay delivers fast, secure, and convenient digital financial services
-                with blockchain technology designed for Nepal's unique needs.
+              <p className="text-lg text-muted-foreground mb-8">
+                Experience the power of blockchain technology with NepaliPay - a secure, transparent and efficient platform for all your digital financial needs.
               </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                {user ? (
-                  <Link href="/dashboard">
-                    <a className="btn-hover-effect px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium inline-flex items-center gap-2">
-                      Go to Dashboard
-                      <ArrowRight size={18} />
-                    </a>
-                  </Link>
-                ) : (
-                  <Link href="/auth">
-                    <a className="btn-hover-effect px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium inline-flex items-center gap-2">
-                      Get Started
-                      <ArrowRight size={18} />
-                    </a>
-                  </Link>
-                )}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/auth">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Create Account
+                  </Button>
+                </Link>
                 <Link href="/support">
-                  <a className="px-8 py-3 border border-border rounded-lg font-medium">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     Learn More
-                  </a>
+                  </Button>
                 </Link>
               </div>
             </div>
-            <div className="hidden lg:block">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl"></div>
-                <img
-                  src="https://images.unsplash.com/photo-1518893494013-481c1d8ed3fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
-                  alt="NepaliPay Dashboard Preview"
-                  className="relative z-10 rounded-xl shadow-xl"
-                />
+            <div className="backdrop-blur-md bg-card/20 border border-border/30 rounded-xl p-6 shadow-lg">
+              <div className="aspect-[4/3] bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
+                <div className="text-center p-8">
+                  <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <Wallet className="h-10 w-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">NPT Token</h3>
+                  <p className="text-muted-foreground">The future of financial transactions in Nepal</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Features Section */}
-      <div className="py-16 container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Innovative Financial Features</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Experience the next generation of digital finance with cutting-edge blockchain technology,
-            designed specifically for Nepal's unique economic landscape.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FeatureCard
-            icon={<Wallet className="text-primary" size={24} />}
-            title="Secure Digital Wallet"
-            description="Store, send, and receive NPT tokens with complete security and privacy using blockchain technology."
-          />
-          <FeatureCard
-            icon={<Shield className="text-primary" size={24} />}
-            title="Collateral-Backed Loans"
-            description="Use cryptocurrency as collateral to access instant loans with competitive interest rates."
-          />
-          <FeatureCard
-            icon={<DownloadCloud className="text-primary" size={24} />}
-            title="Buy NPT Tokens"
-            description="Easily purchase NPT tokens using your credit/debit card with our secure Stripe integration."
-          />
-          <FeatureCard
-            icon={<CreditCard className="text-primary" size={24} />}
-            title="Bill Payments"
-            description="Pay utility bills, mobile recharges, and other services directly from your wallet."
-          />
-          <FeatureCard
-            icon={<BarChart3 className="text-primary" size={24} />}
-            title="Transaction Analytics"
-            description="Track your spending patterns, view transaction history, and manage finances efficiently."
-          />
-          <FeatureCard
-            icon={<Shield className="text-primary" size={24} />}
-            title="Enhanced Security"
-            description="Multi-factor authentication, blockchain verification, and encrypted transactions."
-          />
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-16 bg-primary/5">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to join the financial revolution?</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-            Start your journey with NepaliPay today and experience the future of digital finance in Nepal.
-          </p>
-          {user ? (
-            <Link href="/dashboard">
-              <a className="btn-hover-effect px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium inline-flex items-center gap-2">
-                Go to Dashboard
-                <ArrowRight size={18} />
-              </a>
-            </Link>
-          ) : (
-            <Link href="/auth">
-              <a className="btn-hover-effect px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium inline-flex items-center gap-2">
-                Get Started
-                <ArrowRight size={18} />
-              </a>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-card border-t border-border py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">NepaliPay</h3>
-              <p className="text-muted-foreground">
-                Nepal's leading blockchain-powered digital wallet and financial services platform.
-              </p>
+      {/* Features */}
+      <section className="py-20 px-6 bg-muted/30">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Wallet className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Digital Wallet</h3>
+              <p className="text-muted-foreground">Securely store, send, and receive NPT tokens with our intuitive digital wallet.</p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li><Link href="/dashboard"><a className="text-muted-foreground hover:text-foreground">Dashboard</a></Link></li>
-                <li><Link href="/wallet"><a className="text-muted-foreground hover:text-foreground">Wallet</a></Link></li>
-                <li><Link href="/loans"><a className="text-muted-foreground hover:text-foreground">Loans</a></Link></li>
-                <li><Link href="/buy-tokens"><a className="text-muted-foreground hover:text-foreground">Buy Tokens</a></Link></li>
-              </ul>
+            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Collateralized Loans</h3>
+              <p className="text-muted-foreground">Get instant loans backed by your cryptocurrency collateral with competitive rates.</p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li><Link href="/support"><a className="text-muted-foreground hover:text-foreground">Help Center</a></Link></li>
-                <li><Link href="/support/faq"><a className="text-muted-foreground hover:text-foreground">FAQ</a></Link></li>
-                <li><Link href="/support/knowledgebase"><a className="text-muted-foreground hover:text-foreground">Knowledge Base</a></Link></li>
-                <li><Link href="/support/contact"><a className="text-muted-foreground hover:text-foreground">Contact Us</a></Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Terms of Service</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Privacy Policy</a></li>
-                <li><a href="#" className="text-muted-foreground hover:text-foreground">Security</a></li>
-              </ul>
+            <div className="bg-background/40 backdrop-blur-md p-6 rounded-xl border border-border/30 shadow-sm">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <CreditCard className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Buy NPT Tokens</h3>
+              <p className="text-muted-foreground">Easily purchase NPT tokens using your credit or debit card via secure Stripe payment.</p>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} NepaliPay. All rights reserved.
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-10 px-6 border-t border-border/30 backdrop-blur-sm bg-background/30">
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70">
+                NepaliPay
+              </h2>
+              <p className="text-sm text-muted-foreground">Empowering Nepal's Digital Financial Future</p>
+            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <Link href="/support">
+                <Button variant="ghost" size="sm">Support</Button>
+              </Link>
+              <Link href="/auth">
+                <Button variant="ghost" size="sm">Login</Button>
+              </Link>
+            </div>
+          </div>
+          <div className="mt-8 pt-4 border-t border-border/30 text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} NepaliPay. All rights reserved.
           </div>
         </div>
       </footer>

@@ -12,8 +12,9 @@ import {
 import { db } from './db';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import session from 'express-session';
+import { Store as SessionStore } from 'express-session';
 import connectPg from 'connect-pg-simple';
-import { client } from './db';
+import { client, pgPool } from './db';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -78,15 +79,15 @@ export interface IStorage {
   upsertTransactionFee(fee: InsertTransactionFee): Promise<TransactionFee>;
   
   // Session store for authentication
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
   
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool: client,
+      pool: pgPool,
       createTableIfMissing: true
     });
   }

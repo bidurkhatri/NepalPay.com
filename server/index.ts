@@ -4,7 +4,7 @@ import { Server } from "http";
 import { registerRoutes } from "./routes";
 import { runMigrations } from "./db";
 import path from "path";
-import "./vite";
+import { setupVite } from "./vite";
 
 // Initialize express app
 const app = express();
@@ -24,6 +24,9 @@ async function startServer() {
     
     // Set up application routes
     httpServer = registerRoutes(app);
+    
+    // Set up Vite middleware to serve frontend
+    await setupVite(app, httpServer);
     
     // Listen on host 0.0.0.0 to make the server accessible from outside the container
     const PORT = process.env.PORT || 5000;

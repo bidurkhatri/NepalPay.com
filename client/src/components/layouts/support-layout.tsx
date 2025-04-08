@@ -33,10 +33,10 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   return (
     <Link href={href}>
       <a
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg apple-transition ${
           active
-            ? 'bg-primary/10 text-primary font-medium'
-            : 'hover:bg-primary/5 text-foreground/80'
+            ? 'bg-primary/15 text-primary font-medium backdrop-blur-sm'
+            : 'hover:bg-primary/5 text-foreground/80 hover:text-foreground'
         }`}
         onClick={onClick}
       >
@@ -63,27 +63,27 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
   const ThemeIcon = theme === 'dark' ? Sun : theme === 'light' ? Moon : Monitor;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background dashboard-background">
       {/* Mobile sidebar backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-md lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:static ${
+        className={`glass-sidebar dark:glass-sidebar-dark fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 lg:translate-x-0 lg:static ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center justify-between p-4 border-b border-border/30">
             <Link href="/">
               <a className="flex items-center gap-2">
-                <div className="text-primary font-bold text-xl">NepaliPay</div>
+                <div className="gradient-text font-bold text-xl">NepaliPay</div>
               </a>
             </Link>
             <button
@@ -96,7 +96,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
 
           {/* Support navigation */}
           <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-            <div className="text-sm font-medium text-muted-foreground px-4 py-2">
+            <div className="text-sm font-medium text-gradient px-4 py-2">
               Help & Support
             </div>
             <SidebarItem
@@ -128,7 +128,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
               onClick={() => setIsMobileMenuOpen(false)}
             />
 
-            <div className="mt-6 border-t border-border pt-4">
+            <div className="mt-6 border-t border-border/30 pt-4">
               <SidebarItem
                 href="/dashboard"
                 icon={<Home size={20} />}
@@ -143,17 +143,17 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 h-16 border-b border-border bg-card">
+        <header className="glass-navbar dark:glass-navbar-dark sticky top-0 z-30 flex items-center justify-between px-4 h-16">
           <div className="flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-md hover:bg-muted lg:hidden"
+              className="p-2 rounded-md hover:bg-primary/10 apple-transition lg:hidden"
             >
               <Menu size={20} />
             </button>
             <div className="ml-4 hidden md:block">
-              <div className="text-lg font-medium">Help & Support</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-lg font-medium gradient-text">Help & Support</div>
+              <div className="text-sm">
                 Find answers and get assistance
               </div>
             </div>
@@ -163,7 +163,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+              className="p-2 rounded-full hover:bg-primary/10 apple-transition"
               title={`Switch to ${theme === 'dark' ? 'light' : theme === 'light' ? 'dark' : 'system'} theme`}
             >
               <ThemeIcon size={20} />
@@ -171,7 +171,7 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
 
             {/* Back to dashboard */}
             <Link href="/dashboard">
-              <a className="flex items-center gap-1 px-4 py-2 text-sm rounded-md hover:bg-muted">
+              <a className="glass-button flex items-center gap-1 apple-transition">
                 <ChevronLeft size={16} />
                 <span className="hidden md:inline">Back to Dashboard</span>
               </a>
@@ -181,7 +181,9 @@ const SupportLayout: React.FC<SupportLayoutProps> = ({ children }) => {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
-          {children}
+          <div className="container mx-auto py-6 px-4 md:px-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>

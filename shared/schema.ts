@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, doublePrecision, boolean, varchar, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, integer, doublePrecision, boolean, varchar, pgEnum, numeric } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -14,25 +14,36 @@ export const activityTypeEnum = pgEnum('activity_type', ['login', 'transaction',
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   username: text('username').notNull().unique(),
+  password: text('password').notNull(), 
+  firstName: text('first_name'),
+  lastName: text('last_name'),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(),
-  fullName: text('full_name'),
-  profileImage: text('profile_image'),
-  role: userRoleEnum('role').default('user').notNull(),
+  phoneNumber: text('phone_number'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  finApiUserId: text('finapi_user_id'),
+  kycStatus: text('kyc_status'),
+  kycVerificationId: text('kyc_verification_id'),
+  kycVerifiedAt: timestamp('kyc_verified_at'),
+  role: text('role').default('user').notNull(),
+  walletAddress: text('wallet_address'),
   stripeCustomerId: text('stripe_customer_id'),
   stripeSubscriptionId: text('stripe_subscription_id'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // Wallet schema
 export const wallets = pgTable('wallets', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  address: text('address').notNull().unique(),
-  balance: doublePrecision('balance').default(0).notNull(),
+  balance: numeric('balance').default('0'),
+  currency: text('currency'),
+  lastUpdated: timestamp('last_updated'),
+  address: text('address'),
+  nptBalance: text('npt_balance'),
+  bnbBalance: text('bnb_balance'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  isPrimary: boolean('is_primary').default(false),
 });
 
 // Transaction schema
@@ -40,13 +51,14 @@ export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
   senderId: integer('sender_id').references(() => users.id, { onDelete: 'set null' }),
   receiverId: integer('receiver_id').references(() => users.id, { onDelete: 'set null' }),
-  amount: doublePrecision('amount').notNull(),
-  fee: doublePrecision('fee').default(0).notNull(),
-  type: transactionTypeEnum('type').notNull(),
-  status: transactionStatusEnum('status').default('pending').notNull(),
+  amount: numeric('amount').notNull(),
+  type: text('type').notNull(),
+  status: text('status').default('pending').notNull(),
+  note: text('note'),
   txHash: text('tx_hash'),
+  stripePaymentId: text('stripe_payment_id'),
+  currency: text('currency'),
   description: text('description'),
-  metadata: text('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
