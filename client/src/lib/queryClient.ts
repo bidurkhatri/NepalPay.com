@@ -3,62 +3,62 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });
 
-type ApiRequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
 export async function apiRequest(
-  method: ApiRequestMethod,
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   url: string,
-  data?: any,
-  options?: RequestInit
+  body?: any
 ) {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options?.headers,
-  };
-
-  const requestOptions: RequestInit = {
+  const options: RequestInit = {
     method,
-    headers,
-    credentials: 'include',
-    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Important for auth cookies
   };
 
-  if (data && method !== 'GET') {
-    requestOptions.body = JSON.stringify(data);
+  if (body && method !== 'GET') {
+    options.body = JSON.stringify(body);
   }
 
-  return fetch(url, requestOptions);
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `Request failed with status ${response.status}`);
+  }
+
+  return response;
 }
 
-interface GetQueryFnOptions {
-  on401?: 'throw' | 'returnNull';
-}
-
-export function getQueryFn<TData = unknown>(options: GetQueryFnOptions = {}) {
-  return async ({ queryKey }: { queryKey: string[] }): Promise<TData | null> => {
-    const endpoint = queryKey[0];
+export function getQueryFn(options?: { on401: 'throw' | 'returnNull' }) {
+  return async ({ queryKey }: { queryKey: string | string[] }) => {
+    const path = Array.isArray(queryKey) ? queryKey[0] : queryKey;
     
-    const response = await apiRequest('GET', endpoint);
-    
-    if (response.status === 401) {
-      if (options.on401 === 'returnNull') {
+    try {
+      const response = await apiRequest('GET', path);
+      
+      // Handle empty responses
+      if (response.status === 204) {
         return null;
       }
-      throw new Error('Unauthorized');
+      
+      return await response.json();
+    } catch (error: any) {
+      // Handle unauthorized
+      if (
+        error.message?.includes('401') &&
+        options?.on401 === 'returnNull'
+      ) {
+        return null;
+      }
+      throw error;
     }
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-      throw new Error(error.message || `API Error: ${response.status}`);
-    }
-    
-    return response.json();
   };
 }

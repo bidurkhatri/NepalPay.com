@@ -1,66 +1,57 @@
-import express from "express";
-import cors from "cors";
-import { Server } from "http";
-import path from "path";
-import { setupVite } from "./vite";
+import express from 'express';
+import cors from 'cors';
+import { json } from 'body-parser';
+import { Server } from 'http';
+import { registerRoutes } from './routes';
+import { runMigrations } from './db';
 
-// Initialize express app
+// Initialize Express app
 const app = express();
 
-// Setup middleware
+// Apply middleware
 app.use(cors());
-app.use(express.json());
+app.use(json({ limit: '10mb' }));
 
-// Simple health check endpoint
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "UP" });
-});
-
-// Configure routes 
+// Server variables
 let httpServer: Server;
 
-// Start the server
+// Start server function
 async function startServer() {
   try {
-    // Create HTTP server
-    httpServer = new Server(app);
-    
-    // Set up Vite middleware to serve frontend
-    await setupVite(app, httpServer);
-    
-    // Listen on host 0.0.0.0 to make the server accessible from outside the container
+    // Run database migrations
+    await runMigrations();
+
+    // Register application routes and get server instance
+    httpServer = registerRoutes(app);
+
+    // Start listening
     const PORT = process.env.PORT || 5000;
-    httpServer.listen(PORT, () => {
-      console.log(`Simple server is running at http://0.0.0.0:${PORT}`);
+    httpServer.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
 // Graceful shutdown
 function shutdownServer() {
-  console.log("Shutting down server...");
+  console.log('Shutting down server...');
+  
   if (httpServer) {
     httpServer.close(() => {
-      console.log("Server closed");
+      console.log('Server closed');
       process.exit(0);
     });
-    
-    // Force close server after 5 seconds
-    setTimeout(() => {
-      console.error("Forcing server to shut down...");
-      process.exit(1);
-    }, 5000);
   } else {
     process.exit(0);
   }
 }
 
-// Handle process termination
-process.on("SIGTERM", shutdownServer);
-process.on("SIGINT", shutdownServer);
+// Handle shutdown signals
+process.on('SIGINT', shutdownServer);
+process.on('SIGTERM', shutdownServer);
 
 // Start the server
 startServer();
