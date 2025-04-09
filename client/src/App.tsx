@@ -1,48 +1,129 @@
-import React from 'react';
-import { Switch, Route } from 'wouter';
+import { Route, Switch } from 'wouter';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
-import { AuthProvider } from './hooks/use-auth';
 import { Toaster } from './components/ui/toaster';
+import { AuthProvider } from './hooks/use-auth';
+import { RealTimeProvider } from './contexts/real-time-context';
+import { ProtectedRoute } from './lib/protected-route';
+import DashboardLayout from './components/dashboard-layout';
 
 // Pages
-import HomePage from './pages/home-page';
 import AuthPage from './pages/auth-page';
-import { ProtectedRoute } from './lib/protected-route';
+import BuyTokensPage from './pages/buy-tokens';
+import PaymentSuccessPage from './pages/payment-success';
+import NotFoundPage from './pages/not-found';
+import HomePage from './pages/home-page';
+import AdvancedLandingPage from './pages/advanced-landing-page';
 
-// Main App component
+// Support Pages
+import SupportPage from './pages/support/support-page';
+import FAQPage from './pages/support/faq-page';
+import KnowledgebasePage from './pages/support/knowledgebase-page';
+import ContactPage from './pages/support/contact-page';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Main app routes */}
-        <Switch>
-          <Route path="/" component={HomePage} />
-          <Route path="/auth" component={AuthPage} />
-          
-          {/* Catch all route - not found */}
-          <Route>
-            <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-900 to-gray-800">
-              <div className="max-w-md w-full p-8 bg-gray-800/50 backdrop-blur-lg rounded-xl shadow-xl border border-gray-700/50">
-                <h1 className="text-4xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-300">404</h1>
-                <p className="text-gray-300 text-center mb-8">
-                  The page you're looking for doesn't exist.
-                </p>
-                <div className="flex justify-center">
-                  <a 
-                    href="/"
-                    className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-blue-600/30"
-                  >
-                    Go Back Home
-                  </a>
-                </div>
-              </div>
-            </div>
-          </Route>
-        </Switch>
-        
-        {/* Toast notifications */}
-        <Toaster />
+        <RealTimeProvider>
+          <Switch>
+            <Route path="/">
+              <AdvancedLandingPage />
+            </Route>
+            <Route path="/auth">
+              <AuthPage />
+            </Route>
+            
+            {/* Protected routes with Dashboard Layout */}
+            <ProtectedRoute path="/dashboard">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/wallet">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/send">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/transactions">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/rewards">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/referrals">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/borrow">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/ad-bazaar">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/profile">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/settings">
+              <DashboardLayout>
+                <HomePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/buy-tokens">
+              <DashboardLayout>
+                <BuyTokensPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/payment-success">
+              <DashboardLayout>
+                <PaymentSuccessPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            
+            {/* Support Routes */}
+            <ProtectedRoute path="/support">
+              <DashboardLayout>
+                <SupportPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/faq">
+              <DashboardLayout>
+                <FAQPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/knowledgebase">
+              <DashboardLayout>
+                <KnowledgebasePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/support/contact">
+              <DashboardLayout>
+                <ContactPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            
+            <Route>
+              <NotFoundPage />
+            </Route>
+          </Switch>
+          <Toaster />
+        </RealTimeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -1,12 +1,10 @@
 import { IStorage } from './storage';
-import { db, pgPool, getSchemaDetails } from './db';
-import connectPgSimple from 'connect-pg-simple';
+import { db, initializeDatabase } from './db';
+import connectPg from 'connect-pg-simple';
 import session from 'express-session';
-import { eq, and, or, desc, sql } from 'drizzle-orm';
-import * as schema from '../shared/schema';
-
-// Import schemas
-const {
+import { eq, and, or, desc } from 'drizzle-orm';
+import { pool } from './db';
+import {
   users,
   wallets,
   transactions,
@@ -14,28 +12,23 @@ const {
   collaterals,
   loans,
   ads,
-  tokenPurchases,
-  transactionFees
-} = schema;
+  type User,
+  type InsertUser,
+  type Wallet,
+  type InsertWallet,
+  type Transaction,
+  type InsertTransaction,
+  type Activity,
+  type InsertActivity,
+  type Collateral,
+  type InsertCollateral,
+  type Loan,
+  type InsertLoan,
+  type Ad,
+  type InsertAd,
+} from '@shared/schema';
 
-type User = typeof schema.users.$inferSelect;
-type InsertUser = typeof schema.insertUserSchema._type;
-type Wallet = typeof schema.wallets.$inferSelect;
-type InsertWallet = typeof schema.insertWalletSchema._type;
-type Transaction = typeof schema.transactions.$inferSelect;
-type InsertTransaction = typeof schema.insertTransactionSchema._type;
-type Activity = typeof schema.activities.$inferSelect;
-type InsertActivity = typeof schema.insertActivitySchema._type;
-type Collateral = typeof schema.collaterals.$inferSelect;
-type InsertCollateral = typeof schema.insertCollateralSchema._type;
-type Loan = typeof schema.loans.$inferSelect;
-type InsertLoan = typeof schema.insertLoanSchema._type;
-type Ad = typeof schema.ads.$inferSelect;
-type InsertAd = typeof schema.insertAdSchema._type;
-type TokenPurchase = typeof schema.tokenPurchases.$inferSelect;
-type InsertTokenPurchase = typeof schema.insertTokenPurchaseSchema._type;
-type TransactionFee = typeof schema.transactionFees.$inferSelect;
-type InsertTransactionFee = typeof schema.insertTransactionFeeSchema._type;
+const PostgresSessionStore = connectPg(session);
 
 /**
  * PostgreSQL Storage Implementation
@@ -44,13 +37,9 @@ export class PgStorage implements IStorage {
   public sessionStore: session.Store;
   private initialized: boolean = false;
   
-  // Store schema details for field name compatibility
-  private schemaDetails: any = null;
-  
   constructor() {
-    const PostgresSessionStore = connectPgSimple(session);
     this.sessionStore = new PostgresSessionStore({
-      pool: pgPool,
+      pool,
       createTableIfMissing: true,
       tableName: 'session'
     });
@@ -61,12 +50,10 @@ export class PgStorage implements IStorage {
    */
   private async ensureDbInitialized() {
     if (!this.initialized) {
-      // Get schema details to handle backward compatibility with column names
-      this.schemaDetails = await getSchemaDetails();
-      
-      // Mark as initialized
-      this.initialized = true;
-      console.log("Database connection initialized");
+      this.initialized = await initializeDatabase();
+      if (!this.initialized) {
+        throw new Error('Failed to initialize database');
+      }
     }
   }
   
@@ -113,31 +100,6 @@ export class PgStorage implements IStorage {
     return result[0];
   }
   
-  async updateStripeCustomerId(id: number, customerId: string): Promise<User> {
-    await this.ensureDbInitialized();
-    const result = await db.update(users)
-      .set({
-        stripeCustomerId: customerId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, id))
-      .returning();
-    return result[0];
-  }
-  
-  async updateUserStripeInfo(id: number, stripeInfo: { stripeCustomerId: string, stripeSubscriptionId: string }): Promise<User> {
-    await this.ensureDbInitialized();
-    const result = await db.update(users)
-      .set({
-        stripeCustomerId: stripeInfo.stripeCustomerId,
-        stripeSubscriptionId: stripeInfo.stripeSubscriptionId,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, id))
-      .returning();
-    return result[0];
-  }
-  
   // ====== Wallet Methods ======
   
   async getWallet(id: number): Promise<Wallet | undefined> {
@@ -149,12 +111,6 @@ export class PgStorage implements IStorage {
   async getWalletByUserId(userId: number): Promise<Wallet | undefined> {
     await this.ensureDbInitialized();
     const result = await db.select().from(wallets).where(eq(wallets.userId, userId));
-    return result[0];
-  }
-  
-  async getWalletByAddress(address: string): Promise<Wallet | undefined> {
-    await this.ensureDbInitialized();
-    const result = await db.select().from(wallets).where(eq(wallets.address, address));
     return result[0];
   }
   
@@ -174,19 +130,6 @@ export class PgStorage implements IStorage {
       .where(eq(wallets.id, id))
       .returning();
     return result[0];
-  }
-  
-  async updateWalletBalance(id: number, newBalance: number): Promise<Wallet> {
-    await this.ensureDbInitialized();
-    const [updatedWallet] = await db
-      .update(wallets)
-      .set({ 
-        balance: newBalance.toString(), 
-        updatedAt: new Date() 
-      })
-      .where(eq(wallets.id, id))
-      .returning();
-    return updatedWallet;
   }
   
   // ====== Transaction Methods ======
@@ -259,45 +202,7 @@ export class PgStorage implements IStorage {
   
   async createActivity(activityData: InsertActivity): Promise<Activity> {
     await this.ensureDbInitialized();
-    // Map old field names to new ones if necessary
-    const mappedData: InsertActivity = {
-      ...activityData,
-      // Replace 'action' with 'type' if it exists
-      type: activityData.action ? activityData.action : activityData.type,
-      // Replace 'description' with 'details' if it exists
-      details: activityData.description ? activityData.description : activityData.details,
-    };
-    
-    // Remove old field names that don't exist in the schema
-    delete (mappedData as any).action;
-    delete (mappedData as any).description;
-    
-    const result = await db.insert(activities).values(mappedData).returning();
-    return result[0];
-  }
-  
-  async updateActivity(id: number, activityData: Partial<Activity>): Promise<Activity | undefined> {
-    await this.ensureDbInitialized();
-    // Map old field names to new ones if necessary
-    const mappedData: Partial<Activity> = {
-      ...activityData,
-      // Replace 'action' with 'type' if it exists
-      type: activityData.action ? activityData.action : activityData.type,
-      // Replace 'description' with 'details' if it exists
-      details: activityData.description ? activityData.description : activityData.details,
-    };
-    
-    // Remove old field names that don't exist in the schema
-    delete (mappedData as any).action;
-    delete (mappedData as any).description;
-    
-    const result = await db.update(activities)
-      .set({
-        ...mappedData,
-        updatedAt: new Date()
-      })
-      .where(eq(activities.id, id))
-      .returning();
+    const result = await db.insert(activities).values(activityData).returning();
     return result[0];
   }
   
@@ -316,29 +221,15 @@ export class PgStorage implements IStorage {
   
   async createCollateral(collateralData: InsertCollateral): Promise<Collateral> {
     await this.ensureDbInitialized();
-    // Map old field names to their new counterparts in our schema
-    const mappedData: InsertCollateral = { ...collateralData };
-    
-    // Remove fields that don't exist in our schema
-    delete (mappedData as any).ltv;
-    delete (mappedData as any).status;
-    
-    const result = await db.insert(collaterals).values(mappedData).returning();
+    const result = await db.insert(collaterals).values(collateralData).returning();
     return result[0];
   }
   
   async updateCollateral(id: number, collateralData: Partial<Collateral>): Promise<Collateral | undefined> {
     await this.ensureDbInitialized();
-    // Map old field names to their new counterparts in our schema
-    const mappedData: Partial<Collateral> = { ...collateralData };
-    
-    // Remove fields that don't exist in our schema
-    delete (mappedData as any).ltv;
-    delete (mappedData as any).status;
-    
     const result = await db.update(collaterals)
       .set({
-        ...mappedData,
+        ...collateralData,
         updatedAt: new Date()
       })
       .where(eq(collaterals.id, id))
@@ -366,35 +257,15 @@ export class PgStorage implements IStorage {
   
   async createLoan(loanData: InsertLoan): Promise<Loan> {
     await this.ensureDbInitialized();
-    // Map old field names to new ones
-    const mappedData: InsertLoan = {
-      ...loanData,
-      // Replace 'interest' with 'interestRate' if it exists
-      interestRate: loanData.interest ? loanData.interest : loanData.interestRate,
-    };
-    
-    // Remove old field names that don't exist in the schema
-    delete (mappedData as any).interest;
-    
-    const result = await db.insert(loans).values(mappedData).returning();
+    const result = await db.insert(loans).values(loanData).returning();
     return result[0];
   }
   
   async updateLoan(id: number, loanData: Partial<Loan>): Promise<Loan | undefined> {
     await this.ensureDbInitialized();
-    // Map old field names to new ones
-    const mappedData: Partial<Loan> = {
-      ...loanData,
-      // Handle legacy field names
-      interestRate: loanData.interest ? loanData.interest : loanData.interestRate,
-    };
-    
-    // Remove old field names that don't exist in the schema
-    delete (mappedData as any).interest;
-    
     const result = await db.update(loans)
       .set({
-        ...mappedData,
+        ...loanData,
         updatedAt: new Date()
       })
       .where(eq(loans.id, id))
@@ -417,189 +288,25 @@ export class PgStorage implements IStorage {
   
   async getActiveAds(): Promise<Ad[]> {
     await this.ensureDbInitialized();
-    return await db.select().from(ads).where(eq(ads.isActive, true));
+    return await db.select().from(ads).where(eq(ads.status, 'active'));
   }
   
   async createAd(adData: InsertAd): Promise<Ad> {
     await this.ensureDbInitialized();
-    // Map old field names to their new counterparts
-    const mappedData: InsertAd = { 
-      ...adData,
-      // Convert status to isActive
-      isActive: adData.status === 'active' ? true : false
-    };
-    
-    // Remove fields that don't exist in our schema
-    delete (mappedData as any).status;
-    delete (mappedData as any).startDate;
-    delete (mappedData as any).endDate;
-    delete (mappedData as any).budget;
-    
-    const result = await db.insert(ads).values(mappedData).returning();
+    const result = await db.insert(ads).values(adData).returning();
     return result[0];
   }
   
   async updateAd(id: number, adData: Partial<Ad>): Promise<Ad | undefined> {
     await this.ensureDbInitialized();
-    // Map old field names to their new counterparts
-    const mappedData: Partial<Ad> = { 
-      ...adData,
-      // Convert status to isActive if status exists
-      isActive: adData.status === 'active' ? true : 
-                adData.status === 'inactive' ? false : 
-                adData.isActive
-    };
-    
-    // Remove fields that don't exist in our schema
-    delete (mappedData as any).status;
-    delete (mappedData as any).startDate;
-    delete (mappedData as any).endDate;
-    delete (mappedData as any).budget;
-    
     const result = await db.update(ads)
       .set({
-        ...mappedData,
+        ...adData,
         updatedAt: new Date()
       })
       .where(eq(ads.id, id))
       .returning();
     return result[0];
-  }
-  
-  // ====== Token Purchase Methods ======
-
-  async getTokenPurchase(id: number): Promise<TokenPurchase | undefined> {
-    await this.ensureDbInitialized();
-    const result = await db.select().from(tokenPurchases).where(eq(tokenPurchases.id, id));
-    return result[0];
-  }
-
-  async getTokenPurchaseByPaymentIntent(paymentIntentId: string): Promise<TokenPurchase | undefined> {
-    await this.ensureDbInitialized();
-    const result = await db.select().from(tokenPurchases).where(eq(tokenPurchases.stripePaymentIntentId, paymentIntentId));
-    return result[0];
-  }
-
-  async getTokenPurchasesByUserId(userId: number): Promise<TokenPurchase[]> {
-    await this.ensureDbInitialized();
-    return await db.select().from(tokenPurchases).where(eq(tokenPurchases.userId, userId));
-  }
-
-  async createTokenPurchase(purchaseData: InsertTokenPurchase): Promise<TokenPurchase> {
-    await this.ensureDbInitialized();
-    const result = await db.insert(tokenPurchases).values(purchaseData).returning();
-    return result[0];
-  }
-
-  async updateTokenPurchaseStatus(id: number, status: string): Promise<TokenPurchase> {
-    await this.ensureDbInitialized();
-    const result = await db.update(tokenPurchases)
-      .set({
-        status,
-        updatedAt: new Date()
-      })
-      .where(eq(tokenPurchases.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async updateTokenPurchaseTxHash(id: number, txHash: string): Promise<TokenPurchase> {
-    await this.ensureDbInitialized();
-    const result = await db.update(tokenPurchases)
-      .set({
-        txHash,
-        updatedAt: new Date()
-      })
-      .where(eq(tokenPurchases.id, id))
-      .returning();
-    return result[0];
-  }
-
-  // ====== Transaction Fee Methods ======
-
-  async getTransactionFee(): Promise<TransactionFee | undefined> {
-    await this.ensureDbInitialized();
-    // Get the most recent transaction fee
-    const result = await db.select().from(transactionFees)
-      .orderBy(desc(transactionFees.updatedAt))
-      .limit(1);
-    return result[0];
-  }
-
-  async upsertTransactionFee(feeData: InsertTransactionFee): Promise<TransactionFee> {
-    await this.ensureDbInitialized();
-    
-    // Check if a record exists for this token amount
-    const existingFee = await db.select().from(transactionFees)
-      .where(eq(transactionFees.tokenAmount, feeData.tokenAmount));
-    
-    if (existingFee.length > 0) {
-      // Update existing record
-      const result = await db.update(transactionFees)
-        .set({
-          ...feeData,
-          updatedAt: new Date()
-        })
-        .where(eq(transactionFees.id, existingFee[0].id))
-        .returning();
-      return result[0];
-    } else {
-      // Insert new record
-      const result = await db.insert(transactionFees).values(feeData).returning();
-      return result[0];
-    }
-  }
-
-  // ====== Additional Helper Methods ======
-
-  async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
-    await this.ensureDbInitialized();
-    return await this.getUserTransactions(userId);
-  }
-
-  async updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined> {
-    await this.ensureDbInitialized();
-    return await this.updateTransaction(id, { status });
-  }
-
-  async getActivitiesByUserId(userId: number): Promise<Activity[]> {
-    await this.ensureDbInitialized();
-    return await this.getUserActivities(userId);
-  }
-
-  async getLoansByUserId(userId: number): Promise<Loan[]> {
-    await this.ensureDbInitialized();
-    return await this.getUserLoans(userId);
-  }
-
-  async updateLoanStatus(id: number, status: string): Promise<Loan | undefined> {
-    await this.ensureDbInitialized();
-    return await this.updateLoan(id, { status });
-  }
-
-  async updateLoanRepaidAmount(id: number, repaidAmount: number): Promise<Loan | undefined> {
-    await this.ensureDbInitialized();
-    return await this.updateLoan(id, { repaidAmount });
-  }
-
-  async getCollateralsByUserId(userId: number): Promise<Collateral[]> {
-    await this.ensureDbInitialized();
-    return await this.getUserCollaterals(userId);
-  }
-
-  async updateCollateralLockStatus(id: number, isLocked: boolean): Promise<Collateral | undefined> {
-    await this.ensureDbInitialized();
-    return await this.updateCollateral(id, { isLocked });
-  }
-
-  async getAdsByUserId(userId: number): Promise<Ad[]> {
-    await this.ensureDbInitialized();
-    return await this.getUserAds(userId);
-  }
-
-  async updateAdStatus(id: number, isActive: boolean): Promise<Ad | undefined> {
-    await this.ensureDbInitialized();
-    return await this.updateAd(id, { isActive });
   }
   
   // ====== Demo Data ======
@@ -702,14 +409,14 @@ export class PgStorage implements IStorage {
     // Create demo activities
     await this.createActivity({
       userId: demoUser.id,
-      type: 'login',
-      details: 'User logged in from web app'
+      action: 'login',
+      description: 'User logged in from web app'
     });
     
     await this.createActivity({
       userId: demoUser.id,
-      type: 'transaction',
-      details: 'Sent 500 NPT to admin'
+      action: 'transaction',
+      description: 'Sent 500 NPT to admin'
     });
     
     // Create demo collateral
@@ -717,7 +424,8 @@ export class PgStorage implements IStorage {
       userId: demoUser.id,
       type: 'BNB',
       amount: '2',
-      valueInNPT: 1500
+      ltv: 75,
+      status: 'active'
     });
     
     // Create demo loan
@@ -725,7 +433,7 @@ export class PgStorage implements IStorage {
       userId: demoUser.id,
       collateralId: 1,
       amount: '450',
-      interestRate: '5',
+      interest: '5',
       term: 30,
       status: 'active',
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
@@ -736,8 +444,10 @@ export class PgStorage implements IStorage {
       userId: adminUser.id,
       title: 'Premium NPT Exchange',
       description: 'Get the best rates when exchanging NPT for other cryptocurrencies!',
-      isActive: true,
-      price: 500
+      status: 'active',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      budget: '500'
     });
     
     console.log('Demo data initialization complete');

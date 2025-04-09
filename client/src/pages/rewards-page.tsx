@@ -17,29 +17,16 @@ import { useToast } from '@/hooks/use-toast';
 
 const RewardsPage: React.FC = () => {
   const { 
-    isConnected
+    isConnected, 
+    nptBalance,
+    userAddress,
+    txCount,
+    avatars,
+    referralCount,
+    claimReferralReward,
+    claimCashback,
+    claimAvatarBonus
   } = useBlockchain();
-  
-  // These properties should be included in the blockchain context
-  // Since they aren't yet, we provide default values for now
-  const nptBalance = '1000';
-  const userAddress = '0x1234...5678';
-  const txCount = 8;
-  const avatars = ['😎', '🚀']; // Example avatars (emojis as placeholders)
-  const referralCount = 2;
-  
-  // Mock implementation of claim functions
-  const claimReferralReward = async () => {
-    return new Promise(resolve => setTimeout(resolve, 1500));
-  };
-  
-  const claimCashback = async () => {
-    return new Promise(resolve => setTimeout(resolve, 1500));
-  };
-  
-  const claimAvatarBonus = async () => {
-    return new Promise(resolve => setTimeout(resolve, 1500));
-  };
   
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -64,7 +51,7 @@ const RewardsPage: React.FC = () => {
   
   // Avatar values
   const totalAvatars = 5;
-  const avatarProgress = avatars?.length || 0;
+  const avatarProgress = avatars.length;
   const avatarProgressPercent = (avatarProgress / totalAvatars) * 100;
   const avatarReward = (avatarProgress >= totalAvatars) ? 5 : 0; // 5 NPT for collecting all avatars
   const hasClaimableAvatarReward = avatarProgress >= totalAvatars;
@@ -379,7 +366,7 @@ const RewardsPage: React.FC = () => {
               {/* Avatar display */}
               <div className="grid grid-cols-5 gap-2 mb-6">
                 {/* Available avatars */}
-                {avatars?.map((avatar, index) => (
+                {avatars.map((avatar, index) => (
                   <div key={index} className="relative">
                     <div className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 p-1 rounded-lg">
                       <div className="aspect-square bg-gray-800 rounded flex items-center justify-center overflow-hidden">

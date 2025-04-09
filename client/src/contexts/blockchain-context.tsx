@@ -1,267 +1,819 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useToast } from '@/hooks/use-toast';
 
-// ABI for NepaliPayToken
-const tokenAbi = [
-  'function balanceOf(address owner) view returns (uint256)',
-  'function transfer(address to, uint256 amount) returns (bool)',
-  'function name() view returns (string)',
-  'function symbol() view returns (string)',
-  'function decimals() view returns (uint8)',
-];
-
-interface BlockchainContextType {
-  isConnecting: boolean;
-  connectedWallet: string | null;
-  tokenBalance: string;
-  tokenName: string;
-  tokenSymbol: string;
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-  refreshBalance: () => Promise<void>;
-  transferTokens: (to: string, amount: string) => Promise<boolean>;
-  errorMessage: string | null;
+// Define ethereum in window object
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
 }
 
-export const BlockchainContext = createContext<BlockchainContextType | null>(null);
+// Contract addresses from deployed contracts
+const NEPALI_PAY_TOKEN_ADDRESS = '0x69d34B25809b346702C21EB0E22EAD8C1de58D66';
+const NEPALI_PAY_ADDRESS = '0xe2d189f6696ee8b247ceae97fe3f1f2879054553';
+const FEE_RELAYER_ADDRESS = '0x7ff2271749409f9137dac1e082962e21cc99aee6';
 
-// Contract addresses
-const TOKEN_CONTRACT_ADDRESS = '0x7dd7e8b83706a1193af0f2aa5559fd50f94ed5ae'; // NepaliPayToken on BSC
+// BSC Mainnet chain ID
+const BSC_CHAIN_ID = 56;
 
-export const BlockchainProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+// Blockchain context type definition
+type BlockchainContextType = {
+  provider: ethers.BrowserProvider | null;
+  signer: ethers.JsonRpcSigner | null;
+  tokenContract: ethers.Contract | null;
+  nepaliPayContract: ethers.Contract | null;
+  feeRelayerContract: ethers.Contract | null;
+  account: string | null;
+  chainId: number | null;
+  balance: string;
+  tokenBalance: string;
+  isConnected: boolean;
+  isLoading: boolean;
+  error: string | null;
+  connectWallet: () => Promise<void>;
+  disconnectWallet: () => void;
+  refreshBalances: () => Promise<void>;
+  sendTokens: (toAddress: string, amount: string) => Promise<string>;
+  depositTokens: (amount: string) => Promise<string>;
+  withdrawTokens: (amount: string) => Promise<string>;
+  setUsername: (username: string) => Promise<string>;
+  addCollateral: (type: string, amount: string) => Promise<string>;
+  takeLoan: (amount: string, collateralId: number) => Promise<string>;
+  repayLoan: (loanId: number, amount: string) => Promise<string>;
+  claimReferralReward: (referralCode: string) => Promise<string>;
+  claimCashback: (transactionId: string) => Promise<string>;
+  relayTransaction: (data: string, signature: string) => Promise<string>;
+  isCorrectNetwork: boolean;
+  switchToBscNetwork: () => Promise<void>;
+  demoMode: boolean;
+  toggleDemoMode: () => void;
+};
+
+// Default value for context
+const defaultContextValue: BlockchainContextType = {
+  provider: null,
+  signer: null,
+  tokenContract: null,
+  nepaliPayContract: null,
+  feeRelayerContract: null,
+  account: null,
+  chainId: null,
+  balance: '0',
+  tokenBalance: '0',
+  isConnected: false,
+  isLoading: false,
+  error: null,
+  connectWallet: async () => {},
+  disconnectWallet: () => {},
+  refreshBalances: async () => {},
+  sendTokens: async () => '',
+  depositTokens: async () => '',
+  withdrawTokens: async () => '',
+  setUsername: async () => '',
+  addCollateral: async () => '',
+  takeLoan: async () => '',
+  repayLoan: async () => '',
+  claimReferralReward: async () => '',
+  claimCashback: async () => '',
+  relayTransaction: async () => '',
+  isCorrectNetwork: false,
+  switchToBscNetwork: async () => {},
+  demoMode: false,
+  toggleDemoMode: () => {},
+};
+
+// Create blockchain context
+const BlockchainContext = createContext<BlockchainContextType>(defaultContextValue);
+
+// Provider component
+export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const [tokenBalance, setTokenBalance] = useState('0');
-  const [tokenName, setTokenName] = useState('NepaliPay Token');
-  const [tokenSymbol, setTokenSymbol] = useState('NPT');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Initialize provider and contract
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
   const [tokenContract, setTokenContract] = useState<ethers.Contract | null>(null);
+  const [nepaliPayContract, setNepaliPayContract] = useState<ethers.Contract | null>(null);
+  const [feeRelayerContract, setFeeRelayerContract] = useState<ethers.Contract | null>(null);
+  const [account, setAccount] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<number | null>(null);
+  const [balance, setBalance] = useState<string>('0');
+  const [tokenBalance, setTokenBalance] = useState<string>('0');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCorrectNetwork, setIsCorrectNetwork] = useState<boolean>(false);
+  const [demoMode, setDemoMode] = useState<boolean>(false);
 
-  // Check if wallet is already connected
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        if (window.ethereum?.selectedAddress) {
-          const address = window.ethereum.selectedAddress;
-          setConnectedWallet(address);
-          initializeProvider();
-        }
-      } catch (error) {
-        console.error('Failed to check existing connection:', error);
-      }
-    };
-
-    checkConnection();
-
-    // Listen for account changes
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
-        setConnectedWallet(null);
-        setTokenBalance('0');
-      } else if (accounts[0] !== connectedWallet) {
-        setConnectedWallet(accounts[0]);
-        refreshBalance();
-      }
-    };
-
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
-    };
-  }, []);
-
-  // Initialize provider and contracts when wallet connects
-  const initializeProvider = async () => {
+  // Load contracts function
+  const loadContracts = async (signer: ethers.JsonRpcSigner) => {
     try {
-      if (!window.ethereum) {
-        throw new Error('No Ethereum wallet detected');
-      }
+      // Load token contract ABI
+      const tokenContract = new ethers.Contract(
+        NEPALI_PAY_TOKEN_ADDRESS,
+        [
+          "function balanceOf(address) view returns (uint256)",
+          "function transfer(address to, uint256 amount) returns (bool)",
+          "function approve(address spender, uint256 amount) returns (bool)"
+        ],
+        signer
+      );
+      setTokenContract(tokenContract);
 
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
-      setProvider(browserProvider);
+      // Load NepaliPay contract ABI
+      const nepaliPayContract = new ethers.Contract(
+        NEPALI_PAY_ADDRESS,
+        [
+          "function depositTokens(uint256 amount)",
+          "function withdrawTokens(uint256 amount)",
+          "function setUsername(string memory username)",
+          "function addCollateral(string memory collateralType, uint256 amount) payable returns (uint256)",
+          "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
+          "function repayLoan(uint256 loanId, uint256 amount)",
+          "function claimReferralReward(string memory referralCode) returns (uint256)",
+          "function claimCashback(string memory txId) returns (uint256)"
+        ],
+        signer
+      );
+      setNepaliPayContract(nepaliPayContract);
 
-      const signer = await browserProvider.getSigner();
-      const token = new ethers.Contract(TOKEN_CONTRACT_ADDRESS, tokenAbi, signer);
-      setTokenContract(token);
-
-      // Get token info
-      const name = await token.name();
-      const symbol = await token.symbol();
-      setTokenName(name);
-      setTokenSymbol(symbol);
-
-      // Get initial balance
-      await refreshBalanceInternal(token, signer.address);
+      // Load FeeRelayer contract ABI
+      const feeRelayerContract = new ethers.Contract(
+        FEE_RELAYER_ADDRESS,
+        [
+          "function relayTransaction(bytes memory data, bytes memory signature) returns (bytes memory)"
+        ],
+        signer
+      );
+      setFeeRelayerContract(feeRelayerContract);
     } catch (error) {
-      console.error('Failed to initialize provider:', error);
-      setErrorMessage('Failed to initialize blockchain connection');
+      console.error("Error loading contracts:", error);
+      setError("Failed to load contracts");
     }
   };
 
-  // Connect wallet
-  const connectWallet = async () => {
-    setIsConnecting(true);
-    setErrorMessage(null);
+  // Refresh balances function
+  const refreshBalances = async () => {
+    if (demoMode) {
+      // In demo mode, use hardcoded balances
+      setBalance('1000');
+      setTokenBalance('5000');
+      return;
+    }
+
+    if (!provider || !account || !tokenContract) return;
 
     try {
-      if (!window.ethereum) {
-        throw new Error('No Ethereum wallet detected. Please install MetaMask or another Ethereum wallet.');
-      }
+      setIsLoading(true);
 
+      // Get BNB balance
+      const bnbBalance = await provider.getBalance(account);
+      setBalance(ethers.formatEther(bnbBalance));
+
+      // Get NPT token balance
+      const tokenBalance = await tokenContract.balanceOf(account);
+      setTokenBalance(ethers.formatUnits(tokenBalance, 18));
+    } catch (error: any) {
+      console.error('Error refreshing balances:', error);
+      setError(error.message || 'Error refreshing balances');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize blockchain connection
+  useEffect(() => {
+    if (demoMode) return;
+
+    const initialize = async () => {
+      try {
+        if (window.ethereum) {
+          // Create provider
+          const web3Provider = new ethers.BrowserProvider(window.ethereum);
+          setProvider(web3Provider);
+
+          // Get network info
+          const network = await web3Provider.getNetwork();
+          const currentChainId = Number(network.chainId);
+          setChainId(currentChainId);
+          setIsCorrectNetwork(currentChainId === BSC_CHAIN_ID);
+
+          // Check if already connected
+          const accounts = await web3Provider.listAccounts();
+          if (accounts.length > 0) {
+            // Get signer and set account
+            const address = accounts[0];
+            setAccount(address);
+            const signer = await web3Provider.getSigner();
+            setSigner(signer);
+            setIsConnected(true);
+            
+            // Load contracts
+            await loadContracts(signer);
+            
+            // Get balances
+            const bnbBalance = await web3Provider.getBalance(accounts[0]);
+            setBalance(ethers.formatEther(bnbBalance));
+            
+            const tokenContract = new ethers.Contract(
+              NEPALI_PAY_TOKEN_ADDRESS,
+              ["function balanceOf(address) view returns (uint256)"],
+              signer
+            );
+            const nptBalance = await tokenContract.balanceOf(accounts[0]);
+            setTokenBalance(ethers.formatUnits(nptBalance, 18));
+          }
+        }
+      } catch (error: any) {
+        console.error("Blockchain initialization error:", error);
+        setError(error.message || "Failed to initialize blockchain connection");
+      }
+    };
+
+    initialize();
+
+    // Set up event listeners for MetaMask events
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+      window.ethereum.on('disconnect', handleDisconnect);
+    }
+
+    return () => {
+      // Clean up event listeners
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+        window.ethereum.removeListener('disconnect', handleDisconnect);
+      }
+    };
+  }, [demoMode]);
+
+  // Handle MetaMask account changes
+  const handleAccountsChanged = (accounts: string[]) => {
+    if (accounts.length === 0) {
+      // User disconnected
+      disconnectWallet();
+    } else {
+      // User switched accounts
+      setAccount(accounts[0]);
+      refreshBalances();
+    }
+  };
+
+  // Handle MetaMask chain changes
+  const handleChainChanged = () => {
+    window.location.reload();
+  };
+
+  // Handle MetaMask disconnect
+  const handleDisconnect = () => {
+    disconnectWallet();
+  };
+
+  // Connect wallet function
+  const connectWallet = async () => {
+    if (demoMode) {
+      setAccount('0xDemoAddress...1234');
+      setIsConnected(true);
+      setBalance('1000');
+      setTokenBalance('5000');
+      return;
+    }
+
+    if (!window.ethereum) {
+      toast({
+        title: 'MetaMask not installed',
+        description: 'Please install MetaMask to use this feature',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      if (accounts.length === 0) {
-        throw new Error('No accounts found. Please create an account in your wallet.');
+      const account = accounts[0];
+      setAccount(account);
+      setIsConnected(true);
+
+      // Get current chain ID
+      const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+      const chainId = parseInt(chainIdHex, 16);
+      setChainId(chainId);
+      setIsCorrectNetwork(chainId === BSC_CHAIN_ID);
+
+      // Get provider and signer
+      if (provider) {
+        const newSigner = await provider.getSigner();
+        setSigner(newSigner);
+        
+        // Load contracts
+        await loadContracts(newSigner);
+        
+        // Refresh balances
+        await refreshBalances();
       }
 
-      setConnectedWallet(accounts[0]);
-      
-      await initializeProvider();
-      
       toast({
         title: 'Wallet Connected',
-        description: `Connected to ${accounts[0].substring(0, 6)}...${accounts[0].substring(accounts[0].length - 4)}`,
+        description: 'Your wallet has been connected successfully',
+        variant: 'default',
       });
     } catch (error: any) {
-      console.error('Failed to connect wallet:', error);
-      setErrorMessage(error.message || 'Failed to connect wallet');
-      
+      console.error('Error connecting wallet:', error);
+      setError(error.message || 'Error connecting wallet');
       toast({
         title: 'Connection Failed',
         description: error.message || 'Failed to connect wallet',
         variant: 'destructive',
       });
     } finally {
-      setIsConnecting(false);
+      setIsLoading(false);
     }
   };
 
-  // Disconnect wallet
+  // Disconnect wallet function
   const disconnectWallet = () => {
-    setConnectedWallet(null);
+    setAccount(null);
+    setIsConnected(false);
+    setBalance('0');
     setTokenBalance('0');
-    setProvider(null);
-    setTokenContract(null);
     
-    toast({
-      title: 'Wallet Disconnected',
-      description: 'Your wallet has been disconnected',
-    });
-  };
-
-  // Refresh token balance internal helper
-  const refreshBalanceInternal = async (contract: ethers.Contract, address: string) => {
-    try {
-      const balance = await contract.balanceOf(address);
-      const decimals = await contract.decimals();
-      const formattedBalance = ethers.formatUnits(balance, decimals);
-      setTokenBalance(formattedBalance);
-      return formattedBalance;
-    } catch (error) {
-      console.error('Failed to refresh balance:', error);
-      throw error;
+    if (!demoMode) {
+      toast({
+        title: 'Wallet Disconnected',
+        description: 'Your wallet has been disconnected',
+        variant: 'default',
+      });
     }
   };
 
-  // Refresh token balance
-  const refreshBalance = async () => {
-    if (!tokenContract || !connectedWallet || !provider) {
+  // Switch to BSC Network
+  const switchToBscNetwork = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: 'MetaMask not installed',
+        description: 'Please install MetaMask to use this feature',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
-      await refreshBalanceInternal(tokenContract, connectedWallet);
-    } catch (error: any) {
-      setErrorMessage(error.message || 'Failed to refresh balance');
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x38' }], // BSC Mainnet: 0x38 (in hex)
+      });
+    } catch (switchError: any) {
+      // This error code indicates that the chain has not been added to MetaMask.
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: '0x38',
+                chainName: 'Binance Smart Chain Mainnet',
+                nativeCurrency: {
+                  name: 'BNB',
+                  symbol: 'BNB',
+                  decimals: 18,
+                },
+                rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                blockExplorerUrls: ['https://bscscan.com/'],
+              },
+            ],
+          });
+        } catch (addError: any) {
+          console.error('Error adding BSC network:', addError);
+          toast({
+            title: 'Network Error',
+            description: 'Failed to add BSC network to MetaMask',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        console.error('Error switching to BSC network:', switchError);
+        toast({
+          title: 'Network Error',
+          description: 'Failed to switch to BSC network',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  // Toggle demo mode
+  const toggleDemoMode = () => {
+    if (isConnected && !demoMode) {
+      // If turning on demo mode while connected, disconnect first
+      disconnectWallet();
+    }
+    
+    setDemoMode(!demoMode);
+    
+    if (!demoMode) {
+      // If turning on demo mode, set demo values
+      setAccount('0xDemoAddress...1234');
+      setIsConnected(true);
+      setBalance('1000');
+      setTokenBalance('5000');
       
       toast({
-        title: 'Balance Update Failed',
-        description: 'Failed to update your token balance',
-        variant: 'destructive',
+        title: 'Demo Mode Activated',
+        description: 'You are now using NepaliPay in demo mode',
+        variant: 'default',
+      });
+    } else {
+      // If turning off demo mode, reset values
+      setAccount(null);
+      setIsConnected(false);
+      setBalance('0');
+      setTokenBalance('0');
+      
+      toast({
+        title: 'Demo Mode Deactivated',
+        description: 'Demo mode has been turned off',
+        variant: 'default',
       });
     }
   };
 
-  // Transfer tokens
-  const transferTokens = async (to: string, amount: string): Promise<boolean> => {
-    if (!tokenContract || !connectedWallet || !provider) {
-      setErrorMessage('Wallet not connected');
-      return false;
+  // Send tokens function
+  const sendTokens = async (toAddress: string, amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!tokenContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
     }
 
     try {
-      const decimals = await tokenContract.decimals();
-      const parsedAmount = ethers.parseUnits(amount, decimals);
+      setIsLoading(true);
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      const tx = await tokenContract.transfer(toAddress, parsedAmount);
+      const receipt = await tx.wait();
       
-      const tx = await tokenContract.transfer(to, parsedAmount);
+      await refreshBalances();
       
-      toast({
-        title: 'Transaction Sent',
-        description: 'Your transfer transaction has been sent to the blockchain',
-      });
-      
-      await tx.wait();
-      
-      await refreshBalance();
-      
-      toast({
-        title: 'Transfer Successful',
-        description: `Successfully transferred ${amount} ${tokenSymbol} to ${to.substring(0, 6)}...${to.substring(to.length - 4)}`,
-      });
-      
-      return true;
+      return receipt.hash;
     } catch (error: any) {
-      console.error('Transfer failed:', error);
-      
-      const errorMessage = error.message || 'Failed to transfer tokens';
-      setErrorMessage(errorMessage);
-      
-      toast({
-        title: 'Transfer Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      
-      return false;
+      console.error('Error sending tokens:', error);
+      throw new Error(error.message || 'Error sending tokens');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const value: BlockchainContextType = {
-    isConnecting,
-    connectedWallet,
+  // Deposit tokens function
+  const depositTokens = async (amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !tokenContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      // First approve the NepaliPay contract to spend tokens
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      const approveTx = await tokenContract.approve(NEPALI_PAY_ADDRESS, parsedAmount);
+      await approveTx.wait();
+
+      // Then deposit tokens to NepaliPay
+      const depositTx = await nepaliPayContract.depositTokens(parsedAmount);
+      const receipt = await depositTx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error depositing tokens:', error);
+      throw new Error(error.message || 'Error depositing tokens');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Withdraw tokens function
+  const withdrawTokens = async (amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      const tx = await nepaliPayContract.withdrawTokens(parsedAmount);
+      const receipt = await tx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error withdrawing tokens:', error);
+      throw new Error(error.message || 'Error withdrawing tokens');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Set username function
+  const setUsername = async (username: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const tx = await nepaliPayContract.setUsername(username);
+      const receipt = await tx.wait();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error setting username:', error);
+      throw new Error(error.message || 'Error setting username');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add collateral function
+  const addCollateral = async (type: string, amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      // For ETH/BNB, we need to send value with the transaction
+      const options = type === 'BNB' ? { value: parsedAmount } : {};
+      const tx = await nepaliPayContract.addCollateral(type, parsedAmount, options);
+      const receipt = await tx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error adding collateral:', error);
+      throw new Error(error.message || 'Error adding collateral');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Take loan function
+  const takeLoan = async (amount: string, collateralId: number): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      const tx = await nepaliPayContract.takeLoan(parsedAmount, collateralId);
+      const receipt = await tx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error taking loan:', error);
+      throw new Error(error.message || 'Error taking loan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Repay loan function
+  const repayLoan = async (loanId: number, amount: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !tokenContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      
+      // First approve the NepaliPay contract to spend tokens
+      const approveTx = await tokenContract.approve(NEPALI_PAY_ADDRESS, parsedAmount);
+      await approveTx.wait();
+      
+      // Then repay the loan
+      const repayTx = await nepaliPayContract.repayLoan(loanId, parsedAmount);
+      const receipt = await repayTx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error repaying loan:', error);
+      throw new Error(error.message || 'Error repaying loan');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Claim referral reward function
+  const claimReferralReward = async (referralCode: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const tx = await nepaliPayContract.claimReferralReward(referralCode);
+      const receipt = await tx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error claiming referral reward:', error);
+      throw new Error(error.message || 'Error claiming referral reward');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Claim cashback function
+  const claimCashback = async (transactionId: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!nepaliPayContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const tx = await nepaliPayContract.claimCashback(transactionId);
+      const receipt = await tx.wait();
+      
+      await refreshBalances();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error claiming cashback:', error);
+      throw new Error(error.message || 'Error claiming cashback');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Relay transaction function (for gas-less transactions)
+  const relayTransaction = async (data: string, signature: string): Promise<string> => {
+    if (demoMode) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay
+      return '0xdemo-transaction-hash';
+    }
+
+    if (!feeRelayerContract || !account) {
+      throw new Error('Wallet not connected');
+    }
+
+    if (!isCorrectNetwork) {
+      throw new Error('Please switch to Binance Smart Chain');
+    }
+
+    try {
+      setIsLoading(true);
+      const tx = await feeRelayerContract.relayTransaction(data, signature);
+      const receipt = await tx.wait();
+      
+      return receipt.hash;
+    } catch (error: any) {
+      console.error('Error relaying transaction:', error);
+      throw new Error(error.message || 'Error relaying transaction');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Context value
+  const contextValue: BlockchainContextType = {
+    provider,
+    signer,
+    tokenContract,
+    nepaliPayContract,
+    feeRelayerContract,
+    account,
+    chainId,
+    balance,
     tokenBalance,
-    tokenName,
-    tokenSymbol,
+    isConnected,
+    isLoading,
+    error,
     connectWallet,
     disconnectWallet,
-    refreshBalance,
-    transferTokens,
-    errorMessage,
+    refreshBalances,
+    sendTokens,
+    depositTokens,
+    withdrawTokens,
+    setUsername,
+    addCollateral,
+    takeLoan,
+    repayLoan,
+    claimReferralReward,
+    claimCashback,
+    relayTransaction,
+    isCorrectNetwork,
+    switchToBscNetwork,
+    demoMode,
+    toggleDemoMode,
   };
 
   return (
-    <BlockchainContext.Provider value={value}>
+    <BlockchainContext.Provider value={contextValue}>
       {children}
     </BlockchainContext.Provider>
   );
 };
 
+// Hook to use blockchain context
 export const useBlockchain = () => {
   const context = useContext(BlockchainContext);
-  
   if (!context) {
     throw new Error('useBlockchain must be used within a BlockchainProvider');
   }
-  
   return context;
 };
+
+export default BlockchainContext;

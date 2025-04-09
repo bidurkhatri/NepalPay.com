@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -115,120 +115,63 @@ export default function PaymentSuccessPage() {
 
   if (paymentStatus === 'loading') {
     return (
-      <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-background relative overflow-hidden">
-        {/* Animated background gradients */}
-        <div className="absolute inset-0 bg-background-dark z-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-gradient-to-tl from-secondary/5 to-transparent rounded-full blur-3xl"></div>
-          <div className="absolute top-1/4 left-1/3 w-1/2 h-1/2 bg-gradient-to-br from-accent/5 to-transparent rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="gradient-border w-full max-w-md z-10">
-          <div className="glass-card p-8 flex flex-col items-center">
-            <div className="w-16 h-16 mb-6 relative">
-              <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <h2 className="text-2xl font-bold text-text-color mb-3">Processing your payment...</h2>
-            <p className="text-text-muted text-center">Please wait while we process your transaction</p>
-          </div>
-        </div>
+      <div className="payment-success-page loading">
+        <div className="loading-spinner"></div>
+        <h2>Processing your payment...</h2>
+        <p>Please wait while we process your transaction</p>
       </div>
     );
   }
 
   if (paymentStatus === 'failed') {
     return (
-      <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-background relative overflow-hidden">
-        {/* Animated background gradients */}
-        <div className="absolute inset-0 bg-background-dark z-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-gradient-to-tl from-secondary/5 to-transparent rounded-full blur-3xl"></div>
-          <div className="absolute top-1/4 left-1/3 w-1/2 h-1/2 bg-gradient-to-br from-accent/5 to-transparent rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="gradient-border w-full max-w-md z-10">
-          <div className="glass-card p-8 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-danger-light/10 flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-danger-light">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-text-color mb-3">Payment Failed</h1>
-            <p className="text-text-muted text-center mb-8">{paymentDetails?.error || 'An error occurred during payment processing.'}</p>
-            <button 
-              onClick={handleGoToBuyMore} 
-              className="w-full px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg relative overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1"
-            >
-              Try Again
-            </button>
-          </div>
+      <div className="payment-success-page failed">
+        <div className="error-icon">❌</div>
+        <h1>Payment Failed</h1>
+        <p>{paymentDetails?.error || 'An error occurred during payment processing.'}</p>
+        <div className="actions">
+          <button onClick={handleGoToBuyMore} className="retry-button">
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-background relative overflow-hidden">
-      {/* Animated background gradients */}
-      <div className="absolute inset-0 bg-background-dark z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
-        <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-gradient-to-tl from-secondary/5 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute top-1/4 left-1/3 w-1/2 h-1/2 bg-gradient-to-br from-accent/5 to-transparent rounded-full blur-3xl"></div>
+    <div className="payment-success-page success">
+      <div className="success-icon">✅</div>
+      <h1>Payment Successful</h1>
+      <p>Your token purchase has been completed successfully!</p>
+      
+      <div className="payment-details">
+        <div className="detail-item">
+          <span>Amount Paid:</span>
+          <span>${((paymentDetails?.amount || 0) / 100).toFixed(2)} USD</span>
+        </div>
+        <div className="detail-item highlight">
+          <span>Tokens Purchased:</span>
+          <span>{paymentDetails?.tokenAmount || '0'} NPT</span>
+        </div>
+        <div className="detail-item">
+          <span>Wallet Address:</span>
+          <span>{formatWalletAddress(paymentDetails?.walletAddress || '')}</span>
+        </div>
+        {paymentDetails?.txHash && (
+          <div className="detail-item">
+            <span>Transaction Hash:</span>
+            <span title={paymentDetails.txHash}>{formatTxHash(paymentDetails.txHash)}</span>
+          </div>
+        )}
       </div>
       
-      <div className="gradient-border w-full max-w-lg z-10">
-        <div className="glass-card p-8 flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-success-light/10 flex items-center justify-center mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success-light">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary mb-3">
-            Payment Successful
-          </h1>
-          <p className="text-text-muted text-center mb-8">Your token purchase has been completed successfully!</p>
-          
-          <div className="w-full bg-glass-bg-light backdrop-blur-md rounded-lg border border-border-light p-5 mb-8">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-text-muted">Amount Paid:</span>
-                <span className="text-text-color font-medium">${((paymentDetails?.amount || 0) / 100).toFixed(2)} USD</span>
-              </div>
-              <div className="flex justify-between items-center py-2 px-3 bg-primary/5 rounded-md">
-                <span className="text-text-color font-medium">Tokens Purchased:</span>
-                <span className="text-primary font-bold">{paymentDetails?.tokenAmount || '0'} NPT</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-text-muted">Wallet Address:</span>
-                <span className="text-text-color font-medium">{formatWalletAddress(paymentDetails?.walletAddress || '')}</span>
-              </div>
-              {paymentDetails?.txHash && (
-                <div className="flex justify-between items-center">
-                  <span className="text-text-muted">Transaction Hash:</span>
-                  <span className="text-text-color font-medium" title={paymentDetails.txHash}>
-                    {formatTxHash(paymentDetails.txHash)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex w-full gap-4">
-            <button 
-              onClick={handleGoToWallet} 
-              className="flex-1 px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg relative overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1"
-            >
-              View My Wallet
-            </button>
-            <button 
-              onClick={handleGoToBuyMore} 
-              className="flex-1 px-8 py-4 bg-glass-bg-light border border-border-light text-text-color font-medium rounded-lg hover:bg-border-light/10 transition-all hover:-translate-y-1"
-            >
-              Buy More Tokens
-            </button>
-          </div>
-        </div>
+      <div className="actions">
+        <button onClick={handleGoToWallet} className="primary-button">
+          View My Wallet
+        </button>
+        <button onClick={handleGoToBuyMore} className="secondary-button">
+          Buy More Tokens
+        </button>
       </div>
     </div>
   );

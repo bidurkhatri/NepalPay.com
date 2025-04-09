@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/auth-context';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import MobileNavigation from '@/components/mobile-navigation';
@@ -96,7 +96,7 @@ const ProfilePage: React.FC = () => {
                             <Label htmlFor="firstName">First Name</Label>
                             <Input 
                               id="firstName" 
-                              defaultValue={user.firstName || ''} 
+                              defaultValue={user.firstName} 
                               className="bg-black/30 border-primary/30 focus-visible:ring-primary text-white"
                             />
                           </div>
@@ -104,7 +104,7 @@ const ProfilePage: React.FC = () => {
                             <Label htmlFor="lastName">Last Name</Label>
                             <Input 
                               id="lastName" 
-                              defaultValue={user.lastName || ''} 
+                              defaultValue={user.lastName} 
                               className="bg-black/30 border-primary/30 focus-visible:ring-primary text-white"
                             />
                           </div>
@@ -115,7 +115,7 @@ const ProfilePage: React.FC = () => {
                             <Input 
                               id="email" 
                               type="email"
-                              defaultValue={user.email || ''}
+                              defaultValue={user.email}
                               className="bg-black/30 border-primary/30 focus-visible:ring-primary text-white flex-1"
                             />
                             <Mail className="ml-2 h-4 w-4 opacity-50 self-center" />

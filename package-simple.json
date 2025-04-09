@@ -1,9 +1,0 @@
-{
-  "name": "nepalipay-simple",
-  "version": "1.0.0",
-  "description": "Simplified NepaliPay app",
-  "scripts": {
-    "simple": "tsx server/simple-server.ts",
-    "vite": "vite --config vite.config.simple.ts"
-  }
-}

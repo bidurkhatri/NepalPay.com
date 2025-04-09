@@ -1,341 +1,286 @@
-import React, { useState } from 'react';
-import { Redirect } from 'wouter';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
-
-// Define the forms' schemas
-const loginSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-const registerSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  phoneNumber: z.string().optional(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [error, setError] = useState('');
+  const { user, loginMutation, registerMutation } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Login form
-  const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-    },
-  });
+  // Use useEffect to handle redirection instead of doing it in render
+  useEffect(() => {
+    if (user) {
+      setLocation('/dashboard');
+      console.log("User authenticated, redirecting to dashboard");
+    }
+  }, [user, setLocation]);
 
-  // Register form
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      phoneNumber: '',
-    },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
-  // Handle login submission
-  const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+    try {
+      if (isLogin) {
+        loginMutation.mutate(
+          { username, password },
+          {
+            onError: (error) => {
+              setError(error.message);
+            },
+          }
+        );
+      } else {
+        registerMutation.mutate(
+          { username, password, email, firstName, lastName },
+          {
+            onError: (error) => {
+              setError(error.message);
+            },
+          }
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
   };
 
-  // Handle register submission
-  const onRegisterSubmit = (data: RegisterFormValues) => {
-    // Remove confirmPassword as it's not part of the API schema
-    const { confirmPassword, ...registerData } = data;
-    registerMutation.mutate(registerData);
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
   };
 
-  // Redirect to home if already logged in
+  // If user is already logged in, don't render the form
   if (user) {
-    return <Redirect to="/" />;
+    return null;
   }
 
   return (
-    <div className="min-h-screen flex animated-gradient-bg">
-      {/* Left side - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-12">
-        <div className="glass-morphic-dark p-8 md:p-10 rounded-xl shadow-xl w-full max-w-md">
-          {/* Tabs */}
-          <div className="flex mb-8 border-b border-white/10">
-            <button
-              className={`pb-3 px-4 text-lg font-medium transition-colors ${isLogin ? 'text-white border-b-2 border-blue-500' : 'text-white/60 hover:text-white/80'}`}
-              onClick={() => setIsLogin(true)}
-            >
-              Login
-            </button>
-            <button
-              className={`pb-3 px-4 text-lg font-medium transition-colors ${!isLogin ? 'text-white border-b-2 border-blue-500' : 'text-white/60 hover:text-white/80'}`}
-              onClick={() => setIsLogin(false)}
-            >
-              Register
-            </button>
-          </div>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Animated background gradients */}
+      <div className="absolute inset-0 bg-background-dark z-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent"></div>
+        <div className="absolute bottom-0 right-0 w-3/4 h-3/4 bg-gradient-to-tl from-secondary/5 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 left-1/3 w-1/2 h-1/2 bg-gradient-to-br from-accent/5 to-transparent rounded-full blur-3xl"></div>
+      </div>
+      
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div 
+            key={i} 
+            className="absolute rounded-full bg-primary/20"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 5 + 2}px`,
+              height: `${Math.random() * 5 + 2}px`,
+              animation: `float ${Math.random() * 10 + 15}s linear infinite`
+            }}
+          ></div>
+        ))}
+      </div>
+      
+      <div className="gradient-border w-full max-w-6xl z-10">
+        <div className="glass-card flex flex-col md:flex-row overflow-hidden">
+          {/* Form Side */}
+          <div className="w-full md:w-1/2 p-8 md:p-12">
+            <div className="mb-10">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary mb-3">
+                {isLogin ? 'Welcome Back' : 'Create Account'}
+              </h1>
+              <p className="text-text-muted text-lg">
+                {isLogin
+                  ? 'Sign in to access your NepaliPay wallet.'
+                  : 'Join the digital financial revolution in Nepal.'}
+              </p>
+            </div>
 
-          {/* Login Form */}
-          {isLogin ? (
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-white/80 mb-1">
+            {error && (
+              <div className="bg-danger/10 border border-danger/20 text-danger-light rounded-lg p-4 mb-6 backdrop-blur-md">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="form-group">
+                <label htmlFor="username" className="block text-text-color mb-2 font-medium">
                   Username
                 </label>
-                <input
-                  id="username"
-                  type="text"
-                  {...loginForm.register('username')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Enter your username"
-                />
-                {loginForm.formState.errors.username && (
-                  <p className="mt-1 text-red-400 text-sm">{loginForm.formState.errors.username.message}</p>
-                )}
+                <div className="relative">
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                  />
+                  <div className="absolute inset-0 rounded-lg pointer-events-none border border-primary/0 group-focus-within:border-primary/20 transition-colors"></div>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-white/80 mb-1">
+              {!isLogin && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="email" className="block text-text-color mb-2 font-medium">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="form-group">
+                      <label htmlFor="firstName" className="block text-text-color mb-2 font-medium">
+                        First Name
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="firstName"
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          required
+                          className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="lastName" className="block text-text-color mb-2 font-medium">
+                        Last Name
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="lastName"
+                          type="text"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          required
+                          className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="password" className="block text-text-color mb-2 font-medium">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  {...loginForm.register('password')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Enter your password"
-                />
-                {loginForm.formState.errors.password && (
-                  <p className="mt-1 text-red-400 text-sm">{loginForm.formState.errors.password.message}</p>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
+                <div className="relative">
                   <input
-                    id="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-white/70">
-                    Remember me
-                  </label>
                 </div>
-                <a href="#" className="text-sm text-blue-400 hover:text-blue-300">
-                  Forgot password?
-                </a>
               </div>
 
               <button
                 type="submit"
-                disabled={loginMutation.isPending}
-                className="glass-button-dark w-full py-3 text-white font-medium flex items-center justify-center"
+                className="w-full mt-8 px-8 py-4 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg relative overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-1 disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                disabled={loginMutation.isPending || registerMutation.isPending}
               >
-                {loginMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
-                  </>
-                ) : (
-                  'Login'
-                )}
+                <span className="relative z-10">
+                  {isLogin ? 'Sign In' : 'Create Account'}
+                  {(loginMutation.isPending || registerMutation.isPending) && '...'}
+                </span>
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary-dark to-primary opacity-0 group-hover:opacity-100 transition-opacity"></span>
               </button>
+
+              <div className="text-center text-text-muted mt-6">
+                {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                <button 
+                  type="button" 
+                  onClick={toggleAuthMode} 
+                  className="text-primary hover:text-primary-light transition-colors font-medium"
+                >
+                  {isLogin ? 'Register' : 'Login'}
+                </button>
+              </div>
             </form>
-          ) : (
-            <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-white/80 mb-1">
-                    First Name
-                  </label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    {...registerForm.register('firstName')}
-                    className="glass-input-dark w-full px-4 py-2 text-white"
-                    placeholder="First name"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-white/80 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    {...registerForm.register('lastName')}
-                    className="glass-input-dark w-full px-4 py-2 text-white"
-                    placeholder="Last name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="reg-username" className="block text-sm font-medium text-white/80 mb-1">
-                  Username*
-                </label>
-                <input
-                  id="reg-username"
-                  type="text"
-                  {...registerForm.register('username')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Choose a username"
-                />
-                {registerForm.formState.errors.username && (
-                  <p className="mt-1 text-red-400 text-sm">{registerForm.formState.errors.username.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-1">
-                  Email*
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  {...registerForm.register('email')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Your email address"
-                />
-                {registerForm.formState.errors.email && (
-                  <p className="mt-1 text-red-400 text-sm">{registerForm.formState.errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-white/80 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  id="phoneNumber"
-                  type="tel"
-                  {...registerForm.register('phoneNumber')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Your phone number"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="reg-password" className="block text-sm font-medium text-white/80 mb-1">
-                  Password*
-                </label>
-                <input
-                  id="reg-password"
-                  type="password"
-                  {...registerForm.register('password')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Create a password"
-                />
-                {registerForm.formState.errors.password && (
-                  <p className="mt-1 text-red-400 text-sm">{registerForm.formState.errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-white/80 mb-1">
-                  Confirm Password*
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  {...registerForm.register('confirmPassword')}
-                  className="glass-input-dark w-full px-4 py-2 text-white"
-                  placeholder="Confirm your password"
-                />
-                {registerForm.formState.errors.confirmPassword && (
-                  <p className="mt-1 text-red-400 text-sm">{registerForm.formState.errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"
-                  required
-                />
-                <label htmlFor="terms" className="ml-2 block text-sm text-white/70">
-                  I agree to the <a href="#" className="text-blue-400 hover:text-blue-300">Terms of Service</a> and <a href="#" className="text-blue-400 hover:text-blue-300">Privacy Policy</a>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={registerMutation.isPending}
-                className="glass-button-dark w-full py-3 text-white font-medium flex items-center justify-center"
-              >
-                {registerMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-
-      {/* Right side - Hero */}
-      <div className="hidden md:flex md:w-1/2 bg-gray-900 items-center justify-center relative">
-        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1508196476428-de21c4d8a2ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=1972&q=80')" }}></div>
-        <div className="p-12 max-w-md z-10">
-          <div className="p-6 glass-morphic-dark rounded-xl mb-6 backdrop-blur-lg">
-            <h2 className="text-3xl font-bold mb-6 gradient-text-blue">Welcome to NepaliPay</h2>
-            <p className="text-white/90 mb-6">
-              Join Nepal's most advanced blockchain-powered digital wallet. Secure, fast, and designed specifically for the Nepali financial ecosystem.
-            </p>
-            <ul className="space-y-4">
-              <li className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-white/80">Secure blockchain transactions</span>
-              </li>
-              <li className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-white/80">NPT tokens pegged to Nepalese Rupee</span>
-              </li>
-              <li className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-white/80">Send money instantly across Nepal</span>
-              </li>
-              <li className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-white/80">Access to collateral-based loans</span>
-              </li>
-            </ul>
           </div>
-          <p className="text-white/60 text-sm">
-            Already trusted by thousands of users across Nepal. Join the financial revolution today.
-          </p>
+
+          {/* Info Side */}
+          <div className="w-full md:w-1/2 p-8 md:p-12 bg-gradient-to-br from-primary/10 via-background-light/30 to-secondary/10 backdrop-blur-md flex flex-col justify-center relative overflow-hidden">
+            {/* Background decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10 mb-12">
+              <h2 className="text-4xl font-bold mb-3">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary text-glow">
+                  NepaliPay
+                </span>
+              </h2>
+              <p className="text-text-color text-xl font-medium mb-8">A digital financial revolution for Nepal</p>
+              
+              <div className="h-1 w-16 bg-gradient-to-r from-primary to-secondary rounded-full mb-8"></div>
+            </div>
+            
+            <ul className="space-y-6 mb-12 relative z-10">
+              {[
+                'Secure blockchain-powered digital wallet',
+                'NPT tokens pegged to Nepalese Rupee (NPR)',
+                'Fast and low-cost money transfers',
+                'Collateralized loans and digital payments',
+                'Earn rewards through referrals'
+              ].map((feature, index) => (
+                <li key={index} className="flex items-start">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs mr-4 mt-0.5 shadow-glow">✓</div>
+                  <span className="text-text-muted text-lg">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            
+            <div className="mt-auto pt-8 text-center relative z-10">
+              <div className="py-3 px-6 inline-block rounded-full bg-glass-bg-light border border-border-light text-text-dimmed text-sm backdrop-blur-lg">
+                Powered by advanced blockchain technology
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* CSS for the floating animation */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes float {
+            0% {
+              transform: translateY(0px) translateX(0px);
+            }
+            25% {
+              transform: translateY(-30px) translateX(10px);
+            }
+            50% {
+              transform: translateY(-10px) translateX(20px);
+            }
+            75% {
+              transform: translateY(-20px) translateX(-10px);
+            }
+            100% {
+              transform: translateY(0px) translateX(0px);
+            }
+          }
+        `
+      }} />
     </div>
   );
 }

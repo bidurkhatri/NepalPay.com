@@ -1,64 +1,106 @@
-import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { Pool } from 'pg';
-import * as schema from '@shared/schema';
+import pg from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { users, wallets, transactions, activities, collaterals, loans, ads } from '@shared/schema';
 
-// Extract the DATABASE_URL from the environment variables
-const connectionString = process.env.DATABASE_URL || '';
+// Get the connection string from environment variables
+const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  console.error('DATABASE_URL environment variable is not set');
-  process.exit(1);
+  console.warn('DATABASE_URL environment variable not set. Please set it to connect to the database.');
 }
 
-// Create postgres client
-export const client = postgres(connectionString, { max: 10 });
-
-// Create pg Pool for connect-pg-simple
-export const pgPool = new Pool({
+// Create a PostgreSQL connection pool
+export const pool = new pg.Pool({
   connectionString,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
 });
 
-// Create drizzle ORM instance
-export const db = drizzle(client, { schema });
+// Handle pool errors
+pool.on('error', (err: Error) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
 
-// Function to run migrations (for development and testing)
-export async function runMigrations() {
+// Create a drizzle database instance
+export const db = drizzle(pool, {
+  schema: {
+    users,
+    wallets,
+    transactions,
+    activities,
+    collaterals,
+    loans,
+    ads
+  }
+});
+
+/**
+ * Initialize the database (connect and migrate)
+ */
+export async function initializeDatabase(): Promise<boolean> {
   try {
-    console.log('Running database migrations...');
-    // In a real environment, you'd use drizzle-kit to run proper migrations
-    // This is a simplified version just to ensure the database is properly set up
-    console.log('Database ready!');
+    // Test the connection
+    const connected = await testConnection();
+    if (!connected) {
+      console.error('Failed to connect to database');
+      return false;
+    }
+    
+    console.log('Successfully connected to the database');
+    
+    // Run migrations to create tables if they don't exist
+    await createTables();
+    
+    return true;
   } catch (error) {
-    console.error('Error running migrations:', error);
-    throw error;
+    console.error('Database initialization error:', error);
+    return false;
   }
 }
 
-// Helper function to check if a column exists
-export async function columnExists(table: string, column: string): Promise<boolean> {
-  const { rows } = await pgPool.query(`
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = $1 
-    AND column_name = $2
-  `, [table, column]);
-  
-  return rows.length > 0;
+/**
+ * Test the database connection
+ */
+export async function testConnection(): Promise<boolean> {
+  try {
+    const client = await pool.connect();
+    client.release();
+    return true;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return false;
+  }
 }
 
-// Get schema details (for debugging)
-export async function getSchemaDetails() {
+/**
+ * Create the database tables using drizzle schema
+ */
+export async function createTables(): Promise<void> {
   try {
-    const { rows } = await pgPool.query(`
-      SELECT table_name, column_name, data_type
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-      ORDER BY table_name, ordinal_position
+    // Currently using auto-migration which creates tables if they don't exist
+    // In a production environment, you would use a proper migration system
+    
+    // Check if the 'users' table exists
+    const result = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        AND table_name = 'users'
+      );
     `);
-    return rows;
+    
+    const tableExists = result.rows[0].exists;
+    
+    if (!tableExists) {
+      console.log('Tables do not exist, creating them now');
+      await migrate(db, { migrationsFolder: './drizzle' });
+      console.log('Tables created successfully');
+    } else {
+      console.log('Tables already exist, skipping creation');
+    }
   } catch (error) {
-    console.error('Error getting schema details:', error);
+    console.error('Error creating tables:', error);
     throw error;
   }
 }

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import AppLayout from '@/components/app-layout';
 
 // Dummy implementation for testing purposes
 const useBlockchain = () => ({
@@ -69,7 +70,7 @@ function CheckoutForm({ amount, walletAddress }: { amount: number; walletAddress
 
 export default function BuyTokensPage() {
   const [tokenAmount, setTokenAmount] = useState<number>(100);
-  const [tokenPrice, setTokenPrice] = useState<number>(1); // Default value before fetching
+  const [tokenPrice, setTokenPrice] = useState<number>(1); // 1 USD per token
   const [gasFee, setGasFee] = useState<number>(0.5); // Fixed gas fee in USD
   const [serviceFee, setServiceFee] = useState<number>(0); // 2% service fee
   const [totalCost, setTotalCost] = useState<number>(0);
@@ -77,36 +78,8 @@ export default function BuyTokensPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const { walletAddress, isConnected, connectWallet } = useBlockchain();
   const { toast } = useToast();
-  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(true);
 
-  // Fetch token price from blockchain
-  useEffect(() => {
-    const fetchTokenPrice = async () => {
-      try {
-        setIsLoadingPrice(true);
-        // Call the API to get the token price from the blockchain contract
-        const response = await apiRequest('GET', '/api/token-price');
-        const data = await response.json();
-        
-        if (data.price) {
-          setTokenPrice(data.price);
-        }
-      } catch (error) {
-        console.error("Failed to fetch token price:", error);
-        toast({
-          title: "Price Fetch Error",
-          description: "Could not fetch the current token price. Using default value instead.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingPrice(false);
-      }
-    };
-
-    fetchTokenPrice();
-  }, [toast]);
-
-  // Calculate fees and total cost when token amount or price changes
+  // Calculate fees and total cost when token amount changes
   useEffect(() => {
     const tokenCost = tokenAmount * tokenPrice;
     const serviceFeeAmount = tokenCost * 0.02; // 2% service fee
@@ -138,10 +111,10 @@ export default function BuyTokensPage() {
     }
 
     try {
-      const response = await apiRequest('POST', '/api/purchase-npt', {
+      const response = await apiRequest('POST', '/api/create-payment-intent', {
         amount: totalCost, // The server will handle conversion to cents
         walletAddress,
-        nptAmount: tokenAmount,
+        tokenAmount,
       });
 
       const data = await response.json();

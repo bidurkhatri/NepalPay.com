@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/auth-context';
 import { Link, useLocation } from 'wouter';
 import { useSettings, ThemeType, DisplayMode, AccentColor, Language, CurrencyFormat, DateFormat } from '@/contexts/settings-context';
 import Header from '@/components/header';

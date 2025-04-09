@@ -1,239 +1,479 @@
-import React from 'react';
-import { Link } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { useRealTimeContext } from '@/contexts/real-time-context';
+import { Link, useLocation } from 'wouter';
+import TransactionList from '@/components/transaction-list';
+import ActivityLog from '@/components/activity-log';
+import { 
+  Loader2, 
+  Signal, 
+  SignalZero, 
+  AlertCircle, 
+  Home, 
+  Wallet, 
+  CreditCard, 
+  BarChart3, 
+  Send, 
+  DollarSign, 
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Gift,
+  Users,
+  HelpCircle
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 export default function HomePage() {
+  const { user, logoutMutation } = useAuth();
+  const [location] = useLocation();
+  const { 
+    isConnected, 
+    wallet, 
+    recentTransactions, 
+    recentActivities,
+    lastUpdate,
+    refreshData
+  } = useRealTimeContext();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Simulate loading state for initial data fetch
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Format NPT balance for display
+  const formatBalance = (balance: string | undefined) => {
+    if (!balance) return "0.00";
+    
+    try {
+      const value = parseFloat(balance);
+      if (isNaN(value)) return "0.00";
+      
+      // For large numbers, abbreviate with K, M, etc.
+      if (value >= 1000000) {
+        return (value / 1000000).toFixed(2) + 'M';
+      } else if (value >= 1000) {
+        return (value / 1000).toFixed(2) + 'K';
+      }
+      return value.toFixed(2);
+    } catch (error) {
+      console.error('Error formatting balance:', error);
+      return "0.00";
+    }
+  };
+  
+  const handleRefresh = () => {
+    setIsLoading(true);
+    refreshData();
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Navigation items for both sidebar and mobile menu
+  const navItems = [
+    { icon: <Home className="h-5 w-5" />, label: 'Dashboard', href: '/dashboard', current: location === '/dashboard' },
+    { icon: <Wallet className="h-5 w-5" />, label: 'Wallet', href: '/wallet', current: location === '/wallet' },
+    { icon: <CreditCard className="h-5 w-5" />, label: 'Buy Tokens', href: '/buy-tokens', current: location === '/buy-tokens' },
+    { icon: <Send className="h-5 w-5" />, label: 'Send & Receive', href: '/send', current: location === '/send' },
+    { icon: <BarChart3 className="h-5 w-5" />, label: 'Transactions', href: '/transactions', current: location === '/transactions' },
+    { icon: <Gift className="h-5 w-5" />, label: 'Rewards', href: '/rewards', current: location === '/rewards' },
+    { icon: <Users className="h-5 w-5" />, label: 'Referrals', href: '/referrals', current: location === '/referrals' },
+    { icon: <HelpCircle className="h-5 w-5" />, label: 'Help & Support', href: '/support', current: location === '/support' || location.startsWith('/support/') }
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col animated-gradient-bg">
-      {/* Header */}
-      <header className="w-full py-4 px-4 md:px-8 flex justify-between items-center glass-morphic-dark z-10">
-        <div className="flex items-center">
-          <h1 className="text-2xl font-bold gradient-text-blue">NepaliPay</h1>
-        </div>
-        <nav className="hidden md:flex items-center space-x-6">
-          <a href="#features" className="text-white/80 hover:text-white transition-colors">Features</a>
-          <a href="#how-it-works" className="text-white/80 hover:text-white transition-colors">How It Works</a>
-          <a href="#about" className="text-white/80 hover:text-white transition-colors">About</a>
-          <Link href="/auth" className="glass-button-dark px-4 py-2 text-white hover:bg-blue-600/50 transition-all">
-            Get Started
-          </Link>
-        </nav>
-        <div className="md:hidden">
-          <button className="text-white p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" x2="20" y1="12" y2="12" />
-              <line x1="4" x2="20" y1="6" y2="6" />
-              <line x1="4" x2="20" y1="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="flex-1 flex flex-col md:flex-row items-center justify-center p-4 md:p-12 relative">
-        <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1526663089950-ac3d2a086e0d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80')" }}></div>
-        <div className="glass-morphic-dark max-w-2xl p-8 md:p-12 rounded-2xl z-10 backdrop-blur-lg">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 gradient-text-blue">
-            Revolutionizing Finances in Nepal
-          </h1>
-          <p className="text-white/90 text-lg md:text-xl mb-8">
-            NepaliPay is a blockchain-powered digital wallet designed specifically for the Nepali financial ecosystem.
-            Secure, fast, and culturally integrated.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/auth" className="glass-button-dark text-center py-3 px-8 text-lg font-medium text-white hover:shadow-blue-500/20 hover:bg-blue-600/50 transition-all">
-              Get Started
-            </Link>
-            <a href="#learn-more" className="glass-button text-center bg-white/5 py-3 px-8 text-lg font-medium text-white/80 hover:text-white transition-all">
-              Learn More
-            </a>
+    <div className="flex h-screen bg-black">
+      {/* Sidebar - Desktop */}
+      <div className="hidden lg:flex lg:flex-col lg:w-64 bg-gradient-to-b from-gray-900 to-black border-r border-white/5">
+        <div className="flex items-center justify-center h-16 px-4 border-b border-white/5">
+          <div className="flex items-center">
+            <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">NepaliPay</div>
+            <div className="ml-2 h-5 w-5 bg-gradient-to-r from-primary to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
+              <span className="text-white font-bold text-xs">₹</span>
+            </div>
           </div>
         </div>
-        <div className="hidden md:block ml-10 z-10">
-          <div className="glass-card-dark p-8 rounded-2xl shadow-xl">
-            <div className="relative w-64 h-96 overflow-hidden rounded-xl">
-              <img src="https://images.unsplash.com/photo-1605457867610-e990b296ce5e?ixlib=rb-4.0.3&auto=format&fit=crop&w=987&q=80" alt="NepaliPay App" className="absolute inset-0 object-cover w-full h-full" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4">
-                <h3 className="text-white text-lg font-semibold">NepaliPay App</h3>
-                <p className="text-white/70 text-sm">Seamless & Secure Transactions</p>
+        
+        <div className="flex flex-col flex-grow overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-1">
+            {navItems.map((item) => (
+              <Link 
+                key={item.href} 
+                href={item.href}
+                className={`flex items-center px-4 py-3 rounded-lg text-sm transition-all ${item.current ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+              >
+                <span className={`mr-3 ${item.current ? 'text-primary' : 'text-white/70'}`}>{item.icon}</span>
+                <span>{item.label}</span>
+                {item.current && (
+                  <div className="ml-auto w-1.5 h-6 bg-primary rounded-full"></div>
+                )}
+              </Link>
+            ))}
+          </nav>
+          
+          <div className="p-4 mt-auto border-t border-white/5">
+            <div className="flex items-center mb-4">
+              <div className="flex items-center">
+                <Avatar className="h-9 w-9 bg-primary/20 border border-primary/30">
+                  <span className="text-lg font-semibold text-white">{user?.username?.charAt(0).toUpperCase()}</span>
+                </Avatar>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-white">{user?.username}</p>
+                  <p className="text-xs text-white/50">User</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <Link 
+                href="/settings"
+                className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Settings className="h-4 w-4 mr-3" />
+                Settings
+              </Link>
+              
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:text-white hover:bg-white/5 transition-all"
+              >
+                <LogOut className="h-4 w-4 mr-3" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile menu */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={toggleMobileMenu}></div>
+        <div className="fixed right-0 top-0 bottom-0 w-full max-w-xs bg-gradient-to-b from-gray-900 to-black overflow-y-auto">
+          <div className="flex items-center justify-between p-4 border-b border-white/5">
+            <div className="flex items-center">
+              <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">NepaliPay</div>
+              <div className="ml-2 h-5 w-5 bg-gradient-to-r from-primary to-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-xs">₹</span>
+              </div>
+            </div>
+            <button 
+              onClick={toggleMobileMenu}
+              className="p-2 text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="px-2 py-4">
+            <nav className="space-y-1">
+              {navItems.map((item) => (
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 rounded-lg text-sm ${item.current ? 'bg-white/10 text-white' : 'text-white/70'}`}
+                  onClick={toggleMobileMenu}
+                >
+                  <span className={`mr-3 ${item.current ? 'text-primary' : ''}`}>{item.icon}</span>
+                  <span>{item.label}</span>
+                  {item.current && (
+                    <div className="ml-auto w-1 h-5 bg-primary rounded-full"></div>
+                  )}
+                </Link>
+              ))}
+            </nav>
+            
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <div className="px-4 mb-4">
+                <div className="flex items-center">
+                  <Avatar className="h-10 w-10 bg-primary/20 border border-primary/30">
+                    <span className="text-lg font-semibold text-white">{user?.username?.charAt(0).toUpperCase()}</span>
+                  </Avatar>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-white">{user?.username}</p>
+                    <p className="text-xs text-white/50">User</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-1 px-2">
+                <Link 
+                  href="/settings"
+                  className="flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:bg-white/5"
+                  onClick={toggleMobileMenu}
+                >
+                  <Settings className="h-4 w-4 mr-3" />
+                  Settings
+                </Link>
+                
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center px-4 py-2 text-sm text-white/70 rounded-lg hover:bg-white/5"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Logout
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 px-4 md:px-12 bg-slate-900/50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 gradient-text-blue">Key Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="glass-card-dark p-6 rounded-xl hover:translate-y-[-5px] transition-transform duration-300">
-              <div className="w-14 h-14 rounded-full bg-blue-600/20 flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m12 8-9.04.8a.5.5 0 0 0-.46.5V15a.5.5 0 0 0 .5.5h17a.5.5 0 0 0 .5-.5v-5.7a.5.5 0 0 0-.46-.5L12 8Z"/>
-                  <path d="M19 8V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2"/>
-                  <path d="M12 13v3"/>
-                </svg>
+      </div>
+      
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black">
+        {/* Top navigation bar - Mobile & Tablet */}
+        <header className="bg-black/60 backdrop-blur-md border-b border-white/5 lg:border-b-0">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">
+                NepaliPay
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">Secure Wallet</h3>
-              <p className="text-white/70">
-                Advanced encryption and blockchain technology ensure your assets remain secure at all times.
-              </p>
             </div>
-
-            {/* Feature 2 */}
-            <div className="glass-card-dark p-6 rounded-xl hover:translate-y-[-5px] transition-transform duration-300">
-              <div className="w-14 h-14 rounded-full bg-blue-600/20 flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.91 8.84 8.56 2.23a1.93 1.93 0 0 0-1.81 0L3.1 4.13a2.12 2.12 0 0 0-.05 3.69l12.22 6.93a2 2 0 0 0 1.94 0L21 12.51a2.12 2.12 0 0 0-.09-3.67Z"/>
-                  <path d="m3.09 8.84 12.35-6.61a1.93 1.93 0 0 1 1.81 0l3.65 1.9a2.12 2.12 0 0 1 .1 3.69L8.73 14.75a2 2 0 0 1-1.94 0L3 12.51a2.12 2.12 0 0 1 .09-3.67Z"/>
-                  <line x1="12" y1="22" x2="12" y2="15"/>
-                  <path d="M20 13.5v3.37a2.06 2.06 0 0 1-1.11 1.83l-6 3.08a1.93 1.93 0 0 1-1.78 0l-6-3.08A2.06 2.06 0 0 1 4 16.87V13.5"/>
-                </svg>
+            
+            <div className="flex items-center space-x-4">
+              <div className="connection-status hidden sm:flex items-center rounded-full px-2 py-1 bg-black/30 border border-white/10">
+                {isConnected ? (
+                  <span className="flex items-center text-xs text-green-400">
+                    <Signal className="h-3 w-3 mr-1" />
+                    Connected
+                  </span>
+                ) : (
+                  <span className="flex items-center text-xs text-red-400">
+                    <SignalZero className="h-3 w-3 mr-1" />
+                    Disconnected
+                  </span>
+                )}
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">Fast Transfers</h3>
-              <p className="text-white/70">
-                Instant transactions with minimal fees, enabling quick and efficient money transfers across Nepal.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="glass-card-dark p-6 rounded-xl hover:translate-y-[-5px] transition-transform duration-300">
-              <div className="w-14 h-14 rounded-full bg-blue-600/20 flex items-center justify-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f8ef7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H2v7"/>
-                  <path d="M2 5 15 18 19 14l2 2"/>
-                  <path d="M22 14v5h-5"/>
-                  <path d="M22 14 14 6l-4 4-6-6"/>
-                </svg>
+              
+              <div className="lg:hidden">
+                <Avatar className="h-8 w-8 bg-primary/20 border border-primary/30">
+                  <span className="text-sm font-semibold text-white">{user?.username?.charAt(0).toUpperCase()}</span>
+                </Avatar>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">NPT Tokens</h3>
-              <p className="text-white/70">
-                Our native NPT token is pegged to the Nepalese Rupee, offering stability and ease of use.
-              </p>
+              
+              <button 
+                onClick={toggleMobileMenu}
+                className="p-2 text-white lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="py-16 px-4 md:px-12">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 gradient-text-blue">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <div className="glass-card-dark p-6 rounded-xl relative">
-              <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">1</div>
-              <h3 className="text-xl font-semibold mb-4 mt-4 text-white">Create Account</h3>
-              <p className="text-white/70">
-                Sign up for a free NepaliPay account using your email or phone number.
-              </p>
+        </header>
+        
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Welcome & Header Section */}
+            <section>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <div>
+                  <h1 className="text-2xl font-bold text-white mb-1">Welcome, {user?.username}!</h1>
+                  <p className="text-white/60">Your NepaliPay dashboard</p>
+                </div>
+                
+                <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+                  <button 
+                    onClick={handleRefresh} 
+                    className="inline-flex items-center px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-all"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <span>Refreshing...</span>
+                      </>
+                    ) : (
+                      <span>Refresh Data</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {lastUpdate && (
+                <div className="text-xs text-white/40 mb-4">
+                  Last updated: {new Date(lastUpdate).toLocaleTimeString()}
+                </div>
+              )}
+            </section>
+            
+            {/* Wallet Balance Section - Card with gradient background */}
+            <section>
+              <div className="relative rounded-2xl overflow-hidden">
+                {/* Background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-600/20 to-blue-600/20"></div>
+                
+                {/* Glass overlay */}
+                <div className="relative backdrop-blur-md bg-black/20 p-6 sm:p-8 border border-white/10">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                    <h2 className="text-xl font-bold text-white mb-1">Your Wallet <Badge variant="outline" className="ml-2 bg-white/10">Live</Badge></h2>
+                    
+                    <Link 
+                      href="/wallet"
+                      className="inline-flex items-center text-sm text-white/70 hover:text-white transition-colors mt-2 sm:mt-0"
+                    >
+                      View Details
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Link>
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="h-36 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
+                    </div>
+                  ) : wallet ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6 transition-all hover:bg-black/40">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20 mr-3">
+                              <span className="text-white font-bold">₹</span>
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-medium text-white">NPT Tokens</h3>
+                              <p className="text-xs text-white/50">Stablecoin ≈ 1 NPR</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">
+                            {formatBalance(wallet.nptBalance)} <span className="text-lg">NPT</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-4">
+                            <Link 
+                              href="/buy-tokens"
+                              className="text-sm px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+                            >
+                              Buy More
+                            </Link>
+                            <Link 
+                              href="/send"
+                              className="text-sm px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all"
+                            >
+                              Send
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6 transition-all hover:bg-black/40">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 to-yellow-500 flex items-center justify-center shadow-lg shadow-orange-500/20 mr-3">
+                              <DollarSign className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-medium text-white">BNB Balance</h3>
+                              <p className="text-xs text-white/50">For gas fees</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-yellow-500">
+                            {formatBalance(wallet.bnbBalance)} <span className="text-lg">BNB</span>
+                          </div>
+                          <div className="mt-4 text-sm text-white/60">
+                            <div className="flex justify-between items-center">
+                              <span>Est. Gas Balance:</span>
+                              <span className="text-white">~ {parseInt(wallet.bnbBalance || '0') * 10} transactions</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-black/40 border border-red-500/20 rounded-xl p-6">
+                      <div className="flex items-center text-center justify-center text-red-400 flex-col">
+                        <AlertCircle className="h-8 w-8 mb-2" />
+                        <h3 className="text-lg font-medium">Wallet Not Connected</h3>
+                        <p className="text-sm text-white/60 mt-1 max-w-md">
+                          Please connect your wallet to see your balance and transactions.
+                        </p>
+                        <button className="mt-4 px-4 py-2 bg-primary/20 border border-primary/30 rounded-lg text-primary hover:bg-primary/30 transition-colors">
+                          Connect Wallet
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Animated elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -z-10"></div>
+              </div>
+            </section>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Quick Actions */}
+              <div className="lg:col-span-1 lg:order-last">
+                <div className="space-y-6">
+                  <div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { icon: <CreditCard className="h-5 w-5" />, label: 'Buy Tokens', href: '/buy-tokens', primary: true },
+                          { icon: <Send className="h-5 w-5" />, label: 'Send', href: '/send' },
+                          { icon: <Wallet className="h-5 w-5" />, label: 'Receive', href: '/receive' },
+                          { icon: <Gift className="h-5 w-5" />, label: 'Rewards', href: '/rewards' }
+                        ].map((action, index) => (
+                          <Link 
+                            key={index} 
+                            href={action.href}
+                            className={`flex flex-col items-center justify-center py-3 px-2 rounded-lg text-sm text-center transition-all ${
+                              action.primary 
+                                ? 'bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30' 
+                                : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            <span className="mb-1">{action.icon}</span>
+                            <span>{action.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <ActivityLog 
+                    activities={recentActivities || []} 
+                    loading={isLoading}
+                    onViewAll={() => {}} 
+                  />
+                </div>
+              </div>
+              
+              {/* Recent Transactions */}
+              <div className="lg:col-span-2">
+                <TransactionList 
+                  transactions={recentTransactions || []} 
+                  loading={isLoading}
+                  onLoadMore={() => {}} 
+                />
+              </div>
             </div>
-
-            {/* Step 2 */}
-            <div className="glass-card-dark p-6 rounded-xl relative">
-              <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">2</div>
-              <h3 className="text-xl font-semibold mb-4 mt-4 text-white">Verify Identity</h3>
-              <p className="text-white/70">
-                Complete a simple KYC process to verify your identity and ensure security.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="glass-card-dark p-6 rounded-xl relative">
-              <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">3</div>
-              <h3 className="text-xl font-semibold mb-4 mt-4 text-white">Add Funds</h3>
-              <p className="text-white/70">
-                Purchase NPT tokens using credit/debit cards or other supported payment methods.
-              </p>
-            </div>
-
-            {/* Step 4 */}
-            <div className="glass-card-dark p-6 rounded-xl relative">
-              <div className="absolute -top-3 -left-3 w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">4</div>
-              <h3 className="text-xl font-semibold mb-4 mt-4 text-white">Start Using</h3>
-              <p className="text-white/70">
-                Send money, pay bills, or take loans using your NPT tokens with ease.
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-16 px-4 md:px-12 bg-slate-900/50">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 gradient-text-blue">About NepaliPay</h2>
-          <p className="text-white/80 text-lg text-center mb-12">
-            NepaliPay is a revolutionary financial platform designed to empower Nepali citizens with access to modern financial tools. 
-            Built on blockchain technology, we provide a secure, transparent, and accessible way to manage your finances.
-          </p>
-          <div className="glass-card-dark p-8 rounded-xl mb-12">
-            <h3 className="text-2xl font-bold mb-4 text-white">Our Mission</h3>
-            <p className="text-white/80">
-              We aim to revolutionize the financial landscape in Nepal by providing a secure, accessible, and inclusive digital payment solution that bridges traditional banking gaps and empowers every Nepali citizen with financial freedom.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <Link href="/auth" className="glass-button-dark py-3 px-8 text-lg font-medium text-white hover:shadow-blue-500/20 hover:bg-blue-600/50 transition-all">
-              Join Us Today
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 md:px-12 glass-morphic-dark">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
-            <h3 className="text-xl font-bold mb-4 gradient-text-blue">NepaliPay</h3>
-            <p className="text-white/70 mb-4">
-              The future of financial transactions in Nepal. Secure, fast, and culturally integrated.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
-                </svg>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Press</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Blog</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Support</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Help Center</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-white/70 hover:text-white transition-colors">Terms of Service</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-white/10">
-          <p className="text-white/50 text-center">© 2023 NepaliPay. All rights reserved.</p>
-        </div>
-      </footer>
+        </main>
+      </div>
     </div>
   );
 }

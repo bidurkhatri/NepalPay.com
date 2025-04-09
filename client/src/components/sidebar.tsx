@@ -1,103 +1,100 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import {
-  HomeIcon,
-  WalletIcon,
-  AnalyticsIcon,
-  CardIcon,
-  SettingsIcon,
-  HelpIcon,
-  LogoutIcon
-} from '@/lib/icons';
+import { WalletIcon, CardIcon, PaymentIcon, SendIcon } from '@/lib/icons';
+import { 
+  Coins, 
+  LayoutDashboard, 
+  BarChart3, 
+  User, 
+  Settings, 
+  LogOut, 
+  BadgePercent, 
+  Store
+} from 'lucide-react';
 
-// Navigation items for the sidebar
-const navItems = [
-  {
-    title: 'Home',
-    href: '/',
-    icon: HomeIcon
-  },
-  {
-    title: 'Wallet',
-    href: '/wallet',
-    icon: WalletIcon
-  },
-  {
-    title: 'Transactions',
-    href: '/transactions',
-    icon: AnalyticsIcon
-  },
-  {
-    title: 'Collateral',
-    href: '/collateral',
-    icon: CardIcon
-  },
-  {
-    title: 'Support',
-    href: '/support',
-    icon: HelpIcon
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: SettingsIcon
-  }
-];
-
-const Sidebar = () => {
+const Sidebar: React.FC = () => {
+  const { user, logoutMutation } = useAuth();
   const [location] = useLocation();
-  const { logoutMutation } = useAuth();
 
-  const handleLogout = () => {
+  if (!user) return null;
+
+  // Get user initials
+  const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
+  };
+
+  const initials = getInitials(user.firstName || '', user.lastName || '');
+
+  const menuItems = [
+    { href: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" />, label: 'Dashboard' },
+    { href: '/buy-tokens', icon: <Coins className="mr-2 h-5 w-5" />, label: 'Buy NPT Tokens' },
+    { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
+    { href: '/transactions', icon: <PaymentIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
+    { href: '/send', icon: <SendIcon className="mr-2 h-5 w-5" />, label: 'Send Money' },
+    { href: '/borrow', icon: <CardIcon className="mr-2 h-5 w-5" />, label: 'Borrow NPT' },
+    { href: '/rewards', icon: <BadgePercent className="mr-2 h-5 w-5" />, label: 'Rewards' },
+    { href: '/ad-bazaar', icon: <Store className="mr-2 h-5 w-5" />, label: 'Ad Bazaar' },
+    { href: '/profile', icon: <User className="mr-2 h-5 w-5" />, label: 'Profile' },
+    { href: '/settings', icon: <Settings className="mr-2 h-5 w-5" />, label: 'Settings' },
+    { href: '/support', icon: <BarChart3 className="mr-2 h-5 w-5" />, label: 'Support' },
+  ];
+
+  const handleLogout = async () => {
     logoutMutation.mutate();
   };
 
   return (
-    <div className="flex flex-col h-full w-64 bg-card border-r border-border">
-      {/* Logo and app name */}
-      <div className="flex items-center justify-center h-16 px-4">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-          NepaliPay
-        </h1>
+    <aside className="hidden md:flex flex-col w-64 bg-black/80 border-r border-primary/20 h-screen sticky top-0 cyber-card">
+      <div className="p-6 border-b border-primary/30 animated-border">
+        <div className="flex items-center justify-center">
+          <h1 className="font-bold text-2xl gradient-text">
+            <span>Nepal</span>Pay
+          </h1>
+        </div>
       </div>
-
-      {/* Navigation links */}
+      
+      {/* User info */}
+      <div className="px-6 py-4 border-b border-primary/30">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/30 flex items-center justify-center glow">
+            <span className="text-white font-semibold">{initials}</span>
+          </div>
+          <div>
+            <p className="font-medium text-white">{`${user.firstName} ${user.lastName}`}</p>
+            <p className="text-xs text-primary/80">{user.email}</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = location === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <a
-                className={cn(
-                  'flex items-center px-4 py-3 text-sm rounded-lg transition-colors',
-                  isActive 
-                    ? 'bg-primary/10 text-primary font-medium' 
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                )}
-              >
-                <item.icon className={cn('h-5 w-5 mr-3', isActive ? 'text-primary' : 'text-muted-foreground')} />
-                {item.title}
-              </a>
-            </Link>
-          );
-        })}
+        {menuItems.map((item) => (
+          <Link key={item.href} 
+            href={item.href}
+            className={`flex items-center px-4 py-2 text-sm font-medium rounded-md cursor-pointer backdrop-blur-sm transition-all duration-300 ${
+              location === item.href 
+                ? 'bg-primary/20 text-white glow' 
+                : 'text-gray-300 hover:bg-primary/10 hover:text-white'
+            }`}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        ))}
       </nav>
-
-      {/* User and logout section */}
-      <div className="p-4 border-t border-border">
-        <Button
-          variant="outline"
-          className="w-full justify-start"
+      
+      {/* Logout */}
+      <div className="px-6 py-4 border-t border-primary/30">
+        <button 
           onClick={handleLogout}
+          className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
         >
-          <LogoutIcon className="mr-2 h-4 w-4" />
-          Log out
-        </Button>
+          <LogOut className="mr-2 h-5 w-5" />
+          Logout
+        </button>
       </div>
-    </div>
+    </aside>
   );
 };
 
