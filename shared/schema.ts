@@ -22,7 +22,7 @@ export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'superadmin'])
 export const kycStatusEnum = pgEnum('kyc_status', ['not_submitted', 'pending', 'approved', 'rejected']);
 export const transactionTypeEnum = pgEnum('transaction_type', ['deposit', 'withdrawal', 'transfer', 'payment', 'exchange', 'fee', 'loan_disbursal', 'loan_repayment', 'collateral_lock', 'collateral_release']);
 export const transactionStatusEnum = pgEnum('transaction_status', ['pending', 'processing', 'completed', 'failed', 'cancelled']);
-export const activityTypeEnum = pgEnum('activity_type', ['login', 'password_change', 'profile_update', 'transaction', 'kyc_update', 'settings_change', 'wallet_create', 'loan_action', 'collateral_action']);
+export const activityTypeEnum = pgEnum('activity_type', ['login', 'password_change', 'password_reset_request', 'password_reset', 'profile_update', 'transaction', 'kyc_update', 'settings_change', 'wallet_create', 'loan_action', 'collateral_action']);
 export const walletTypeEnum = pgEnum('wallet_type', ['custodial', 'non_custodial']);
 export const collateralTypeEnum = pgEnum('collateral_type', ['BNB', 'ETH', 'BTC']);
 export const collateralStatusEnum = pgEnum('collateral_status', ['active', 'locked', 'released', 'liquidated']);
@@ -45,12 +45,9 @@ export const users = pgTable('users', {
   kycVerifiedAt: timestamp('kyc_verified_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  lastLoginAt: timestamp('last_login_at'),
   stripeCustomerId: text('stripe_customer_id'),
   stripeSubscriptionId: text('stripe_subscription_id'),
   finapiUserId: text('finapi_user_id'),
-  preferredLanguage: varchar('preferred_language', { length: 10 }).default('en').notNull(),
-  preferences: json('preferences').default({}),
 });
 
 // User relations

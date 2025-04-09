@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot-password'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -22,13 +26,14 @@ export default function AuthPage() {
     }
   }, [user, setLocation]);
 
-  // Direct form submission to the server without using mutations
+  // Handle form submission for all auth modes
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     try {
-      if (isLogin) {
+      if (authMode === 'login') {
         console.log('Attempting login with:', { username });
         const response = await fetch('/api/login', {
           method: 'POST',
@@ -49,8 +54,15 @@ export default function AuthPage() {
         
         console.log('Login successful:', data);
         window.location.href = '/dashboard'; // Force page reload
-      } else {
+      } 
+      else if (authMode === 'register') {
         console.log('Attempting registration with:', { username, email });
+        
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        
         const response = await fetch('/api/register', {
           method: 'POST',
           headers: {
@@ -61,7 +73,8 @@ export default function AuthPage() {
             username, 
             password, 
             email, 
-            fullName: `${firstName} ${lastName}`.trim() 
+            firstName, 
+            lastName
           }),
         });
 
@@ -76,15 +89,88 @@ export default function AuthPage() {
         console.log('Registration successful:', data);
         window.location.href = '/dashboard'; // Force page reload
       }
+      else if (authMode === 'forgot-password') {
+        if (resetToken) {
+          // Reset password with token
+          if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+          }
+          
+          console.log('Resetting password with token');
+          const response = await fetch('/api/reset-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              token: resetToken,
+              password 
+            }),
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            console.error('Password reset error:', data);
+            setError(data.error || 'Password reset failed');
+            return;
+          }
+          
+          setSuccessMessage('Your password has been reset successfully! You can now login.');
+          setTimeout(() => {
+            setAuthMode('login');
+            setPassword('');
+            setConfirmPassword('');
+            setResetToken('');
+            setSuccessMessage('');
+          }, 3000);
+        }
+        else {
+          // Request password reset
+          console.log('Requesting password reset for:', { email });
+          const response = await fetch('/api/forgot-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          const data = await response.json();
+          
+          if (!response.ok) {
+            console.error('Forgot password error:', data);
+            setError(data.error || 'Forgot password request failed');
+            return;
+          }
+          
+          // In development, we'll get the token back for testing
+          if (data.token) {
+            setResetToken(data.token);
+            setSuccessMessage('Please enter your new password below.');
+          } else {
+            setSuccessMessage('If an account with that email exists, a password reset link has been sent.');
+            setTimeout(() => {
+              setAuthMode('login');
+              setEmail('');
+              setSuccessMessage('');
+            }, 3000);
+          }
+        }
+      }
     } catch (err) {
       console.error('Form submission error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
+  // Switch between different authentication modes
+  const switchAuthMode = (mode: 'login' | 'register' | 'forgot-password') => {
+    setAuthMode(mode);
     setError('');
+    setSuccessMessage('');
+    setResetToken('');
   };
 
   // Show loading state
@@ -133,41 +219,112 @@ export default function AuthPage() {
           <div className="w-full md:w-1/2 p-8 md:p-12">
             <div className="mb-10">
               <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary-light to-secondary mb-3">
-                {isLogin ? 'Welcome Back' : 'Create Account'}
+                {authMode === 'login' ? 'Welcome Back' : 
+                 authMode === 'register' ? 'Create Account' : 
+                 'Reset Password'}
               </h1>
               <p className="text-text-muted text-lg">
-                {isLogin
+                {authMode === 'login'
                   ? 'Sign in to access your NepaliPay wallet.'
-                  : 'Join the digital financial revolution in Nepal.'}
+                  : authMode === 'register'
+                  ? 'Join the digital financial revolution in Nepal.'
+                  : 'We\'ll help you recover access to your account.'}
               </p>
+              
+              {authMode === 'forgot-password' && (
+                <button
+                  type="button"
+                  onClick={() => switchAuthMode('login')}
+                  className="mt-4 flex items-center text-primary hover:text-primary-light transition-all"
+                >
+                  <ArrowLeft size={16} className="mr-1" />
+                  <span>Back to login</span>
+                </button>
+              )}
             </div>
 
             {error && (
-              <div className="bg-danger/10 border border-danger/20 text-danger-light rounded-lg p-4 mb-6 backdrop-blur-md">
-                {error}
-              </div>
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {successMessage && (
+              <Alert variant="success" className="mb-6 bg-green-50 border-green-200 text-green-800">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>{successMessage}</AlertDescription>
+              </Alert>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="form-group">
-                <label htmlFor="username" className="block text-text-color mb-2 font-medium">
-                  Username
-                </label>
-                <div className="relative">
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
-                  />
-                  <div className="absolute inset-0 rounded-lg pointer-events-none border border-primary/0 group-focus-within:border-primary/20 transition-colors"></div>
-                </div>
-              </div>
-
-              {!isLogin && (
+              {/* Login Form */}
+              {authMode === 'login' && (
                 <>
+                  <div className="form-group">
+                    <label htmlFor="username" className="block text-text-color mb-2 font-medium">
+                      Username
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <div className="flex justify-between mb-2">
+                      <label htmlFor="password" className="block text-text-color font-medium">
+                        Password
+                      </label>
+                      <button 
+                        type="button" 
+                        onClick={() => switchAuthMode('forgot-password')}
+                        className="text-sm text-primary hover:text-primary-light transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Registration Form */}
+              {authMode === 'register' && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="username" className="block text-text-color mb-2 font-medium">
+                      Username
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                
                   <div className="form-group">
                     <label htmlFor="email" className="block text-text-color mb-2 font-medium">
                       Email
@@ -183,6 +340,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="form-group">
                       <label htmlFor="firstName" className="block text-text-color mb-2 font-medium">
@@ -215,24 +373,100 @@ export default function AuthPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="form-group">
+                    <label htmlFor="password" className="block text-text-color mb-2 font-medium">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword" className="block text-text-color mb-2 font-medium">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
                 </>
               )}
-
-              <div className="form-group">
-                <label htmlFor="password" className="block text-text-color mb-2 font-medium">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
-                  />
+              
+              {/* Forgot Password Form */}
+              {authMode === 'forgot-password' && !resetToken && (
+                <div className="form-group">
+                  <label htmlFor="email" className="block text-text-color mb-2 font-medium">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      placeholder="Enter your account email"
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-text-muted">
+                    We'll send a password reset link to this email address.
+                  </p>
                 </div>
-              </div>
+              )}
+              
+              {/* Reset Password Form (with token) */}
+              {authMode === 'forgot-password' && resetToken && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="password" className="block text-text-color mb-2 font-medium">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword" className="block text-text-color mb-2 font-medium">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 bg-glass-bg-light border border-border-light rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-text-color backdrop-blur-md transition-all"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <button
                 type="submit"
@@ -240,22 +474,27 @@ export default function AuthPage() {
                 disabled={loginMutation.isPending || registerMutation.isPending}
               >
                 <span className="relative z-10">
-                  {isLogin ? 'Sign In' : 'Create Account'}
+                  {authMode === 'login' ? 'Sign In' : 
+                   authMode === 'register' ? 'Create Account' : 
+                   resetToken ? 'Reset Password' : 'Send Reset Link'}
                   {(loginMutation.isPending || registerMutation.isPending) && '...'}
                 </span>
                 <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-primary-dark to-primary opacity-0 group-hover:opacity-100 transition-opacity"></span>
               </button>
 
-              <div className="text-center text-text-muted mt-6">
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button 
-                  type="button" 
-                  onClick={toggleAuthMode} 
-                  className="text-primary hover:text-primary-light transition-colors font-medium"
-                >
-                  {isLogin ? 'Register' : 'Login'}
-                </button>
-              </div>
+              {/* Bottom links for switching between login/register */}
+              {authMode !== 'forgot-password' && (
+                <div className="text-center text-text-muted mt-6">
+                  {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                  <button 
+                    type="button" 
+                    onClick={() => switchAuthMode(authMode === 'login' ? 'register' : 'login')} 
+                    className="text-primary hover:text-primary-light transition-colors font-medium"
+                  >
+                    {authMode === 'login' ? 'Register' : 'Login'}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
 

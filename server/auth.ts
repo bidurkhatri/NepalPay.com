@@ -186,9 +186,6 @@ export function setupAuth(app: Express): void {
         kycStatus: 'not_submitted',
         kycVerificationId: null,
         kycVerifiedAt: null,
-        lastLoginAt: new Date(),
-        preferredLanguage: 'en',
-        preferences: {},
         stripeCustomerId: null,
         stripeSubscriptionId: null,
         finapiUserId: null,
@@ -325,7 +322,7 @@ export function setupAuth(app: Express): void {
     }
 
     try {
-      const allowedFields = ['fullName', 'phone', 'preferredLanguage', 'preferences'];
+      const allowedFields = ['firstName', 'lastName', 'phoneNumber'];
       const updates: Partial<User> = {};
 
       // Only allow updating specific fields
@@ -333,6 +330,13 @@ export function setupAuth(app: Express): void {
         if (req.body[field] !== undefined) {
           updates[field] = req.body[field];
         }
+      }
+      
+      // Handle fullName field by splitting it into firstName and lastName
+      if (req.body.fullName !== undefined) {
+        const nameParts = req.body.fullName.split(' ');
+        updates.firstName = nameParts[0] || null;
+        updates.lastName = nameParts.slice(1).join(' ') || null;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -366,6 +370,127 @@ export function setupAuth(app: Express): void {
     } catch (error) {
       log(`Profile update error: ${error instanceof Error ? error.message : String(error)}`);
       return res.status(500).json({ error: 'Profile update failed' });
+    }
+  });
+
+  // Password reset token manager (in-memory storage for demo purposes)
+  // In production, these would be stored in the database with expiration
+  const passwordResetTokens: Map<string, { userId: number; expires: Date }> = new Map();
+
+  // Request password reset endpoint
+  app.post('/api/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal whether or not a user exists for security
+        return res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+      }
+
+      // Generate a secure random token
+      const token = randomBytes(32).toString('hex');
+      
+      // Store token with expiration (24 hours)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      passwordResetTokens.set(token, { userId: user.id, expires: expiresAt });
+
+      // In a real app, we would send an email here with the reset link
+      // For demo purposes, we'll return the token in the response
+      // NOTE: In production, you would use SendGrid or another email service
+
+      // Create activity record
+      await storage.createActivity({
+        userId: user.id,
+        activityType: 'password_reset_request',
+        description: 'Password reset requested',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+        transactionId: null,
+        loanId: null,
+        collateralId: null
+      });
+
+      console.log(`Password reset token for ${email}: ${token}`);
+
+      return res.status(200).json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.',
+        // Only include the token in development for testing purposes
+        ...(process.env.NODE_ENV !== 'production' && { token })
+      });
+    } catch (error) {
+      log(`Forgot password error: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  });
+
+  // Reset password endpoint
+  app.post('/api/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({ error: 'Token and new password are required' });
+      }
+
+      // Verify token exists and is not expired
+      const tokenData = passwordResetTokens.get(token);
+      if (!tokenData) {
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+      }
+
+      if (tokenData.expires < new Date()) {
+        // Clean up expired token
+        passwordResetTokens.delete(token);
+        return res.status(400).json({ error: 'Reset token has expired' });
+      }
+
+      // Get user
+      const user = await storage.getUser(tokenData.userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+
+      // Update user's password
+      const updatedUser = await storage.updateUser(user.id, { password: hashedPassword });
+      if (!updatedUser) {
+        return res.status(500).json({ error: 'Failed to update password' });
+      }
+
+      // Clean up used token
+      passwordResetTokens.delete(token);
+
+      // Create activity record
+      await storage.createActivity({
+        userId: user.id,
+        activityType: 'password_reset',
+        description: 'Password successfully reset',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+        transactionId: null,
+        loanId: null,
+        collateralId: null
+      });
+
+      return res.status(200).json({ message: 'Password has been reset successfully' });
+    } catch (error) {
+      log(`Reset password error: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to reset password' });
     }
   });
 }
