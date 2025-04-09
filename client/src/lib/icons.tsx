@@ -14,6 +14,11 @@ import {
   Search
 } from 'lucide-react';
 
+// Utility function to get user initials from their name
+export const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined): string => {
+  return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
+};
+
 // Outgoing payment icon
 export const SendIcon = ArrowUpRight;
 
