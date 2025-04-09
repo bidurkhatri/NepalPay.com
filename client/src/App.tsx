@@ -13,6 +13,15 @@ import HomePage from './pages/home-page';
 import AdvancedLandingPage from './pages/advanced-landing-page';
 import DashboardPage from './pages/dashboard';
 import WalletPage from './pages/wallet';
+import SendFundsPage from './pages/send-funds';
+import PurchaseTokensPage from './pages/purchase-tokens';
+import PaymentsPage from './pages/payments';
+import LoansPage from './pages/loans';
+import AnalyticsPage from './pages/analytics';
+import RewardsPage from './pages/rewards';
+import MarketplacePage from './pages/marketplace';
+import ProfilePage from './pages/profile';
+import SettingsPage from './pages/settings';
 
 function App() {
   return (
@@ -37,9 +46,49 @@ function App() {
               <WalletPage />
             </DashboardLayout>
           </ProtectedRoute>
-          <ProtectedRoute path="/home">
+          <ProtectedRoute path="/send">
             <DashboardLayout>
-              <HomePage />
+              <SendFundsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/purchase">
+            <DashboardLayout>
+              <PurchaseTokensPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/payments">
+            <DashboardLayout>
+              <PaymentsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/loans">
+            <DashboardLayout>
+              <LoansPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/analytics">
+            <DashboardLayout>
+              <AnalyticsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/rewards">
+            <DashboardLayout>
+              <RewardsPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/marketplace">
+            <DashboardLayout>
+              <MarketplacePage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/profile">
+            <DashboardLayout>
+              <ProfilePage />
+            </DashboardLayout>
+          </ProtectedRoute>
+          <ProtectedRoute path="/settings">
+            <DashboardLayout>
+              <SettingsPage />
             </DashboardLayout>
           </ProtectedRoute>
           

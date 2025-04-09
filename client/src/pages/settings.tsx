@@ -1,708 +1,392 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
-import { Link, useLocation } from 'wouter';
-import { useSettings, ThemeType, DisplayMode, AccentColor, Language, CurrencyFormat, DateFormat } from '@/contexts/settings-context';
-import Header from '@/components/header';
-import Sidebar from '@/components/sidebar';
-import MobileNavigation from '@/components/mobile-navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Paintbrush, Globe, Moon, Sun, Languages, Shield, Bell, Volume2, Check, AlertCircle, HelpCircle, Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const SettingsPage: React.FC = () => {
-  const { user } = useAuth();
-  const { settings, updateTheme, updateDisplayMode, updateAccentColor, updateLanguage, 
-          updateCurrencyFormat, updateDateFormat, updateNotificationSetting, 
-          toggleTwoFactor, resetSettings, saveSettings } = useSettings();
   const { toast } = useToast();
-  
-  // Used for simulating actions
-  const [loading, setLoading] = useState<{ [key: string]: boolean }>({
-    saveAppearance: false,
-    saveLang: false,
-    saveNotifications: false,
-    savePrivacy: false,
-    twoFactor: false,
-    testNotification: false,
-    sessions: false,
-    dataPrivacy: false,
-  });
 
-  if (!user) return null;
-  
   return (
-    <div className="flex flex-col md:flex-row min-h-screen relative">
-      <Sidebar />
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold gradient-text mb-2">Settings</h1>
+        <p className="text-muted-foreground">Customize your NepaliPay experience</p>
+      </div>
       
-      <main className="flex-1 flex flex-col pb-16 md:pb-0">
-        <Header />
-
-        <div className="flex-1 py-6 px-4 sm:px-6 lg:px-8 bg-black/80">
-          <div className="max-w-4xl mx-auto">
-            {/* Page Heading */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold gradient-text">Settings</h1>
-              <p className="text-gray-400 mt-1">Customize your application preferences</p>
-            </div>
-
-            <Tabs defaultValue="appearance" className="w-full">
-              <TabsList className="grid grid-cols-5 w-full bg-black/50 border border-primary/30 text-white">
-                <TabsTrigger value="appearance" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
-                  <Paintbrush className="h-4 w-4 mr-1 inline" />
-                  <span className="hidden sm:inline">Appearance</span>
-                </TabsTrigger>
-                <TabsTrigger value="language" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
-                  <Globe className="h-4 w-4 mr-1 inline" />
-                  <span className="hidden sm:inline">Language</span>
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
-                  <Bell className="h-4 w-4 mr-1 inline" />
-                  <span className="hidden sm:inline">Notifications</span>
-                </TabsTrigger>
-                <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
-                  <Shield className="h-4 w-4 mr-1 inline" />
-                  <span className="hidden sm:inline">Privacy</span>
-                </TabsTrigger>
-                <TabsTrigger value="support" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary text-white hover:text-primary/90">
-                  <HelpCircle className="h-4 w-4 mr-1 inline" />
-                  <span className="hidden sm:inline">Help</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="appearance" className="mt-4">
-                <Card className="bg-black/40 border-primary/20 text-white">
-                  <CardHeader>
-                    <CardTitle>Appearance Settings</CardTitle>
-                    <CardDescription className="text-white/70">
-                      Customize how the application looks
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-md font-medium">Theme</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <div 
-                            className={`cyber-card glass rounded-md p-4 border-2 ${settings.theme === 'cyber' ? 'border-primary glow' : 'border-gray-700'} text-center cursor-pointer`}
-                            onClick={() => updateTheme('cyber')}
-                          >
-                            <div className="h-24 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-md flex items-center justify-center">
-                              <span className="gradient-text font-bold text-lg">Cyber</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center">
-                            <Label htmlFor="theme-cyber" className="mr-2">Select</Label>
-                            <Switch 
-                              id="theme-cyber" 
-                              checked={settings.theme === 'cyber'} 
-                              onCheckedChange={() => updateTheme('cyber')}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div 
-                            className={`rounded-md p-4 border-2 ${settings.theme === 'dark' ? 'border-primary glow' : 'border-gray-700'} text-center cursor-pointer`}
-                            onClick={() => updateTheme('dark')}
-                          >
-                            <div className="h-24 bg-gray-800 rounded-md flex items-center justify-center">
-                              <span className="text-white font-bold text-lg">Dark</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center">
-                            <Label htmlFor="theme-dark" className="mr-2">Select</Label>
-                            <Switch 
-                              id="theme-dark" 
-                              checked={settings.theme === 'dark'} 
-                              onCheckedChange={() => updateTheme('dark')}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div 
-                            className={`rounded-md p-4 border-2 ${settings.theme === 'light' ? 'border-primary glow' : 'border-gray-300'} text-center cursor-pointer`}
-                            onClick={() => updateTheme('light')}
-                          >
-                            <div className="h-24 bg-gray-100 rounded-md flex items-center justify-center">
-                              <span className="text-gray-900 font-bold text-lg">Light</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center">
-                            <Label htmlFor="theme-light" className="mr-2">Select</Label>
-                            <Switch 
-                              id="theme-light" 
-                              checked={settings.theme === 'light'} 
-                              onCheckedChange={() => updateTheme('light')}
-                            />
-                          </div>
-                        </div>
+      <Tabs defaultValue="appearance">
+        <TabsList className="grid w-full grid-cols-4 bg-black/40 backdrop-blur-md">
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="support">Help & Support</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="appearance">
+          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
+            <CardHeader>
+              <CardTitle>Appearance Settings</CardTitle>
+              <CardDescription>Customize how NepaliPay looks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Theme</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
+                      <div className="bg-background/80 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">Dark Theme</span>
                       </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: 'Theme Updated',
+                            description: 'Dark theme applied successfully.',
+                          });
+                        }}
+                      >
+                        Selected
+                      </Button>
                     </div>
                     
-                    <div className="space-y-4">
-                      <h3 className="text-md font-medium">Display Mode</h3>
-                      <div className="flex space-x-4">
-                        <Button 
-                          variant="outline" 
-                          className={`border-primary/50 ${settings.displayMode === 'light' ? 'bg-primary/30' : 'bg-primary/10'} text-white flex items-center space-x-2`}
-                          onClick={() => updateDisplayMode('light')}
-                        >
-                          <Sun className="h-4 w-4" />
-                          <span>Light</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className={`border-primary/50 ${settings.displayMode === 'dark' ? 'bg-primary/30' : 'bg-primary/10'} text-white flex items-center space-x-2`}
-                          onClick={() => updateDisplayMode('dark')}
-                        >
-                          <Moon className="h-4 w-4" />
-                          <span>Dark</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className={`border-primary/50 ${settings.displayMode === 'auto' ? 'bg-primary/30' : 'bg-primary/10'} text-white flex items-center space-x-2`}
-                          onClick={() => updateDisplayMode('auto')}
-                        >
-                          <span>Auto</span>
-                        </Button>
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
+                      <div className="bg-white/90 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
+                        <span className="text-xs text-black/70">Light Theme</span>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: 'Feature Coming Soon',
+                            description: 'Light theme will be available in the next update.',
+                          });
+                        }}
+                      >
+                        Select
+                      </Button>
                     </div>
                     
-                    <div className="space-y-4">
-                      <h3 className="text-md font-medium">Accent Color</h3>
-                      <div className="flex space-x-4">
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-primary cursor-pointer ${settings.accentColor === 'default' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('default')}
-                        />
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-blue-500 cursor-pointer ${settings.accentColor === 'blue' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('blue')}
-                        />
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-green-500 cursor-pointer ${settings.accentColor === 'green' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('green')}
-                        />
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-purple-500 cursor-pointer ${settings.accentColor === 'purple' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('purple')}
-                        />
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-red-500 cursor-pointer ${settings.accentColor === 'red' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('red')}
-                        />
-                        <div 
-                          className={`w-8 h-8 rounded-full bg-orange-500 cursor-pointer ${settings.accentColor === 'orange' ? 'ring-2 ring-white' : ''}`}
-                          onClick={() => updateAccentColor('orange')}
-                        />
+                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
+                      <div className="bg-gradient-to-br from-primary/30 to-background/90 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
+                        <span className="text-xs text-white/90">System Theme</span>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className="bg-gradient-to-r from-primary to-purple-500 hover:opacity-90 mr-2"
-                      onClick={() => {
-                        setLoading(prev => ({ ...prev, saveAppearance: true }));
-                        saveSettings();
-                        setTimeout(() => {
-                          setLoading(prev => ({ ...prev, saveAppearance: false }));
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
                           toast({
-                            title: "Appearance settings saved",
-                            description: "Your appearance settings have been updated",
-                            variant: "default",
+                            title: 'Feature Coming Soon',
+                            description: 'System theme will be available in the next update.',
                           });
-                        }, 500);
-                      }}
-                      disabled={loading.saveAppearance}
-                    >
-                      {loading.saveAppearance ? (
-                        <>
-                          <span className="mr-2">Saving...</span>
-                          <span className="animate-spin">⏳</span>
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-primary/50 text-white hover:bg-primary/20"
-                      onClick={resetSettings}
-                      disabled={loading.saveAppearance}
-                    >
-                      Reset
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="language" className="mt-4">
-                <Card className="bg-black/40 border-primary/20 text-white">
-                  <CardHeader>
-                    <CardTitle>Language & Region</CardTitle>
-                    <CardDescription className="text-white/70">
-                      Set your language and regional preferences
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="language">Display Language</Label>
-                          <p className="text-sm text-white/60">
-                            Choose the language for the user interface
-                          </p>
-                        </div>
-                        <Select 
-                          value={settings.language} 
-                          onValueChange={value => updateLanguage(value as Language)}
-                        >
-                          <SelectTrigger className="w-[180px] bg-black/30 border-primary/30 text-white">
-                            <SelectValue placeholder="Select language" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-black/90 border-primary/30 text-white">
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="np">Nepali</SelectItem>
-                            <SelectItem value="hi">Hindi</SelectItem>
-                            <SelectItem value="zh">Chinese</SelectItem>
-                            <SelectItem value="ja">Japanese</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="language">Currency Format</Label>
-                          <p className="text-sm text-white/60">
-                            Choose how currencies are displayed
-                          </p>
-                        </div>
-                        <Select 
-                          value={settings.currencyFormat} 
-                          onValueChange={value => updateCurrencyFormat(value as CurrencyFormat)}
-                        >
-                          <SelectTrigger className="w-[180px] bg-black/30 border-primary/30 text-white">
-                            <SelectValue placeholder="Select currency" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-black/90 border-primary/30 text-white">
-                            <SelectItem value="npr">Nepali Rupee (NPR)</SelectItem>
-                            <SelectItem value="usd">US Dollar (USD)</SelectItem>
-                            <SelectItem value="eur">Euro (EUR)</SelectItem>
-                            <SelectItem value="gbp">British Pound (GBP)</SelectItem>
-                            <SelectItem value="jpy">Japanese Yen (JPY)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="language">Date Format</Label>
-                          <p className="text-sm text-white/60">
-                            Choose how dates are displayed
-                          </p>
-                        </div>
-                        <Select 
-                          value={settings.dateFormat} 
-                          onValueChange={value => updateDateFormat(value as DateFormat)}
-                        >
-                          <SelectTrigger className="w-[180px] bg-black/30 border-primary/30 text-white">
-                            <SelectValue placeholder="Select format" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-black/90 border-primary/30 text-white">
-                            <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
-                            <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
-                            <SelectItem value="ymd">YYYY/MM/DD</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                        }}
+                      >
+                        Select
+                      </Button>
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className="bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                      onClick={() => {
-                        setLoading(prev => ({ ...prev, saveLang: true }));
-                        saveSettings();
-                        setTimeout(() => {
-                          setLoading(prev => ({ ...prev, saveLang: false }));
-                          toast({
-                            title: "Language & Region settings saved",
-                            description: "Your language and regional preferences have been updated",
-                            variant: "default",
-                          });
-                        }, 500);
-                      }}
-                      disabled={loading.saveLang}
-                    >
-                      {loading.saveLang ? (
-                        <>
-                          <span className="mr-2">Saving...</span>
-                          <span className="animate-spin">⏳</span>
-                        </>
-                      ) : (
-                        "Save Preferences"
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notifications" className="mt-4">
-                <Card className="bg-black/40 border-primary/20 text-white">
-                  <CardHeader>
-                    <CardTitle>Notification Settings</CardTitle>
-                    <CardDescription className="text-white/70">
-                      Manage your notification preferences
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center">
-                            <Bell className="h-4 w-4 mr-2 text-primary" />
-                            <Label>Transaction Alerts</Label>
-                          </div>
-                          <p className="text-sm text-white/60">
-                            Get notified for all transactions
-                          </p>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.transactionAlerts} 
-                          onCheckedChange={checked => updateNotificationSetting('transactionAlerts', checked)} 
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center">
-                            <Shield className="h-4 w-4 mr-2 text-primary" />
-                            <Label>Security Alerts</Label>
-                          </div>
-                          <p className="text-sm text-white/60">
-                            Get notified about security updates
-                          </p>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.securityAlerts} 
-                          onCheckedChange={checked => updateNotificationSetting('securityAlerts', checked)} 
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center">
-                            <Bell className="h-4 w-4 mr-2 text-primary" />
-                            <Label>Marketing Updates</Label>
-                          </div>
-                          <p className="text-sm text-white/60">
-                            Receive news and promotional offers
-                          </p>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.marketingUpdates} 
-                          onCheckedChange={checked => updateNotificationSetting('marketingUpdates', checked)} 
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center">
-                            <Volume2 className="h-4 w-4 mr-2 text-primary" />
-                            <Label>Sound Alerts</Label>
-                          </div>
-                          <p className="text-sm text-white/60">
-                            Play sounds for notifications
-                          </p>
-                        </div>
-                        <Switch 
-                          checked={settings.notifications.soundAlerts} 
-                          onCheckedChange={checked => updateNotificationSetting('soundAlerts', checked)} 
-                        />
-                      </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium">Accent Color</h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="h-5 w-5 rounded-full bg-blue-500"></div>
+                      <Label htmlFor="blue">Blue</Label>
+                      <Switch id="blue" checked />
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className="bg-gradient-to-r from-primary to-purple-500 hover:opacity-90 mr-2"
-                      onClick={() => {
-                        setLoading(prev => ({ ...prev, saveNotifications: true }));
-                        saveSettings();
-                        setTimeout(() => {
-                          setLoading(prev => ({ ...prev, saveNotifications: false }));
-                          toast({
-                            title: "Notification settings saved",
-                            description: "Your notification preferences have been updated",
-                            variant: "default",
-                          });
-                        }, 500);
-                      }}
-                      disabled={loading.saveNotifications}
-                    >
-                      {loading.saveNotifications ? (
-                        <>
-                          <span className="mr-2">Saving...</span>
-                          <span className="animate-spin">⏳</span>
-                        </>
-                      ) : (
-                        "Save Changes"
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-primary/50 text-white hover:bg-primary/20"
-                      onClick={() => {
-                        setLoading(prev => ({ ...prev, testNotification: true }));
-                        setTimeout(() => {
-                          setLoading(prev => ({ ...prev, testNotification: false }));
-                          toast({
-                            title: "Test Notification",
-                            description: "This is a test notification. If you can see this, notifications are working!",
-                            variant: "default",
-                          });
-                        }, 500);
-                      }}
-                      disabled={loading.testNotification}
-                    >
-                      {loading.testNotification ? (
-                        <span className="animate-spin">⏳</span>
-                      ) : (
-                        "Test Notification"
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="privacy" className="mt-4">
-                <Card className="bg-black/40 border-primary/20 text-white">
-                  <CardHeader>
-                    <CardTitle>Privacy & Security</CardTitle>
-                    <CardDescription className="text-white/70">
-                      Manage your privacy and security settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Two-Factor Authentication</Label>
-                          <p className="text-sm text-white/60">
-                            Add an extra layer of security
-                          </p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          className="border-primary/50 bg-primary/10 text-white hover:bg-primary/20"
-                          onClick={() => {
-                            setLoading(prev => ({ ...prev, twoFactor: true }));
-                            toggleTwoFactor();
-                            setTimeout(() => {
-                              setLoading(prev => ({ ...prev, twoFactor: false }));
-                              toast({
-                                title: settings.twoFactorEnabled ? "Two-Factor Authentication Disabled" : "Two-Factor Authentication Enabled",
-                                description: settings.twoFactorEnabled ? 
-                                  "Two-factor authentication has been disabled. Your account is now less secure." : 
-                                  "Two-factor authentication has been enabled. Your account is now more secure.",
-                                variant: settings.twoFactorEnabled ? "destructive" : "default",
-                              });
-                            }, 800);
-                          }}
-                          disabled={loading.twoFactor}
-                        >
-                          {loading.twoFactor ? (
-                            <span className="animate-spin">⏳</span>
-                          ) : settings.twoFactorEnabled ? (
-                            "Disable"
-                          ) : (
-                            "Enable"
-                          )}
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Session Management</Label>
-                          <p className="text-sm text-white/60">
-                            Manage your active sessions
-                          </p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          className="border-primary/50 bg-primary/10 text-white hover:bg-primary/20"
-                          onClick={() => {
-                            setLoading(prev => ({ ...prev, sessions: true }));
-                            setTimeout(() => {
-                              setLoading(prev => ({ ...prev, sessions: false }));
-                              toast({
-                                title: "Session Management",
-                                description: "This feature will be available in a future update.",
-                                variant: "default",
-                              });
-                            }, 600);
-                          }}
-                          disabled={loading.sessions}
-                        >
-                          {loading.sessions ? (
-                            <span className="animate-spin">⏳</span>
-                          ) : (
-                            "View Sessions"
-                          )}
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Data Privacy</Label>
-                          <p className="text-sm text-white/60">
-                            Control how your data is used
-                          </p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          className="border-primary/50 bg-primary/10 text-white hover:bg-primary/20"
-                          onClick={() => {
-                            setLoading(prev => ({ ...prev, privacy: true }));
-                            setTimeout(() => {
-                              setLoading(prev => ({ ...prev, privacy: false }));
-                              toast({
-                                title: "Data Privacy Settings",
-                                description: "Data privacy management will be available in a future update.",
-                                variant: "default",
-                              });
-                            }, 600);
-                          }}
-                          disabled={loading.privacy}
-                        >
-                          {loading.privacy ? (
-                            <span className="animate-spin">⏳</span>
-                          ) : (
-                            "Manage"
-                          )}
-                        </Button>
-                      </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <div className="h-5 w-5 rounded-full bg-purple-500"></div>
+                      <Label htmlFor="purple">Purple</Label>
+                      <Switch id="purple" />
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      className="bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                      onClick={() => {
-                        setLoading(prev => ({ ...prev, savePrivacy: true }));
-                        saveSettings();
-                        setTimeout(() => {
-                          setLoading(prev => ({ ...prev, savePrivacy: false }));
-                          toast({
-                            title: "Privacy settings saved",
-                            description: "Your privacy and security preferences have been updated",
-                            variant: "default",
-                          });
-                        }, 500);
-                      }}
-                      disabled={loading.savePrivacy}
-                    >
-                      {loading.savePrivacy ? (
-                        <>
-                          <span className="mr-2">Saving...</span>
-                          <span className="animate-spin">⏳</span>
-                        </>
-                      ) : (
-                        "Save Preferences"
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="support" className="mt-4">
-                <Card className="bg-black/40 border-primary/20 text-white">
-                  <CardHeader>
-                    <CardTitle>Help & Support</CardTitle>
-                    <CardDescription className="text-white/70">
-                      Get help and access support resources
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                        <div className="flex items-center mb-4">
-                          <HelpCircle className="h-6 w-6 text-primary mr-2" />
-                          <h3 className="text-lg font-semibold">Support Center</h3>
-                        </div>
-                        <p className="text-sm text-white/70 mb-4">
-                          Get personalized help from our support team. We're here to assist you with any issues you encounter.
-                        </p>
-                        <Link href="/support">
-                          <Button 
-                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                          >
-                            Contact Support
-                          </Button>
-                        </Link>
-                      </div>
-                      
-                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                        <div className="flex items-center mb-4">
-                          <AlertCircle className="h-6 w-6 text-primary mr-2" />
-                          <h3 className="text-lg font-semibold">Frequently Asked Questions</h3>
-                        </div>
-                        <p className="text-sm text-white/70 mb-4">
-                          Find answers to common questions about NepaliPay and its features.
-                        </p>
-                        <Link href="/faq">
-                          <Button 
-                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                          >
-                            View FAQ
-                          </Button>
-                        </Link>
-                      </div>
-                      
-                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                        <div className="flex items-center mb-4">
-                          <Globe className="h-6 w-6 text-primary mr-2" />
-                          <h3 className="text-lg font-semibold">Knowledge Base</h3>
-                        </div>
-                        <p className="text-sm text-white/70 mb-4">
-                          Explore our comprehensive guides and tutorials to learn more about NepaliPay.
-                        </p>
-                        <Link href="/knowledge">
-                          <Button 
-                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                          >
-                            Browse Articles
-                          </Button>
-                        </Link>
-                      </div>
-                      
-                      <div className="bg-black/30 p-6 rounded-lg border border-primary/20 hover:border-primary/40 transition-all duration-300">
-                        <div className="flex items-center mb-4">
-                          <Mail className="h-6 w-6 text-primary mr-2" />
-                          <h3 className="text-lg font-semibold">Contact Us</h3>
-                        </div>
-                        <p className="text-sm text-white/70 mb-4">
-                          Reach out to us with questions, feedback, or partnership inquiries.
-                        </p>
-                        <Link href="/contact">
-                          <Button 
-                            className="w-full bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
-                          >
-                            Contact Form
-                          </Button>
-                        </Link>
-                      </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <div className="h-5 w-5 rounded-full bg-green-500"></div>
+                      <Label htmlFor="green">Green</Label>
+                      <Switch id="green" />
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-        <MobileNavigation />
-      </main>
+                    
+                    <div className="flex items-center space-x-2">
+                      <div className="h-5 w-5 rounded-full bg-amber-500"></div>
+                      <Label htmlFor="amber">Amber</Label>
+                      <Switch id="amber" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium">Font Size</h3>
+                  
+                  <Select defaultValue="medium">
+                    <SelectTrigger className="w-full md:w-[200px] bg-background/50">
+                      <SelectValue placeholder="Select font size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Small</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="large">Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: 'Settings Updated',
+                      description: 'Your appearance settings have been updated.',
+                    });
+                  }}
+                >
+                  Save Appearance Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="notifications">
+          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
+            <CardHeader>
+              <CardTitle>Notification Settings</CardTitle>
+              <CardDescription>Manage how NepaliPay notifies you</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Email Notifications</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="email-transactions">Transaction Updates</Label>
+                      <Switch id="email-transactions" checked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="email-security">Security Alerts</Label>
+                      <Switch id="email-security" checked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="email-marketing">Marketing & Promotions</Label>
+                      <Switch id="email-marketing" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="email-newsletter">Newsletter</Label>
+                      <Switch id="email-newsletter" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium">Push Notifications</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="push-transactions">Transaction Updates</Label>
+                      <Switch id="push-transactions" checked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="push-security">Security Alerts</Label>
+                      <Switch id="push-security" checked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="push-marketing">Marketing & Promotions</Label>
+                      <Switch id="push-marketing" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="push-price">Price Alerts</Label>
+                      <Switch id="push-price" />
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: 'Notification Settings Updated',
+                      description: 'Your notification preferences have been saved.',
+                    });
+                  }}
+                >
+                  Save Notification Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="preferences">
+          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
+            <CardHeader>
+              <CardTitle>User Preferences</CardTitle>
+              <CardDescription>Customize your NepaliPay experience</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Language</h3>
+                  
+                  <Select defaultValue="en">
+                    <SelectTrigger className="w-full md:w-[200px] bg-background/50">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="np">Nepali</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="font-medium">Currency Display</h3>
+                  
+                  <Select defaultValue="npt">
+                    <SelectTrigger className="w-full md:w-[200px] bg-background/50">
+                      <SelectValue placeholder="Select primary currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="npt">NPT (Nepal Token)</SelectItem>
+                      <SelectItem value="npr">NPR (Nepalese Rupee)</SelectItem>
+                      <SelectItem value="usd">USD (US Dollar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="font-medium">Display Preferences</h3>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pref-balance">Show Balance on Dashboard</Label>
+                    <Switch id="pref-balance" checked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pref-animations">Enable Animations</Label>
+                    <Switch id="pref-animations" checked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pref-charts">Show Analytics Charts</Label>
+                    <Switch id="pref-charts" checked />
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: 'Preferences Updated',
+                      description: 'Your preferences have been saved successfully.',
+                    });
+                  }}
+                >
+                  Save Preferences
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="support">
+          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
+            <CardHeader>
+              <CardTitle>Help & Support</CardTitle>
+              <CardDescription>Get help with NepaliPay</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 border border-primary/20 rounded-lg bg-black/20">
+                    <h3 className="font-medium mb-2">Frequently Asked Questions</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Find answers to common questions</p>
+                    <Button variant="outline" className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: 'Feature Coming Soon',
+                          description: 'FAQ page will be available in the next update.',
+                        });
+                      }}
+                    >
+                      View FAQs
+                    </Button>
+                  </div>
+                  
+                  <div className="p-4 border border-primary/20 rounded-lg bg-black/20">
+                    <h3 className="font-medium mb-2">Contact Support</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Get help from our support team</p>
+                    <Button variant="outline" className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: 'Feature Coming Soon',
+                          description: 'Support contact will be available in the next update.',
+                        });
+                      }}
+                    >
+                      Contact Support
+                    </Button>
+                  </div>
+                  
+                  <div className="p-4 border border-primary/20 rounded-lg bg-black/20">
+                    <h3 className="font-medium mb-2">Knowledge Base</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Learn how to use NepaliPay features</p>
+                    <Button variant="outline" className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: 'Feature Coming Soon',
+                          description: 'Knowledge base will be available in the next update.',
+                        });
+                      }}
+                    >
+                      Browse Articles
+                    </Button>
+                  </div>
+                  
+                  <div className="p-4 border border-primary/20 rounded-lg bg-black/20">
+                    <h3 className="font-medium mb-2">Report an Issue</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Let us know if something isn't working</p>
+                    <Button variant="outline" className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: 'Feature Coming Soon',
+                          description: 'Issue reporting will be available in the next update.',
+                        });
+                      }}
+                    >
+                      Report Issue
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="p-4 border border-primary/20 rounded-lg">
+                  <h3 className="font-medium mb-2">About NepaliPay</h3>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Version:</strong> 1.0.0</p>
+                    <p><strong>Website:</strong> <a href="https://nepalipay.com" className="text-primary hover:underline">nepalipay.com</a></p>
+                    <p><strong>Smart Contract:</strong> <span className="font-mono text-xs">0x1234...5678</span></p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

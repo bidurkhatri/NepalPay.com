@@ -116,6 +116,10 @@ export const transactions = pgTable('transactions', {
   relatedTransactionId: integer('related_transaction_id'),
   loanId: integer('loan_id').references(() => loans.id),
   collateralId: integer('collateral_id').references(() => collaterals.id),
+  // Additional fields for exchange transactions
+  exchangeRate: numeric('exchange_rate', { precision: 24, scale: 8 }),
+  exchangeAmount: numeric('exchange_amount', { precision: 24, scale: 8 }),
+  exchangeCurrency: varchar('exchange_currency', { length: 10 }),
 });
 
 // Transaction relations
@@ -163,6 +167,8 @@ export const collaterals = pgTable('collaterals', {
   lockTxHash: varchar('lock_tx_hash', { length: 100 }),
   releaseTxHash: varchar('release_tx_hash', { length: 100 }),
   liquidationThreshold: numeric('liquidation_threshold', { precision: 24, scale: 8 }),
+  liquidationTimestamp: timestamp('liquidation_timestamp'),
+  valueToLoanRatio: numeric('value_to_loan_ratio', { precision: 8, scale: 6 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   loanId: integer('loan_id').references(() => loans.id),
@@ -187,6 +193,8 @@ export const loans = pgTable('loans', {
   status: loanStatusEnum('status').notNull(),
   startDate: timestamp('start_date'),
   dueDate: timestamp('due_date'),
+  endDate: timestamp('end_date'),
+  repaymentDate: timestamp('repayment_date'),
   repaidAmount: numeric('repaid_amount', { precision: 24, scale: 8 }).default('0').notNull(),
   loanToValueRatio: numeric('loan_to_value_ratio', { precision: 8, scale: 6 }).notNull(),
   originationFee: numeric('origination_fee', { precision: 24, scale: 8 }).notNull(),
@@ -195,6 +203,9 @@ export const loans = pgTable('loans', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   approvedBy: integer('approved_by').references(() => users.id),
+  lateFee: numeric('late_fee', { precision: 24, scale: 8 }),
+  rejectionReason: text('rejection_reason'),
+  collateralRequired: boolean('collateral_required').default(false),
   metadata: json('metadata'),
 });
 
