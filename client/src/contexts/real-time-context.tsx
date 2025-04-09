@@ -1,4 +1,5 @@
-import React, { createContext, useContext, ReactNode, useState } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useRealTime } from '@/hooks/use-real-time';
 import { Transaction, Wallet, Collateral, Loan, Activity } from '@/types';
 
 interface RealtimeContextValue {
@@ -15,20 +16,7 @@ interface RealtimeContextValue {
 const RealTimeContext = createContext<RealtimeContextValue | undefined>(undefined);
 
 export function RealTimeProvider({ children }: { children: ReactNode }) {
-  // Using mock data instead of WebSocket connection
-  const [isConnected] = useState(true);
-  const [lastUpdate] = useState<Date | null>(new Date());
-  const [data] = useState({
-    wallet: null,
-    recentTransactions: [],
-    collaterals: [],
-    loans: [],
-    recentActivities: []
-  });
-
-  const refreshData = () => {
-    console.log('Refresh data called - using mock data for now');
-  };
+  const { isConnected, data, lastUpdate, refreshData } = useRealTime();
 
   const value: RealtimeContextValue = {
     isConnected,
