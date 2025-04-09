@@ -10,7 +10,7 @@ import { getQueryFn, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 type AuthContextType = {
-  user: User | null;
+  user: User | null | undefined;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<User, Error, LoginData>;
@@ -51,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (res.status === 401) {
           return null;
         }
-        return await res.json();
+        const userData = await res.json();
+        return userData;
       } catch (error) {
         return null;
       }

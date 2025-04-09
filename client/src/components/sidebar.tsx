@@ -28,16 +28,8 @@ const Sidebar: React.FC = () => {
 
   const menuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" />, label: 'Dashboard' },
-    { href: '/buy-tokens', icon: <Coins className="mr-2 h-5 w-5" />, label: 'Buy NPT Tokens' },
     { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
-    { href: '/transactions', icon: <PaymentIcon className="mr-2 h-5 w-5" />, label: 'Transactions' },
-    { href: '/send', icon: <SendIcon className="mr-2 h-5 w-5" />, label: 'Send Money' },
-    { href: '/borrow', icon: <CardIcon className="mr-2 h-5 w-5" />, label: 'Borrow NPT' },
-    { href: '/rewards', icon: <BadgePercent className="mr-2 h-5 w-5" />, label: 'Rewards' },
-    { href: '/ad-bazaar', icon: <Store className="mr-2 h-5 w-5" />, label: 'Ad Bazaar' },
-    { href: '/profile', icon: <User className="mr-2 h-5 w-5" />, label: 'Profile' },
-    { href: '/settings', icon: <Settings className="mr-2 h-5 w-5" />, label: 'Settings' },
-    { href: '/support', icon: <BarChart3 className="mr-2 h-5 w-5" />, label: 'Support' },
+    { href: '/home', icon: <User className="mr-2 h-5 w-5" />, label: 'Home' },
   ];
 
   const handleLogout = async () => {

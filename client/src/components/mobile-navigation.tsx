@@ -6,11 +6,9 @@ const MobileNavigation: React.FC = () => {
   const [location] = useLocation();
 
   const menuItems = [
-    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Home' },
+    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard' },
     { href: '/wallet', icon: <Wallet className="h-5 w-5" />, label: 'Wallet' },
-    { href: '/rewards', icon: <BadgePercent className="h-5 w-5" />, label: 'Rewards' },
-    { href: '/ad-bazaar', icon: <Store className="h-5 w-5" />, label: 'Ads' },
-    { href: '/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
+    { href: '/home', icon: <Settings className="h-5 w-5" />, label: 'Home' },
   ];
 
   return (

@@ -33,30 +33,39 @@ export function useRealTime(): RealtimeHook {
   });
 
   const connectWebSocket = useCallback(() => {
-    // Close existing connection if any
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.close();
-    }
+    try {
+      // Close existing connection if any
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.close();
+      }
 
-    // Skip if no user
-    if (!user) return;
+      // Skip if no user
+      if (!user) return;
 
-    // Create WebSocket connection
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const socket = new WebSocket(wsUrl);
-
-    // Set up event handlers
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-      setIsConnected(true);
+      console.log('Attempting to connect to WebSocket...');
       
-      // Authenticate the connection with user ID
-      socket.send(JSON.stringify({
-        type: 'auth',
-        userId: user.id
-      }));
-    };
+      // Create WebSocket connection
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log('WebSocket URL:', wsUrl);
+      
+      const socket = new WebSocket(wsUrl);
+
+      // Set up event handlers
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+        setIsConnected(true);
+        
+        try {
+          // Authenticate the connection with user ID
+          socket.send(JSON.stringify({
+            type: 'auth',
+            userId: user.id
+          }));
+        } catch (error) {
+          console.error('Error sending auth message:', error);
+        }
+      };
 
     socket.onclose = () => {
       console.log('WebSocket connection closed');
@@ -212,6 +221,14 @@ export function useRealTime(): RealtimeHook {
         socket.close();
       }
     };
+  } catch (error) {
+    console.error('Error in connectWebSocket:', error);
+    toast({
+      title: 'Connection Error',
+      description: 'Failed to establish WebSocket connection',
+      variant: 'destructive'
+    });
+  }
   }, [user, toast]);
 
   // Connect when component mounts or user changes
