@@ -135,23 +135,42 @@ export function setupAuth(app: Express): void {
   // Registration endpoint
   app.post('/api/register', async (req, res) => {
     try {
-      const { username, email, password, fullName = null, phone = null } = req.body;
+      console.log('Registration attempt with data:', req.body);
+      const { username, email, password, firstName = null, lastName = null, fullName = null } = req.body;
 
       // Basic validation
       if (!username || !email || !password) {
+        console.log('Registration failed: Missing required fields');
         return res.status(400).json({ error: 'Username, email, and password are required' });
       }
 
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ error: 'Username already exists' });
+      try {
+        // Check if username already exists
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser) {
+          console.log('Registration failed: Username already exists');
+          return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Check if email already exists
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          console.log('Registration failed: Email already in use');
+          return res.status(400).json({ error: 'Email already in use' });
+        }
+      } catch (error) {
+        console.error('Error checking existing user:', error);
+        return res.status(500).json({ error: 'Error checking user existence' });
       }
 
-      // Check if email already exists
-      const existingEmail = await storage.getUserByEmail(email);
-      if (existingEmail) {
-        return res.status(400).json({ error: 'Email already in use' });
+      // Split full name into first and last name if provided
+      let firstNameValue = firstName;
+      let lastNameValue = lastName;
+      
+      if (fullName && (!firstName || !lastName)) {
+        const nameParts = fullName.split(' ');
+        firstNameValue = nameParts[0] || null;
+        lastNameValue = nameParts.slice(1).join(' ') || null;
       }
 
       // Create new user with hashed password
@@ -159,21 +178,20 @@ export function setupAuth(app: Express): void {
         username,
         email,
         password: await hashPassword(password),
-        fullName,
-        phone,
+        firstName: firstNameValue,
+        lastName: lastNameValue,
+        phoneNumber: null,
+        walletAddress: null,
         role: 'user',
         kycStatus: 'not_submitted',
         kycVerificationId: null,
         kycVerifiedAt: null,
-        twoFactorEnabled: false,
-        twoFactorSecret: null,
         lastLoginAt: new Date(),
-        referralCode: generateReferralCode(username),
-        referredBy: null,
         preferredLanguage: 'en',
         preferences: {},
         stripeCustomerId: null,
         stripeSubscriptionId: null,
+        finapiUserId: null,
       });
 
       // Create wallet for new user
@@ -189,7 +207,7 @@ export function setupAuth(app: Express): void {
         ethAddress: null,
         btcAddress: null,
         privateKeyEncrypted: null,
-        encryptionIv: null,
+        encryptionIV: null,
         lastSyncedAt: null
       });
 
