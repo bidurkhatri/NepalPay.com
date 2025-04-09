@@ -65,21 +65,16 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 // Wallets table
 export const wallets = pgTable('wallets', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
-  nptBalance: numeric('npt_balance', { precision: 24, scale: 8 }).default('0').notNull(),
-  bnbBalance: numeric('bnb_balance', { precision: 24, scale: 18 }).default('0').notNull(),
-  ethBalance: numeric('eth_balance', { precision: 24, scale: 18 }).default('0').notNull(),
-  btcBalance: numeric('btc_balance', { precision: 24, scale: 8 }).default('0').notNull(),
-  walletType: walletTypeEnum('wallet_type').default('custodial').notNull(),
-  nptAddress: varchar('npt_address', { length: 42 }),
-  bnbAddress: varchar('bnb_address', { length: 42 }),
-  ethAddress: varchar('eth_address', { length: 42 }),
-  btcAddress: varchar('btc_address', { length: 42 }),
-  privateKeyEncrypted: text('private_key_encrypted'),
-  encryptionIV: text('encryption_iv'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  lastSyncedAt: timestamp('last_synced_at'),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  balance: numeric('balance').notNull(),
+  currency: text('currency').notNull(),
+  lastUpdated: timestamp('last_updated').notNull(),
+  address: text('address'),
+  nptBalance: text('npt_balance'),
+  bnbBalance: text('bnb_balance'),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+  is_primary: boolean('is_primary'),
 });
 
 // Wallet relations

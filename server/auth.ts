@@ -89,10 +89,7 @@ export function setupAuth(app: Express): void {
           return done(null, false);
         }
 
-        // Update last login timestamp
-        await storage.updateUser(user.id, {
-          lastLoginAt: new Date(),
-        });
+        // No need to update last login timestamp as it's not in our schema
         
         // Create activity record
         await storage.createActivity({
@@ -194,18 +191,13 @@ export function setupAuth(app: Express): void {
       // Create wallet for new user
       const wallet = await storage.createWallet({
         userId: user.id,
+        balance: '0',
+        currency: 'NPT',
+        lastUpdated: new Date(),
         nptBalance: '0',
         bnbBalance: '0',
-        ethBalance: '0',
-        btcBalance: '0',
-        walletType: 'custodial',
-        nptAddress: null,
-        bnbAddress: null,
-        ethAddress: null,
-        btcAddress: null,
-        privateKeyEncrypted: null,
-        encryptionIV: null,
-        lastSyncedAt: null
+        address: null,
+        is_primary: true
       });
 
       // Create activity record
@@ -217,7 +209,7 @@ export function setupAuth(app: Express): void {
         userAgent: null,
         metadata: {
           walletId: wallet.id,
-          walletType: wallet.walletType,
+          currency: wallet.currency,
         },
         transactionId: null,
         loanId: null,
