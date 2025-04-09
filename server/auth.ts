@@ -5,14 +5,21 @@ import session from 'express-session';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { storage } from './storage';
-import { User as SelectUser } from '@shared/schema';
+import { User } from '@shared/schema';
+import { log } from './vite';
+import connectPgSimple from 'connect-pg-simple';
+import { pool } from './db';
 
+// Extend Express.User interface
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends Omit<User, 'id'> {
+      id: number;
+    }
   }
 }
 
+// Promisify scrypt
 const scryptAsync = promisify(scrypt);
 
 /**
@@ -29,185 +36,312 @@ export async function hashPassword(password: string): Promise<string> {
  * Only processes properly hashed passwords for security (format: "hash.salt")
  */
 export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
-  try {
-    // Ensure we're only dealing with properly hashed passwords
-    if (!stored.includes('.')) {
-      console.error('Security warning: Stored password is not properly hashed');
-      return false;
-    }
-    
-    // Handle properly hashed passwords
-    const [hashed, salt] = stored.split('.');
-    const hashedBuf = Buffer.from(hashed, 'hex');
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } catch (error) {
-    console.error('Password comparison error:', error);
+  // Make sure the stored password is in the correct format
+  if (!stored.includes('.')) {
     return false;
   }
+
+  const [hashed, salt] = stored.split('.');
+  const hashedBuf = Buffer.from(hashed, 'hex');
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 /**
  * Set up authentication routes and passport configuration
  */
 export function setupAuth(app: Express): void {
+  // PostgreSQL session store
+  const PgStore = connectPgSimple(session);
+
   // Configure session middleware
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'nepalipay-session-secret',
+    store: new PgStore({
+      pool,
+      tableName: 'session', // Default session table name
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'nepalipay_session_secret_change_in_production',
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    }
+      httpOnly: true,
+      sameSite: 'lax',
+    },
   };
 
+  // Set up session and passport
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure passport to use local strategy
+  // Configure local strategy (username/password)
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // Find user by username
         const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false, { message: 'Invalid username or password' });
-        }
         
-        const isPasswordValid = await comparePasswords(password, user.password);
-        if (!isPasswordValid) {
-          return done(null, false, { message: 'Invalid username or password' });
+        // If no user found or password doesn't match
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
         }
+
+        // Update last login timestamp
+        await storage.updateUser(user.id, {
+          lastLoginAt: new Date(),
+        });
         
+        // Create activity record
+        await storage.createActivity({
+          userId: user.id,
+          activityType: 'login',
+          description: 'User logged in',
+          ipAddress: null, // In a real app, we'd get this from the request
+          userAgent: null, // In a real app, we'd get this from the request
+          metadata: {
+            method: 'local',
+          },
+          transactionId: null,
+          loanId: null,
+          collateralId: null
+        });
+
+        // Success
         return done(null, user);
       } catch (error) {
+        log(`Authentication error: ${error instanceof Error ? error.message : String(error)}`);
         return done(error);
       }
     })
   );
 
-  // Configure serialization and deserialization of users
-  passport.serializeUser((user, done) => {
+  // Serialize/deserialize user to/from session
+  passport.serializeUser((user: Express.User, done) => {
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      if (!user) {
-        return done(null, false);
-      }
       done(null, user);
     } catch (error) {
-      done(error, null);
+      done(error);
     }
   });
 
-  // Authentication routes
-  app.post('/api/register', async (req, res, next) => {
+  // Registration endpoint
+  app.post('/api/register', async (req, res) => {
     try {
-      const { username, email, password, firstName, lastName, walletAddress } = req.body;
-      
-      // Validate required fields
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
+      const { username, email, password, fullName = null, phone = null } = req.body;
+
+      // Basic validation
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: 'Username, email, and password are required' });
       }
-      
-      // Check if username is already taken
+
+      // Check if username already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
+        return res.status(400).json({ error: 'Username already exists' });
       }
-      
-      // Check if email is already taken (if provided)
-      if (email) {
-        const existingEmail = await storage.getUserByEmail(email);
-        if (existingEmail) {
-          return res.status(400).json({ message: 'Email already in use' });
-        }
+
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ error: 'Email already in use' });
       }
-      
-      // Hash the password
-      const hashedPassword = await hashPassword(password);
-      
-      // Create the user
-      const newUser = await storage.createUser({
+
+      // Create new user with hashed password
+      const user = await storage.createUser({
         username,
         email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        walletAddress,
-        role: 'user'
+        password: await hashPassword(password),
+        fullName,
+        phone,
+        role: 'user',
+        kycStatus: 'not_submitted',
+        kycVerificationId: null,
+        kycVerifiedAt: null,
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        lastLoginAt: new Date(),
+        referralCode: generateReferralCode(username),
+        referredBy: null,
+        preferredLanguage: 'en',
+        preferences: {},
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
       });
-      
-      // Log in the user after registration
-      req.login(newUser, (err) => {
+
+      // Create wallet for new user
+      const wallet = await storage.createWallet({
+        userId: user.id,
+        nptBalance: '0',
+        bnbBalance: '0',
+        ethBalance: '0',
+        btcBalance: '0',
+        walletType: 'custodial',
+        nptAddress: null,
+        bnbAddress: null,
+        ethAddress: null,
+        btcAddress: null,
+        privateKeyEncrypted: null,
+        encryptionIv: null,
+        lastSyncedAt: null
+      });
+
+      // Create activity record
+      await storage.createActivity({
+        userId: user.id,
+        activityType: 'wallet_create',
+        description: 'Wallet created for new user',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          walletId: wallet.id,
+          walletType: wallet.walletType,
+        },
+        transactionId: null,
+        loanId: null,
+        collateralId: null
+      });
+
+      // Log the user in
+      req.login(user, (err) => {
         if (err) {
-          return next(err);
+          return res.status(500).json({ error: 'Login after registration failed' });
         }
         
-        // Return user data without password
-        const { password, ...userWithoutPassword } = newUser;
-        res.status(201).json(userWithoutPassword);
+        // Return user data (excluding password)
+        const { password, ...userWithoutPassword } = user;
+        return res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
-      console.error('Registration error:', error);
-      res.status(500).json({ message: 'Failed to register user' });
+      log(`Registration error: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Registration failed' });
     }
   });
 
+  // Login endpoint (handled by passport)
   app.post('/api/login', (req, res, next) => {
-    passport.authenticate('local', (err: any, user: Express.User | false, info: { message?: string } | undefined) => {
+    passport.authenticate('local', (err, user, info) => {
       if (err) {
         return next(err);
       }
-      
       if (!user) {
-        return res.status(401).json({
-          message: info?.message || 'Invalid username or password'
-        });
+        return res.status(401).json({ error: 'Invalid username or password' });
       }
-      
-      req.login(user, (err: any) => {
+      req.login(user, (err) => {
         if (err) {
           return next(err);
         }
-        
-        // Return user data without password
+        // Return user data (excluding password)
         const { password, ...userWithoutPassword } = user;
         return res.json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
+  // Logout endpoint
   app.post('/api/logout', (req, res) => {
+    if (req.isAuthenticated()) {
+      const userId = req.user.id;
+      
+      // Create activity record
+      storage.createActivity({
+        userId,
+        activityType: 'login',
+        description: 'User logged out',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {},
+        transactionId: null,
+        loanId: null,
+        collateralId: null
+      }).catch(err => {
+        log(`Error recording logout activity: ${err}`);
+      });
+    }
+    
     req.logout((err) => {
       if (err) {
-        return res.status(500).json({ message: 'Failed to logout' });
+        return res.status(500).json({ error: 'Logout failed' });
       }
-      
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Failed to destroy session' });
-        }
-        
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out successfully' });
-      });
+      return res.sendStatus(200);
     });
   });
 
+  // Get current user endpoint
   app.get('/api/user', (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    // Return user data without password
+    // Return user data (excluding password)
     const { password, ...userWithoutPassword } = req.user;
-    res.json(userWithoutPassword);
+    return res.json(userWithoutPassword);
   });
+
+  // Update user profile endpoint
+  app.patch('/api/user', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const allowedFields = ['fullName', 'phone', 'preferredLanguage', 'preferences'];
+      const updates: Partial<User> = {};
+
+      // Only allow updating specific fields
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+
+      // Update the user
+      const updatedUser = await storage.updateUser(req.user.id, updates);
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Create activity record
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: 'profile_update',
+        description: 'User profile updated',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          fields: Object.keys(updates),
+        },
+        transactionId: null,
+        loanId: null,
+        collateralId: null
+      });
+
+      // Return updated user (excluding password)
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      log(`Profile update error: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Profile update failed' });
+    }
+  });
+}
+
+/**
+ * Generate a referral code based on username
+ */
+function generateReferralCode(username: string): string {
+  const randomPart = randomBytes(3).toString('hex').toUpperCase();
+  const usernamePart = username.slice(0, 4).toUpperCase();
+  return `${usernamePart}-${randomPart}`;
 }

@@ -1,809 +1,592 @@
-import { Request, Response, NextFunction, Express } from 'express';
+import type { Express } from 'express';
 import { createServer, type Server } from 'http';
+import { WebSocketServer, type WebSocket } from 'ws';
 import Stripe from 'stripe';
-import { ethers } from 'ethers';
-import { WebSocketServer, WebSocket } from 'ws';
-import { storage } from './storage';
 import { setupAuth } from './auth';
-import { Transaction, Wallet, Collateral, Loan, Activity } from '@shared/schema';
+import { storage } from './storage';
+import { log } from './vite';
 
-// Initialize Stripe client
+// Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('Missing STRIPE_SECRET_KEY environment variable');
+  log('Warning: STRIPE_SECRET_KEY not found in environment variables');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    })
+  : null;
 
-// Authentication middleware
-const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  // Ensure TypeScript knows req.user is defined after this middleware
-  if (!req.user) {
-    return res.status(401).json({ message: 'User not found in session' });
-  }
-  next();
-};
+// Store connected WebSocket clients
+const clients: Set<WebSocket> = new Set();
 
-const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  if (!req.user) {
-    return res.status(401).json({ message: 'User not found in session' });
-  }
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin privileges required' });
-  }
-  next();
-};
-
-const requireSuperadmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  if (!req.user) {
-    return res.status(401).json({ message: 'User not found in session' });
-  }
-  if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'Superadmin privileges required' });
-  }
-  next();
-};
-
-// Initialize blockchain provider and admin wallet
-const provider = new ethers.JsonRpcProvider(
-  process.env.RPC_URL || 'https://data-seed.binance.org'
-);
-
-let adminWallet: ethers.Wallet | null = null;
-if (process.env.ADMIN_PRIVATE_KEY) {
-  adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
-  console.log('Admin wallet initialized with address:', adminWallet.address);
-} else {
-  console.warn('Missing ADMIN_PRIVATE_KEY environment variable, token transfers will not work');
-}
-
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
+/**
+ * Register API routes and create HTTP server
+ */
+export function registerRoutes(app: Express): Server {
+  // Setup auth routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
-  
-  // User routes
-  app.get('/api/users', requireAdmin, async (req, res) => {
-    try {
-      const users = await storage.getAllUsers();
-      // Remove sensitive data
-      const safeUsers = users.map(({ password, ...user }) => user);
-      res.json(safeUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ message: 'Error fetching users' });
+
+  // Get user wallet
+  app.get('/api/wallet', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
-  });
-  
-  // User profile route
-  app.get('/api/profile', requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Get user's wallet
-      const wallet = await storage.getWalletByUserId(user.id);
-      
-      // Remove sensitive data
-      const { password, ...userProfile } = user;
-      
-      res.json({
-        ...userProfile,
-        wallet
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      res.status(500).json({ message: 'Error fetching profile' });
-    }
-  });
-  
-  // Update profile route
-  app.patch('/api/profile', requireAuth, async (req, res) => {
-    try {
-      const { id, role, password, ...updateData } = req.body;
-      
-      // Update the user
-      const updatedUser = await storage.updateUser(req.user.id, updateData);
-      if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Remove sensitive data
-      const { password: _, ...userProfile } = updatedUser;
-      
-      res.json(userProfile);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      res.status(500).json({ message: 'Error updating profile' });
-    }
-  });
-  
-  // Wallet routes
-  app.get('/api/wallet', requireAuth, async (req, res) => {
+
     try {
       const wallet = await storage.getWalletByUserId(req.user.id);
       if (!wallet) {
-        return res.status(404).json({ message: 'Wallet not found' });
+        return res.status(404).json({ error: 'Wallet not found' });
       }
-      
-      res.json(wallet);
+      return res.json(wallet);
     } catch (error) {
-      console.error('Error fetching wallet:', error);
-      res.status(500).json({ message: 'Error fetching wallet' });
+      log(`Error fetching wallet: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch wallet' });
     }
   });
-  
-  app.post('/api/wallet', requireAuth, async (req, res) => {
-    try {
-      const existingWallet = await storage.getWalletByUserId(req.user.id);
-      if (existingWallet) {
-        return res.status(400).json({ message: 'User already has a wallet' });
-      }
-      
-      const { address } = req.body;
-      if (!address) {
-        return res.status(400).json({ message: 'Wallet address is required' });
-      }
-      
-      const wallet = await storage.createWallet({
-        userId: req.user.id,
-        address,
-        nptBalance: '0',
-        bnbBalance: '0'
-      });
-      
-      // Also update the user with the wallet address
-      await storage.updateUser(req.user.id, { walletAddress: address });
-      
-      // Log activity
-      await storage.createActivity({
-        userId: req.user.id,
-        action: 'WALLET_CREATE',
-        description: 'Created a new wallet',
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || ''
-      });
-      
-      res.status(201).json(wallet);
-    } catch (error) {
-      console.error('Error creating wallet:', error);
-      res.status(500).json({ message: 'Error creating wallet' });
+
+  // Get user transactions
+  app.get('/api/transactions', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
-  });
-  
-  // Transaction routes
-  app.get('/api/transactions', requireAuth, async (req, res) => {
+
     try {
       const transactions = await storage.getUserTransactions(req.user.id);
-      res.json(transactions);
+      return res.json(transactions);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      res.status(500).json({ message: 'Error fetching transactions' });
+      log(`Error fetching transactions: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch transactions' });
     }
   });
-  
-  app.get('/api/transactions/:id', requireAuth, async (req, res) => {
+
+  // Get user activities
+  app.get('/api/activities', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
     try {
-      const transaction = await storage.getTransaction(parseInt(req.params.id));
-      if (!transaction) {
-        return res.status(404).json({ message: 'Transaction not found' });
-      }
-      
-      // Check if user is authorized to view this transaction
-      if (transaction.senderId !== req.user.id && transaction.receiverId !== req.user.id) {
-        return res.status(403).json({ message: 'Not authorized to view this transaction' });
-      }
-      
-      res.json(transaction);
+      const activities = await storage.getUserActivities(req.user.id);
+      return res.json(activities);
     } catch (error) {
-      console.error('Error fetching transaction:', error);
-      res.status(500).json({ message: 'Error fetching transaction' });
+      log(`Error fetching activities: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch activities' });
     }
   });
-  
-  app.post('/api/transactions/transfer', requireAuth, async (req, res) => {
-    try {
-      const { receiverAddress, amount } = req.body;
-      if (!receiverAddress || !amount) {
-        return res.status(400).json({ message: 'Receiver address and amount are required' });
-      }
-      
-      // Verify the sender has a wallet
-      const senderWallet = await storage.getWalletByUserId(req.user.id);
-      if (!senderWallet) {
-        return res.status(400).json({ message: 'You need a wallet to make transfers' });
-      }
-      
-      // Check if sender has enough balance (this is a simple check, the actual transfer happens on blockchain)
-      const senderBalance = parseFloat(senderWallet.nptBalance || '0');
-      const transferAmount = parseFloat(amount || '0');
-      if (senderBalance < transferAmount) {
-        return res.status(400).json({ message: 'Insufficient balance' });
-      }
-      
-      // Create a pending transaction in the database
-      const transaction = await storage.createTransaction({
-        senderId: req.user.id,
-        receiverId: null, // We don't know the receiver's user ID yet
-        amount: amount.toString(),
-        currency: 'NPT',
-        status: 'pending',
-        type: 'transfer',
-        description: `Transfer to ${receiverAddress}`
-      });
-      
-      // Log activity
-      await storage.createActivity({
-        userId: req.user.id,
-        action: 'TRANSACTION_INITIATED',
-        description: `Initiated transfer of ${amount} NPT to ${receiverAddress}`,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || ''
-      });
-      
-      // Notify via WebSocket
-      broadcastTransaction(transaction);
-      
-      res.status(201).json({
-        transaction,
-        message: 'Transfer initiated. Please complete the transaction in your Web3 wallet.'
-      });
-    } catch (error) {
-      console.error('Error creating transfer:', error);
-      res.status(500).json({ message: 'Error creating transfer' });
+
+  // Get user collaterals
+  app.get('/api/collaterals', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
-  });
-  
-  // Collateral routes
-  app.get('/api/collaterals', requireAuth, async (req, res) => {
+
     try {
       const collaterals = await storage.getUserCollaterals(req.user.id);
-      res.json(collaterals);
+      return res.json(collaterals);
     } catch (error) {
-      console.error('Error fetching collaterals:', error);
-      res.status(500).json({ message: 'Error fetching collaterals' });
+      log(`Error fetching collaterals: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch collaterals' });
     }
   });
-  
-  app.post('/api/collaterals', requireAuth, async (req, res) => {
-    try {
-      const { type, amount, ltv } = req.body;
-      if (!type || !amount || !ltv) {
-        return res.status(400).json({ message: 'Type, amount, and LTV are required' });
-      }
-      
-      // Create a new collateral
-      const collateral = await storage.createCollateral({
-        userId: req.user.id,
-        type,
-        amount: amount.toString(),
-        status: 'pending',
-        ltv: parseInt(ltv)
-      });
-      
-      // Log activity
-      await storage.createActivity({
-        userId: req.user.id,
-        action: 'COLLATERAL_CREATED',
-        description: `Created ${amount} ${type} collateral with ${ltv}% LTV`,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || ''
-      });
-      
-      // Notify via WebSocket
-      broadcastToUser(req.user.id, {
-        type: 'collateral',
-        collateral,
-        action: 'created'
-      });
-      
-      res.status(201).json({
-        collateral,
-        message: 'Collateral created. Please complete the transaction in your Web3 wallet.'
-      });
-    } catch (error) {
-      console.error('Error creating collateral:', error);
-      res.status(500).json({ message: 'Error creating collateral' });
+
+  // Get user loans
+  app.get('/api/loans', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
-  });
-  
-  // Loan routes
-  app.get('/api/loans', requireAuth, async (req, res) => {
+
     try {
       const loans = await storage.getUserLoans(req.user.id);
-      res.json(loans);
+      return res.json(loans);
     } catch (error) {
-      console.error('Error fetching loans:', error);
-      res.status(500).json({ message: 'Error fetching loans' });
+      log(`Error fetching loans: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch loans' });
     }
   });
-  
-  app.post('/api/loans', requireAuth, async (req, res) => {
-    try {
-      const { collateralId, amount, term } = req.body;
-      if (!collateralId || !amount || !term) {
-        return res.status(400).json({ message: 'Collateral ID, amount, and term are required' });
-      }
-      
-      // Verify the collateral exists and belongs to the user
-      const collateral = await storage.getCollateral(parseInt(collateralId));
-      if (!collateral) {
-        return res.status(404).json({ message: 'Collateral not found' });
-      }
-      
-      if (collateral.userId !== req.user.id) {
-        return res.status(403).json({ message: 'Not authorized to use this collateral' });
-      }
-      
-      if (collateral.status !== 'active') {
-        return res.status(400).json({ message: 'Collateral is not active' });
-      }
-      
-      // Calculate interest based on collateral type and LTV
-      const interest = '5'; // 5% interest rate, could be more dynamic based on risk
-      
-      // Calculate due date (term is in days)
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + parseInt(term));
-      
-      // Create a new loan
-      const loan = await storage.createLoan({
-        userId: req.user.id,
-        collateralId: collateral.id,
-        amount: amount.toString(),
-        interest,
-        term: parseInt(term),
-        status: 'pending',
-        dueDate
-      });
-      
-      // Log activity
-      await storage.createActivity({
-        userId: req.user.id,
-        action: 'LOAN_CREATED',
-        description: `Created loan of ${amount} NPT for ${term} days`,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || ''
-      });
-      
-      // Notify via WebSocket
-      broadcastToUser(req.user.id, {
-        type: 'loan',
-        loan,
-        action: 'created'
-      });
-      
-      res.status(201).json({
-        loan,
-        message: 'Loan created. Waiting for approval.'
-      });
-    } catch (error) {
-      console.error('Error creating loan:', error);
-      res.status(500).json({ message: 'Error creating loan' });
-    }
-  });
-  
-  // Ad routes
+
+  // Get active ads
   app.get('/api/ads', async (req, res) => {
     try {
       const ads = await storage.getActiveAds();
-      res.json(ads);
+      return res.json(ads);
     } catch (error) {
-      console.error('Error fetching ads:', error);
-      res.status(500).json({ message: 'Error fetching ads' });
+      log(`Error fetching ads: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch ads' });
     }
-  });
-  
-  app.post('/api/ads', requireAuth, async (req, res) => {
-    try {
-      const { title, description, budget, startDate, endDate } = req.body;
-      if (!title || !description || !budget) {
-        return res.status(400).json({ message: 'Title, description, and budget are required' });
-      }
-      
-      // Create a new ad
-      const ad = await storage.createAd({
-        userId: req.user.id,
-        title,
-        description,
-        status: 'pending',
-        budget: budget.toString(),
-        impressions: 0,
-        clicks: 0,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null
-      });
-      
-      // Log activity
-      await storage.createActivity({
-        userId: req.user.id,
-        action: 'AD_CREATED',
-        description: `Created ad: ${title}`,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent') || ''
-      });
-      
-      // Notify via WebSocket
-      broadcastToUser(req.user.id, {
-        type: 'ad',
-        ad,
-        action: 'created'
-      });
-      
-      res.status(201).json({
-        ad,
-        message: 'Ad created. Waiting for approval.'
-      });
-    } catch (error) {
-      console.error('Error creating ad:', error);
-      res.status(500).json({ message: 'Error creating ad' });
-    }
-  });
-  
-  // Stripe payment routes
-  app.post('/api/create-payment-intent', requireAuth, async (req, res) => {
-    try {
-      const { amount, tokenAmount } = req.body;
-      
-      if (!amount) {
-        return res.status(400).json({ message: 'Amount is required' });
-      }
-      
-      // Create a Payment Intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: 'usd',
-        description: `Purchase of ${tokenAmount} NPT tokens`,
-        metadata: {
-          userId: req.user.id.toString(),
-          tokenAmount: tokenAmount.toString()
-        }
-      });
-      
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id
-      });
-    } catch (error: any) {
-      console.error('Error creating payment intent:', error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-  
-  // Webhook handler for Stripe events
-  app.post('/api/webhook', async (req, res) => {
-    const sig = req.headers['stripe-signature'] as string;
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
-    if (!endpointSecret) {
-      return res.status(400).json({ message: 'Webhook secret not configured' });
-    }
-    
-    let event;
-    
-    try {
-      // Verify the webhook signature
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).json({ message: `Webhook Error: ${err.message}` });
-    }
-    
-    // Handle the event
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
-      try {
-        // Extract metadata
-        const userId = parseInt(paymentIntent.metadata.userId);
-        const tokenAmount = paymentIntent.metadata.tokenAmount;
-        
-        // Get user and wallet
-        const user = await storage.getUser(userId);
-        if (!user) {
-          throw new Error('User not found');
-        }
-        
-        const wallet = await storage.getWalletByUserId(userId);
-        if (!wallet) {
-          throw new Error('Wallet not found');
-        }
-        
-        // Create a transaction record
-        const transaction = await storage.createTransaction({
-          senderId: null, // This is from the treasury/system
-          receiverId: userId,
-          amount: tokenAmount,
-          currency: 'NPT',
-          status: 'completed',
-          type: 'purchase',
-          description: 'Token purchase via Stripe',
-          stripePaymentId: paymentIntent.id
-        });
-        
-        // Update wallet balance (optimistic update, actual tokens will be transferred by the admin wallet)
-        const currentBalance = parseFloat(wallet.nptBalance || '0');
-        const newBalance = currentBalance + parseFloat(tokenAmount || '0');
-        
-        await storage.updateWallet(wallet.id, {
-          nptBalance: newBalance.toString()
-        });
-        
-        // Log activity
-        await storage.createActivity({
-          userId,
-          action: 'PAYMENT_COMPLETED',
-          description: `Purchased ${tokenAmount} NPT tokens`,
-          ipAddress: 'stripe-webhook',
-          userAgent: 'Stripe'
-        });
-        
-        // Notify user via WebSocket
-        broadcastTransaction(transaction);
-        broadcastWalletUpdate(userId);
-        
-        // Transfer tokens from admin wallet to user wallet
-        if (adminWallet && wallet.address) {
-          // This would normally call a contract method to transfer tokens
-          // The actual implementation would depend on your smart contract
-          console.log(`[SIMULATION] Transferring ${tokenAmount} NPT from ${adminWallet.address} to ${wallet.address}`);
-          
-          // In a real implementation, you would do something like:
-          // const contract = new ethers.Contract(tokenContractAddress, tokenAbi, adminWallet);
-          // const tx = await contract.transfer(wallet.address, ethers.utils.parseUnits(tokenAmount, 18));
-          // await tx.wait();
-          // const txHash = tx.hash;
-          
-          // Update transaction with tx hash once complete
-          // await storage.updateTransaction(transaction.id, { txHash });
-        } else {
-          console.warn('Admin wallet not configured, cannot transfer tokens');
-        }
-        
-        console.log(`Payment for user ${userId} completed successfully`);
-      } catch (error) {
-        console.error('Error processing payment success:', error);
-      }
-    }
-    
-    // Return a response to acknowledge receipt of the event
-    res.json({ received: true });
-  });
-  
-  // Verification endpoint for payment status
-  app.get('/api/payment/:paymentId', requireAuth, async (req, res) => {
-    try {
-      const { paymentId } = req.params;
-      
-      // Fetch payment from Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
-      
-      // Verify this payment belongs to the authenticated user
-      if (paymentIntent.metadata.userId !== req.user.id.toString()) {
-        return res.status(403).json({ message: 'Not authorized to view this payment' });
-      }
-      
-      // Get all transactions and find by Stripe payment ID
-      const transactions = await storage.getUserTransactions(req.user.id);
-      const transaction = transactions.find((t: Transaction) => t.stripePaymentId === paymentId);
-      
-      res.json({
-        paymentStatus: paymentIntent.status,
-        transaction: transaction || null
-      });
-    } catch (error: any) {
-      console.error('Error verifying payment:', error);
-      res.status(500).json({ message: error.message });
-    }
-  });
-  
-  // Serve the React frontend in development via Vite
-  // This endpoint helps frontend get the current backend URL
-  app.get('/api/app-url', (req, res) => {
-    const protocol = req.protocol;
-    const host = req.get('host') || '';
-    const url = `${protocol}://${host}`;
-    res.json({ url });
   });
 
-  // Create an HTTP server
+  // Ad impression endpoint
+  app.post('/api/ads/:id/impression', async (req, res) => {
+    try {
+      const adId = parseInt(req.params.id, 10);
+      if (isNaN(adId)) {
+        return res.status(400).json({ error: 'Invalid ad ID' });
+      }
+
+      const ad = await storage.incrementAdImpressions(adId);
+      if (!ad) {
+        return res.status(404).json({ error: 'Ad not found' });
+      }
+
+      return res.json({ success: true, impressions: ad.impressions });
+    } catch (error) {
+      log(`Error recording ad impression: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to record impression' });
+    }
+  });
+
+  // Ad click endpoint
+  app.post('/api/ads/:id/click', async (req, res) => {
+    try {
+      const adId = parseInt(req.params.id, 10);
+      if (isNaN(adId)) {
+        return res.status(400).json({ error: 'Invalid ad ID' });
+      }
+
+      const ad = await storage.incrementAdClicks(adId);
+      if (!ad) {
+        return res.status(404).json({ error: 'Ad not found' });
+      }
+
+      return res.json({ success: true, clicks: ad.clicks });
+    } catch (error) {
+      log(`Error recording ad click: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to record click' });
+    }
+  });
+
+  // Create Stripe payment intent for purchasing NPT tokens
+  app.post('/api/create-payment-intent', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    if (!stripe) {
+      return res.status(500).json({ error: 'Stripe not configured' });
+    }
+
+    try {
+      const { amount, currency = 'usd' } = req.body;
+      
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: 'Invalid amount' });
+      }
+
+      // Create a PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
+        currency: currency.toLowerCase(),
+        metadata: { 
+          userId: req.user.id.toString(),
+          tokenAmount: amount,
+          type: 'token_purchase'
+        },
+      });
+
+      // Create a pending transaction
+      const transaction = await storage.createTransaction({
+        senderId: null, // System/treasury
+        recipientId: req.user.id,
+        walletId: (await storage.getWalletByUserId(req.user.id))?.id || null,
+        amount: amount.toString(),
+        currency: 'NPT',
+        fee: '0',
+        transactionType: 'deposit',
+        status: 'pending',
+        txHash: null,
+        blockNumber: null,
+        networkFee: null,
+        exchangeRate: null,
+        exchangeAmount: amount.toString(),
+        exchangeCurrency: currency.toUpperCase(),
+        description: 'NPT token purchase via Stripe',
+        metadata: {
+          paymentIntentId: paymentIntent.id,
+        },
+        loanId: null,
+        collateralId: null,
+      });
+
+      // Record activity
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: 'transaction',
+        description: 'Started NPT token purchase',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          paymentIntentId: paymentIntent.id,
+          amount,
+          currency,
+        },
+        transactionId: transaction.id,
+        loanId: null,
+        collateralId: null,
+      });
+
+      // Return client secret to complete payment on the client
+      return res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        transactionId: transaction.id
+      });
+    } catch (error) {
+      log(`Error creating payment intent: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create payment intent' });
+    }
+  });
+
+  // Webhook endpoint to handle Stripe events
+  app.post('/api/webhook/stripe', async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ error: 'Stripe not configured' });
+    }
+
+    const sig = req.headers['stripe-signature'];
+    if (!sig || typeof sig !== 'string') {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+
+    // Stripe webhook secret should be set in environment variables
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!endpointSecret) {
+      return res.status(500).json({ error: 'Stripe webhook secret not configured' });
+    }
+
+    try {
+      // Verify and extract the event
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        endpointSecret
+      );
+
+      // Handle the event
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          await handleSuccessfulPayment(paymentIntent);
+          break;
+        
+        case 'payment_intent.payment_failed':
+          const failedPayment = event.data.object;
+          await handleFailedPayment(failedPayment);
+          break;
+        
+        // Add more event handlers as needed
+        
+        default:
+          log(`Unhandled Stripe event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      log(`Stripe webhook error: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(400).json({ error: 'Webhook error' });
+    }
+  });
+
+  // Create loan application
+  app.post('/api/loans', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const { amount, interestRate, termDays, collateralRequired = true } = req.body;
+      
+      if (!amount || !interestRate || !termDays) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const loan = await storage.createLoan({
+        userId: req.user.id,
+        amount: amount.toString(),
+        interestRate: interestRate.toString(),
+        termDays,
+        status: 'pending',
+        startDate: null,
+        endDate: null,
+        repaymentDate: null,
+        lateFee: null,
+        collateralRequired,
+        approvedBy: null,
+        rejectionReason: null,
+        metadata: {},
+      });
+
+      // Record activity
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: 'loan_action',
+        description: 'Loan application submitted',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          loanId: loan.id,
+          amount,
+          interestRate,
+          termDays,
+        },
+        transactionId: null,
+        loanId: loan.id,
+        collateralId: null,
+      });
+
+      // Broadcast to WebSocket clients
+      broadcast({
+        type: 'loan_application',
+        data: { loan },
+      });
+
+      return res.status(201).json(loan);
+    } catch (error) {
+      log(`Error creating loan: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create loan' });
+    }
+  });
+
+  // Create collateral
+  app.post('/api/collaterals', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const { loanId, collateralType, amount, valueInNpt, valueToLoanRatio } = req.body;
+      
+      if (!collateralType || !amount || !valueInNpt || !valueToLoanRatio) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const collateral = await storage.createCollateral({
+        userId: req.user.id,
+        loanId: loanId || null,
+        collateralType,
+        amount: amount.toString(),
+        valueInNpt: valueInNpt.toString(),
+        status: 'active',
+        lockTimestamp: new Date(),
+        releaseTimestamp: null,
+        liquidationTimestamp: null,
+        valueToLoanRatio: valueToLoanRatio.toString(),
+        liquidationThreshold: null,
+        metadata: {},
+      });
+
+      // Record activity
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: 'collateral_action',
+        description: 'Collateral created',
+        ipAddress: null,
+        userAgent: null,
+        metadata: {
+          collateralId: collateral.id,
+          collateralType,
+          amount,
+          valueInNpt,
+        },
+        transactionId: null,
+        loanId: loanId || null,
+        collateralId: collateral.id,
+      });
+
+      // Broadcast to WebSocket clients
+      broadcast({
+        type: 'collateral_created',
+        data: { collateral },
+      });
+
+      return res.status(201).json(collateral);
+    } catch (error) {
+      log(`Error creating collateral: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create collateral' });
+    }
+  });
+
+  // Create HTTP server
   const httpServer = createServer(app);
-  
-  // Set up WebSocket server for real-time updates
+
+  // Create WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Store client connections by user ID
-  const clients = new Map<number, WebSocket[]>();
-  
-  // WebSocket connection handler
+
   wss.on('connection', (ws) => {
-    console.log('WebSocket client connected');
-    let userId: number | null = null;
-    
-    // Handle messages from clients
+    // Add client to set
+    clients.add(ws);
+    log('WebSocket client connected');
+
+    // Handle messages from client
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
+        log(`Received WebSocket message: ${JSON.stringify(data)}`);
         
-        // Handle authentication message to associate the connection with a user
-        if (data.type === 'auth' && data.userId) {
-          userId = parseInt(data.userId);
-          
-          // Add this connection to the user's connections list
-          if (!clients.has(userId)) {
-            clients.set(userId, []);
-          }
-          clients.get(userId)?.push(ws);
-          
-          console.log(`WebSocket client authenticated for user ${userId}`);
-          
-          // Send initial data (wallet balance, etc.)
-          sendUserData(userId, ws);
+        // Handle different message types
+        if (data.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
         }
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        log(`WebSocket message error: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
-    
-    // Handle disconnection
+
+    // Handle client disconnect
     ws.on('close', () => {
-      console.log('WebSocket client disconnected');
-      if (userId) {
-        // Remove this connection from the user's connections list
-        const userConnections = clients.get(userId);
-        if (userConnections) {
-          const index = userConnections.indexOf(ws);
-          if (index !== -1) {
-            userConnections.splice(index, 1);
-          }
-          if (userConnections.length === 0) {
-            clients.delete(userId);
-          }
-        }
-      }
+      clients.delete(ws);
+      log('WebSocket client disconnected');
     });
-    
-    // Send initial connection confirmation
-    ws.send(JSON.stringify({ type: 'connected' }));
+
+    // Send welcome message
+    ws.send(JSON.stringify({ type: 'welcome', message: 'Connected to NepaliPay WebSocket server' }));
   });
-  
-  // Function to send updates to a specific user's connections
-  async function sendUserData(userId: number, ws: WebSocket) {
-    try {
-      // Only send if the connection is open
-      if (ws.readyState === WebSocket.OPEN) {
-        // Get user's wallet, transactions, collaterals and loans
-        const wallet = await storage.getWalletByUserId(userId);
-        const transactions = await storage.getUserTransactions(userId);
-        const collaterals = await storage.getUserCollaterals(userId);
-        const loans = await storage.getUserLoans(userId);
-        const activities = await storage.getUserActivities(userId);
-        
-        // Send wallet and financial data
-        ws.send(JSON.stringify({
-          type: 'userData',
-          wallet,
-          recentTransactions: transactions.slice(0, 5), // Send only the 5 most recent transactions
-          collaterals,
-          loans,
-          recentActivities: activities.slice(0, 10) // Send only the 10 most recent activities
-        }));
-      }
-    } catch (error) {
-      console.error('Error sending user data via WebSocket:', error);
-    }
-  }
-  
-  // Function to broadcast updates to all connections for a user
-  async function broadcastToUser(userId: number, data: any) {
-    const userConnections = clients.get(userId);
-    if (userConnections && userConnections.length > 0) {
-      const message = JSON.stringify(data);
-      
-      userConnections.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
-    }
-  }
-  
-  // Function to broadcast transaction updates
-  async function broadcastTransaction(transaction: Transaction) {
-    // Notify sender
-    if (transaction.senderId) {
-      broadcastToUser(transaction.senderId, {
-        type: 'transaction',
-        transaction,
-        action: 'sent'
-      });
-    }
-    
-    // Notify receiver
-    if (transaction.receiverId) {
-      broadcastToUser(transaction.receiverId, {
-        type: 'transaction',
-        transaction,
-        action: 'received'
-      });
-    }
-  }
-  
-  // Function to broadcast wallet updates
-  async function broadcastWalletUpdate(userId: number) {
-    try {
-      const wallet = await storage.getWalletByUserId(userId);
-      if (wallet) {
-        broadcastToUser(userId, {
-          type: 'walletUpdate',
-          wallet
-        });
-      }
-    } catch (error) {
-      console.error('Error broadcasting wallet update:', error);
-    }
-  }
 
-  // Function to broadcast collateral updates
-  async function broadcastCollateralUpdate(userId: number, collateralId: number) {
-    try {
-      const collateral = await storage.getCollateral(collateralId);
-      if (collateral && collateral.userId === userId) {
-        broadcastToUser(userId, {
-          type: 'collateralUpdate',
-          collateral
-        });
-      }
-    } catch (error) {
-      console.error('Error broadcasting collateral update:', error);
-    }
-  }
-
-  // Function to broadcast loan updates
-  async function broadcastLoanUpdate(userId: number, loanId: number) {
-    try {
-      const loan = await storage.getLoan(loanId);
-      if (loan && loan.userId === userId) {
-        broadcastToUser(userId, {
-          type: 'loanUpdate',
-          loan
-        });
-      }
-    } catch (error) {
-      console.error('Error broadcasting loan update:', error);
-    }
-  }
-
-  // Function to broadcast activity updates
-  async function broadcastActivityUpdate(userId: number) {
-    try {
-      const activities = await storage.getUserActivities(userId);
-      if (activities.length > 0) {
-        broadcastToUser(userId, {
-          type: 'activityUpdate',
-          recentActivities: activities.slice(0, 10) // Send only the 10 most recent activities
-        });
-      }
-    } catch (error) {
-      console.error('Error broadcasting activity update:', error);
-    }
-  }
-  
-  // Export the broadcast functions for use in other routes
-  app.locals.broadcastTransaction = broadcastTransaction;
-  app.locals.broadcastWalletUpdate = broadcastWalletUpdate;
-  app.locals.broadcastCollateralUpdate = broadcastCollateralUpdate;
-  app.locals.broadcastLoanUpdate = broadcastLoanUpdate;
-  app.locals.broadcastActivityUpdate = broadcastActivityUpdate;
-  
   return httpServer;
+}
+
+/**
+ * Broadcast a message to all connected WebSocket clients
+ */
+function broadcast(data: any): void {
+  clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+}
+
+/**
+ * Handle successful Stripe payment
+ */
+async function handleSuccessfulPayment(paymentIntent: any): Promise<void> {
+  try {
+    const { userId, tokenAmount, type } = paymentIntent.metadata || {};
+    
+    if (!userId || !tokenAmount || type !== 'token_purchase') {
+      log(`Invalid payment intent metadata: ${JSON.stringify(paymentIntent.metadata)}`);
+      return;
+    }
+
+    // Find pending transaction
+    const transactions = await storage.getUserTransactions(parseInt(userId, 10));
+    const transaction = transactions.find(
+      (t) => t.status === 'pending' && 
+             t.metadata && 
+             typeof t.metadata === 'object' && 
+             t.metadata.paymentIntentId === paymentIntent.id
+    );
+
+    if (!transaction) {
+      log(`No matching transaction found for payment intent: ${paymentIntent.id}`);
+      return;
+    }
+
+    // Update transaction status
+    await storage.updateTransaction(transaction.id, {
+      status: 'completed',
+      txHash: paymentIntent.id,  // Use Stripe payment ID as tx hash
+    });
+
+    // Update wallet balance
+    const wallet = await storage.getWalletByUserId(parseInt(userId, 10));
+    if (wallet) {
+      await storage.updateWalletBalance(
+        parseInt(userId, 10),
+        'NPT',
+        parseFloat(tokenAmount)
+      );
+    }
+
+    // Record activity
+    await storage.createActivity({
+      userId: parseInt(userId, 10),
+      activityType: 'transaction',
+      description: 'NPT token purchase completed',
+      ipAddress: null,
+      userAgent: null,
+      metadata: {
+        paymentIntentId: paymentIntent.id,
+        amount: tokenAmount,
+      },
+      transactionId: transaction.id,
+      loanId: null,
+      collateralId: null,
+    });
+
+    // Broadcast to WebSocket clients
+    broadcast({
+      type: 'transaction_completed',
+      data: { 
+        transactionId: transaction.id,
+        userId: parseInt(userId, 10)
+      },
+    });
+
+    log(`Successfully processed payment for token purchase: ${paymentIntent.id}`);
+  } catch (error) {
+    log(`Error handling successful payment: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Handle failed Stripe payment
+ */
+async function handleFailedPayment(paymentIntent: any): Promise<void> {
+  try {
+    const { userId, type } = paymentIntent.metadata || {};
+    
+    if (!userId || type !== 'token_purchase') {
+      log(`Invalid payment intent metadata: ${JSON.stringify(paymentIntent.metadata)}`);
+      return;
+    }
+
+    // Find pending transaction
+    const transactions = await storage.getUserTransactions(parseInt(userId, 10));
+    const transaction = transactions.find(
+      (t) => t.status === 'pending' && 
+             t.metadata && 
+             typeof t.metadata === 'object' && 
+             t.metadata.paymentIntentId === paymentIntent.id
+    );
+
+    if (!transaction) {
+      log(`No matching transaction found for failed payment intent: ${paymentIntent.id}`);
+      return;
+    }
+
+    // Update transaction status
+    await storage.updateTransaction(transaction.id, {
+      status: 'failed',
+    });
+
+    // Record activity
+    await storage.createActivity({
+      userId: parseInt(userId, 10),
+      activityType: 'transaction',
+      description: 'NPT token purchase failed',
+      ipAddress: null,
+      userAgent: null,
+      metadata: {
+        paymentIntentId: paymentIntent.id,
+        failureReason: paymentIntent.last_payment_error?.message || 'Unknown error',
+      },
+      transactionId: transaction.id,
+      loanId: null,
+      collateralId: null,
+    });
+
+    // Broadcast to WebSocket clients
+    broadcast({
+      type: 'transaction_failed',
+      data: { 
+        transactionId: transaction.id,
+        userId: parseInt(userId, 10),
+        error: paymentIntent.last_payment_error?.message || 'Payment failed'
+      },
+    });
+
+    log(`Processed failed payment: ${paymentIntent.id}`);
+  } catch (error) {
+    log(`Error handling failed payment: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
