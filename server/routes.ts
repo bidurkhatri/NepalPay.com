@@ -298,6 +298,12 @@ export function registerRoutes(app: Express): Server {
       if (!amount || !interestRate || !termDays) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
+      
+      // Calculate loan-to-value ratio (typically 50-80% for crypto loans)
+      const loanToValueRatio = "0.75";
+      
+      // Calculate origination fee (typically 1-3% of loan amount)
+      const originationFee = (parseFloat(amount) * 0.02).toString();
 
       const loan = await storage.createLoan({
         userId: req.user.id,
@@ -306,12 +312,13 @@ export function registerRoutes(app: Express): Server {
         termDays,
         status: 'pending',
         startDate: null,
+        dueDate: null,
         endDate: null,
         repaymentDate: null,
-        lateFee: null,
+        repaidAmount: "0",
+        loanToValueRatio,
+        originationFee,
         collateralRequired,
-        approvedBy: null,
-        rejectionReason: null,
         metadata: {},
       });
 

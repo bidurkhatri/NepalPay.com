@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './hooks/use-auth';
+import { RealTimeProvider } from './contexts/real-time-context';
 import { ProtectedRoute } from './lib/protected-route';
 import DashboardLayout from './components/dashboard-layout';
 
@@ -27,76 +28,78 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Switch>
-          <Route path="/">
-            <AdvancedLandingPage />
-          </Route>
-          <Route path="/auth">
-            <AuthPage />
-          </Route>
-          
-          {/* Protected routes with Dashboard Layout */}
-          <ProtectedRoute path="/dashboard">
-            <DashboardLayout>
-              <DashboardPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/wallet">
-            <DashboardLayout>
-              <WalletPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/send">
-            <DashboardLayout>
-              <SendFundsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/purchase">
-            <DashboardLayout>
-              <PurchaseTokensPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/payments">
-            <DashboardLayout>
-              <PaymentsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/loans">
-            <DashboardLayout>
-              <LoansPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/analytics">
-            <DashboardLayout>
-              <AnalyticsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/rewards">
-            <DashboardLayout>
-              <RewardsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/marketplace">
-            <DashboardLayout>
-              <MarketplacePage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/profile">
-            <DashboardLayout>
-              <ProfilePage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          <ProtectedRoute path="/settings">
-            <DashboardLayout>
-              <SettingsPage />
-            </DashboardLayout>
-          </ProtectedRoute>
-          
-          <Route>
-            <NotFoundPage />
-          </Route>
-        </Switch>
-        <Toaster />
+        <RealTimeProvider>
+          <Switch>
+            <Route path="/">
+              <AdvancedLandingPage />
+            </Route>
+            <Route path="/auth">
+              <AuthPage />
+            </Route>
+            
+            {/* Protected routes with Dashboard Layout */}
+            <ProtectedRoute path="/dashboard">
+              <DashboardLayout>
+                <DashboardPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/wallet">
+              <DashboardLayout>
+                <WalletPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/send">
+              <DashboardLayout>
+                <SendFundsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/purchase">
+              <DashboardLayout>
+                <PurchaseTokensPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/payments">
+              <DashboardLayout>
+                <PaymentsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/loans">
+              <DashboardLayout>
+                <LoansPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/analytics">
+              <DashboardLayout>
+                <AnalyticsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/rewards">
+              <DashboardLayout>
+                <RewardsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/marketplace">
+              <DashboardLayout>
+                <MarketplacePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/profile">
+              <DashboardLayout>
+                <ProfilePage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            <ProtectedRoute path="/settings">
+              <DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+            
+            <Route>
+              <NotFoundPage />
+            </Route>
+          </Switch>
+          <Toaster />
+        </RealTimeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

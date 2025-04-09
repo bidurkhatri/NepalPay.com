@@ -111,6 +111,7 @@ export const transactions = pgTable('transactions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   stripePaymentId: varchar('stripe_payment_id', { length: 100 }),
+  paymentIntentId: varchar('payment_intent_id', { length: 100 }),
   gasUsed: numeric('gas_used', { precision: 24, scale: 8 }),
   networkFee: numeric('network_fee', { precision: 24, scale: 8 }),
   relatedTransactionId: integer('related_transaction_id'),
