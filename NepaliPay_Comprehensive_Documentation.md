@@ -4765,57 +4765,1381 @@ The payment processing system is designed to comply with relevant financial regu
 
 ## 10. Collateral and Loan System
 
-### 10.1 Supported Collateral Assets
+NepaliPay's collateralized lending system enables users to access liquidity while maintaining exposure to their cryptocurrency assets. This feature allows users to borrow NPT tokens by using their cryptocurrency holdings as collateral, without needing to sell their digital assets.
 
-- **BNB**: 75% loan-to-value ratio
-- **ETH**: 70% loan-to-value ratio
-- **BTC**: 65-80% loan-to-value ratio (varies based on market conditions)
+### 10.1 System Architecture
 
-### 10.2 Loan Process
+#### 10.1.1 Component Overview
 
-1. **Collateral Deposit**: User locks cryptocurrency as collateral
-2. **Loan Request**: Specifies desired NPT amount within LTV limits
-3. **Approval Process**: System validates collateral value and approves loan
-4. **Token Issuance**: NPT tokens transferred to user wallet
-5. **Repayment**: User repays loan amount plus interest
-6. **Collateral Release**: Original collateral returned upon full repayment
+The collateral and loan system consists of several integrated components:
 
-### 10.3 Liquidation Process
+- **Collateral Management**: Handles the locking and monitoring of collateral assets
+- **Loan Calculation Engine**: Determines loan eligibility, amounts, and terms
+- **Price Oracle**: Provides real-time cryptocurrency price data
+- **Risk Management System**: Monitors health of loans and triggers liquidations
+- **Smart Contract Integration**: Manages on-chain collateral locking and releases
+- **User Interface**: Provides intuitive controls for loan application and management
 
-If collateral value falls below threshold:
-1. **Warning Notification**: User alerted of potential liquidation
-2. **Grace Period**: Time allowed to add collateral or repay portion
-3. **Liquidation**: System sells collateral to recover loan if necessary
+#### 10.1.2 System Flow
+
+```
+                  ┌───────────────┐
+                  │  User Wallet  │
+                  └───────┬───────┘
+                          │ 
+                          ▼
+┌──────────────┐   ┌───────────────┐   ┌───────────────┐
+│  Collateral  │◄──┤  Loan Portal  │──►│ Price Oracle  │
+│  Management  │   └───────┬───────┘   └───────────────┘
+└──────┬───────┘           │                    ▲
+       │                   ▼                    │
+       │          ┌───────────────┐             │
+       └─────────►│  Risk Monitor │─────────────┘
+                  └───────┬───────┘
+                          │
+                          ▼
+                  ┌───────────────┐
+                  │ Loan Database │
+                  └───────────────┘
+```
+
+### 10.2 Supported Collateral Assets
+
+The system accepts multiple cryptocurrency assets as collateral, each with specific parameters based on liquidity, volatility, and market conditions.
+
+#### 10.2.1 Asset Parameters
+
+| Asset | Base LTV | Liquidation Threshold | Min. Collateral | Max. Loan Duration | Interest Rate Range |
+|-------|----------|----------------------|-----------------|-------------------|-------------------|
+| BNB   | 75%      | 82.5%                | 0.5 BNB         | 90 days           | 5-8% APR          |
+| ETH   | 70%      | 77.5%                | 0.1 ETH         | 90 days           | 5-8% APR          |
+| BTC   | 65-80%*  | 72.5-87.5%*          | 0.01 BTC        | 90 days           | 5-8% APR          |
+
+*Varies based on market conditions and volatility
+
+#### 10.2.2 Dynamic LTV Adjustment
+
+The system implements a dynamic Loan-to-Value (LTV) adjustment mechanism that responds to market conditions:
+
+```typescript
+// Dynamic LTV calculation
+function calculateDynamicLTV(
+  assetType: 'BNB' | 'ETH' | 'BTC',
+  baseVolatility: number
+): number {
+  // Current market volatility index (higher = more volatile)
+  const currentVolatility = getCurrentMarketVolatility(assetType);
+  
+  // Base LTV for the asset
+  const baseLTV = getBaseLTV(assetType);
+  
+  // Volatility adjustment factor (reduces LTV as volatility increases)
+  const volatilityFactor = Math.max(0, 1 - (currentVolatility / baseVolatility - 1) * 2);
+  
+  // Apply adjustment (limited to a maximum reduction of 15%)
+  const adjustedLTV = baseLTV * Math.max(0.85, volatilityFactor);
+  
+  // Round to nearest 0.5%
+  return Math.round(adjustedLTV * 200) / 200;
+}
+```
+
+#### 10.2.3 Asset Risk Profiles
+
+Each supported asset has a comprehensive risk profile that influences its loan parameters:
+
+- **BNB (Binance Coin)**:
+  - **Risk Category**: Medium
+  - **Market Capitalization**: Top 5 cryptocurrency
+  - **Liquidity**: High on BSC, moderate on other chains
+  - **Advantages**: Native token of BSC with high utility
+  - **Risk Factors**: Regulatory concerns, exchange-related risk
+
+- **ETH (Ethereum)**:
+  - **Risk Category**: Low-Medium
+  - **Market Capitalization**: Top 2 cryptocurrency
+  - **Liquidity**: Very high across most platforms
+  - **Advantages**: Industry standard with broad adoption
+  - **Risk Factors**: Network congestion, transition risks (PoW to PoS)
+
+- **BTC (Bitcoin)**:
+  - **Risk Category**: Low
+  - **Market Capitalization**: Largest cryptocurrency
+  - **Liquidity**: Extremely high globally
+  - **Advantages**: "Digital gold" status, strongest brand recognition
+  - **Risk Factors**: Regulatory pressure, slower technological evolution
+
+### 10.3 Loan Process
+
+The loan process follows a clearly defined sequence of steps, designed to ensure security, transparency, and usability.
+
+#### 10.3.1 Loan Application Flow
+
+1. **Asset Selection and Deposit**:
+   - User selects asset type (BNB, ETH, BTC) to use as collateral
+   - System generates a unique collateral deposit address
+   - User transfers crypto to the designated deposit address
+   - System monitors blockchain for confirmation
+   - Upon confirmation, collateral status updates to "received"
+
+2. **Loan Configuration**:
+   - System calculates maximum loan amount based on current asset value and LTV ratio
+   - User specifies desired loan amount (must be below maximum)
+   - User selects loan duration (7, 14, 30, 60, or 90 days)
+   - System calculates interest based on amount, duration, and current rates
+   - Complete loan terms are displayed for user review
+
+3. **Loan Application Review**:
+   ```typescript
+   // Loan application validation
+   function validateLoanApplication(application: LoanApplication): ValidationResult {
+     // Validate user is eligible for loans
+     if (!isUserEligible(application.userId)) {
+       return { valid: false, reason: 'USER_NOT_ELIGIBLE' };
+     }
+     
+     // Validate KYC status
+     const user = await getUserById(application.userId);
+     if (user.kycStatus !== 'verified') {
+       return { valid: false, reason: 'KYC_REQUIRED' };
+     }
+     
+     // Get collateral current value
+     const collateral = await getCollateral(application.collateralId);
+     const currentValue = await getPriceOracle().getUsdValue(
+       collateral.assetType,
+       collateral.amount
+     );
+     
+     // Validate collateral value is sufficient
+     const ltv = getLoanToValue(collateral.assetType);
+     const maxLoanAmount = currentValue * ltv;
+     
+     if (application.loanAmount > maxLoanAmount) {
+       return { 
+         valid: false, 
+         reason: 'LOAN_EXCEEDS_MAX',
+         maxAmount: maxLoanAmount
+       };
+     }
+     
+     // Validate against user limits
+     const userActiveLoans = await getUserActiveLoans(application.userId);
+     const totalBorrowed = userActiveLoans.reduce(
+       (sum, loan) => sum + loan.amount, 
+       0
+     );
+     
+     const userBorrowLimit = getUserBorrowLimit(user);
+     if (totalBorrowed + application.loanAmount > userBorrowLimit) {
+       return {
+         valid: false,
+         reason: 'USER_LIMIT_EXCEEDED',
+         remainingLimit: Math.max(0, userBorrowLimit - totalBorrowed)
+       };
+     }
+     
+     return { valid: true };
+   }
+   ```
+
+4. **Loan Approval and Issuance**:
+   - Automated approval for loans meeting all criteria
+   - NPT tokens transferred to user's wallet from platform treasury
+   - Loan status updated to "active"
+   - Loan details recorded on blockchain for transparency
+   - Confirmation notification sent to user via app and email
+
+#### 10.3.2 Loan Terms and Conditions
+
+- **Interest Calculation**: Simple interest calculated up-front based on full term
+  ```
+  Interest = Principal × Rate × (Term / 365)
+  ```
+
+- **Early Repayment**: Partial interest rebate for early full repayment
+  ```
+  Rebate = Interest × (1 - DaysElapsed / TotalDays) × 0.5
+  ```
+
+- **Extension Options**: Loans can be extended once by up to 50% of the original term with additional interest
+
+- **Minimum/Maximum Amounts**:
+  - Minimum loan: 100 NPT
+  - Maximum loan: 100,000 NPT (or equivalent to $20,000 USD, whichever is lower)
+
+#### 10.3.3 Loan Management Features
+
+- **Loan Dashboard**: Unified view of all active loans with health metrics
+- **Repayment Options**: Full or partial repayments with clear instructions
+- **Collateral Management**: Option to add additional collateral to improve loan health
+- **Notification System**: Automated alerts for important loan events
+- **Historical View**: Complete loan history with all associated transactions
+
+### 10.4 Repayment Process
+
+The repayment system is designed to be flexible and user-friendly, allowing various repayment options.
+
+#### 10.4.1 Repayment Methods
+
+1. **Full Repayment**:
+   - User initiates full repayment from loan management screen
+   - System calculates total repayment amount (principal + interest)
+   - User approves the transfer of NPT tokens
+   - System processes repayment and updates loan status to "repaid"
+   - Collateral release process is initiated automatically
+
+2. **Partial Repayment**:
+   - User specifies amount to repay (must be at least 10% of outstanding balance)
+   - System applies payment first to interest, then to principal
+   - Loan health metrics are updated to reflect new balance
+   - Partial collateral release is not available for partial repayments
+
+3. **Automatic Repayment**:
+   - Users can opt-in to automatic repayment scheduling
+   - System automatically deducts repayment amount on schedule
+   - Email confirmation sent for each automatic payment
+   - Automatic repayments can be paused or canceled at any time
+
+#### 10.4.2 Collateral Release
+
+Upon full repayment, the system automatically processes the collateral release:
+
+1. **Release Initiation**:
+   - System confirms loan is fully repaid
+   - Collateral status updated to "releasing"
+
+2. **Blockchain Transaction**:
+   - System prepares transaction to return collateral to user's wallet
+   - Transaction signed by platform's multisig wallet
+   - Transaction submitted to blockchain with appropriate gas price
+
+3. **Confirmation Process**:
+   - System monitors blockchain for transaction confirmation
+   - Upon confirmation, collateral status updated to "released"
+   - User notified of successful collateral return
+
+4. **Failed Release Handling**:
+   - Automated retry for failed transactions (up to 3 attempts)
+   - If all automated attempts fail, case escalated to manual review
+   - Support team contacts user to resolve the issue
+
+### 10.5 Liquidation Process
+
+The liquidation process protects the platform from losses when collateral value falls below critical thresholds.
+
+#### 10.5.1 Health Factor Calculation
+
+Every loan has a real-time health factor calculated as:
+
+```
+Health Factor = Collateral Value × Liquidation Threshold ÷ Loan Value
+```
+
+Where:
+- Health Factor > 1.0: Loan is healthy
+- Health Factor = 1.0: Liquidation threshold exactly reached
+- Health Factor < 1.0: Loan is eligible for liquidation
+
+```typescript
+// Health factor calculation
+function calculateHealthFactor(loan: Loan, collateral: Collateral): number {
+  // Get current USD value of collateral
+  const collateralValue = getPriceOracle().getUsdValue(
+    collateral.assetType,
+    collateral.amount
+  );
+  
+  // Get liquidation threshold percentage for this asset
+  const liquidationThreshold = getLiquidationThreshold(collateral.assetType);
+  
+  // Calculate maximum loan value before liquidation
+  const maxLoanValue = collateralValue * liquidationThreshold;
+  
+  // Calculate health factor
+  const healthFactor = maxLoanValue / loan.outstandingAmount;
+  
+  return healthFactor;
+}
+```
+
+#### 10.5.2 Risk Monitoring
+
+The risk monitoring system continuously tracks all active loans:
+
+1. **Regular Health Checks**:
+   - All loans evaluated every 15 minutes
+   - Price updates from multiple oracles with outlier detection
+   - Health factors updated and stored in database
+
+2. **Warning System**:
+   - Health Factor < 1.3: "Low Health" warning
+   - Health Factor < 1.15: "Critical Health" warning
+   - Notifications sent via app, email, and SMS
+
+3. **Market Volatility Response**:
+   - Monitoring frequency increases during high market volatility
+   - Checks every 5 minutes when market moves >5% in 1 hour
+   - Management alerts for unusual market conditions
+
+#### 10.5.3 Liquidation Execution
+
+When a loan becomes eligible for liquidation:
+
+1. **Pre-Liquidation Grace Period**:
+   - 12-hour grace period for loans with Health Factor between 0.95 and 1.0
+   - Urgent notifications sent to user with clear instructions
+   - Option to add collateral or make partial repayment
+   - No grace period for Health Factor < 0.95 or during extreme market volatility
+
+2. **Liquidation Process**:
+   ```typescript
+   // Liquidation process
+   async function processLiquidation(loanId: number): Promise<LiquidationResult> {
+     // Get loan and collateral details
+     const loan = await getLoanById(loanId);
+     const collateral = await getCollateralById(loan.collateralId);
+     
+     // Verify liquidation is necessary
+     const healthFactor = await calculateHealthFactor(loan, collateral);
+     if (healthFactor >= 1.0) {
+       return { success: false, reason: 'LOAN_HEALTHY' };
+     }
+     
+     // Update loan and collateral status
+     await updateLoanStatus(loanId, 'liquidating');
+     await updateCollateralStatus(collateral.id, 'liquidating');
+     
+     try {
+       // Transfer collateral to liquidation wallet
+       const txHash = await transferCollateralToLiquidationWallet(
+         collateral.assetType,
+         collateral.amount
+       );
+       
+       // Record liquidation transaction
+       await createLiquidationRecord({
+         loanId,
+         collateralId: collateral.id,
+         healthFactor,
+         outstandingAmount: loan.outstandingAmount,
+         collateralValue: collateral.valueUsd,
+         liquidationTxHash: txHash,
+         timestamp: new Date()
+       });
+       
+       // Update loan status to liquidated
+       await updateLoanStatus(loanId, 'liquidated');
+       await updateCollateralStatus(collateral.id, 'liquidated');
+       
+       // Notify user of liquidation
+       await notifyUser(loan.userId, 'loan_liquidated', {
+         loanId,
+         collateralType: collateral.assetType,
+         collateralAmount: collateral.amount
+       });
+       
+       return { success: true, txHash };
+     } catch (error) {
+       // Handle failure
+       console.error('Liquidation failed:', error);
+       await updateLoanStatus(loanId, 'liquidation_failed');
+       
+       // Escalate to manual handling
+       await createManualLiquidationTask(loanId);
+       
+       return { success: false, reason: 'LIQUIDATION_FAILED', error };
+     }
+   }
+   ```
+
+3. **Collateral Sale**:
+   - Liquidated collateral sold through partner exchanges
+   - Market orders executed in tranches to minimize slippage
+   - Sale proceeds used to repay loan principal and liquidation fees
+   - Any surplus returned to user's wallet
+   - Transaction records maintained for transparency
+
+4. **Post-Liquidation**:
+   - Detailed liquidation report provided to user
+   - Loan marked as "liquidated" in system
+   - User remains eligible for future loans unless fraudulent activity detected
+
+#### 10.5.4 Liquidation Fee Structure
+
+Liquidation includes the following fees:
+
+| Component | Percentage | Description |
+|-----------|------------|-------------|
+| Base Liquidation Fee | 5% | Platform fee for processing liquidation |
+| Exchange Fee | 0.1-0.5% | Fee charged by exchange partners |
+| Market Impact | Variable | Cost of executing market sale |
+| Gas Costs | Variable | Blockchain transaction fees |
+
+### 10.6 Risk Management
+
+The platform implements a comprehensive risk management strategy to ensure the stability and security of the lending system.
+
+#### 10.6.1 Collateral Risk Parameters
+
+Each collateral asset has defined risk parameters that are regularly reviewed and updated:
+
+- **Base LTV Ratio**: Starting point for loan calculations
+- **Liquidation Threshold**: Value that triggers liquidation process
+- **Liquidation Penalty**: Additional fee applied during liquidation
+- **Utilization Cap**: Maximum percentage of treasury that can be loaned against each asset
+- **Minimum Collateral Size**: Smallest acceptable collateral amount
+
+#### 10.6.2 Oracle Security
+
+To prevent price manipulation attacks:
+
+- **Multi-Oracle Architecture**: Prices aggregated from at least 3 independent sources
+- **Time-Weighted Average Price (TWAP)**: Used for particularly volatile assets
+- **Deviation Thresholds**: Large price movements trigger additional verification
+- **Fallback Mechanisms**: Alternative data sources when primary oracles fail
+- **Oracle Guard**: Monitoring system to detect and respond to oracle attacks
+
+#### 10.6.3 Treasury Risk Management
+
+The loan system's treasury implements safeguards:
+
+- **Diversification**: Maximum 30% of treasury allocated to lending
+- **Asset Caps**: Limits on total loans for each collateral type
+- **Circuit Breakers**: Automatic lending pause during extreme market events
+- **Reserve Ratio**: Minimum 20% of tokens held in reserve for loan redemptions
+- **Stress Testing**: Regular simulations of market crashes and liquidity crises
+
+#### 10.6.4 Smart Contract Safeguards
+
+Smart contracts include multiple safety mechanisms:
+
+- **Emergency Pause**: Ability to halt all lending functions
+- **Upgradability**: Proxy pattern allowing contract improvements
+- **Access Control**: Multi-level authorization for administrative functions
+- **Global Parameters**: Adjustable risk parameters with time-locked changes
+- **Event Monitoring**: Comprehensive logging for off-chain monitoring
+
+### 10.7 Analytics and Reporting
+
+The collateral and loan system includes robust analytics capabilities to monitor performance and identify trends.
+
+#### 10.7.1 Key Performance Indicators
+
+- **Total Value Locked (TVL)**: Sum of all collateral value
+- **Outstanding Loan Value**: Total value of active loans
+- **Utilization Rate**: Percentage of maximum lending capacity currently used
+- **Average Loan Size**: Mean value of active loans
+- **Liquidation Rate**: Percentage of loans ending in liquidation
+- **Profit Metrics**: Interest income, liquidation fee income, etc.
+
+#### 10.7.2 Reporting System
+
+- **Daily Reports**: Automated summary of lending activity
+- **Weekly Risk Analysis**: Detailed review of portfolio health
+- **Monthly Performance Review**: Comprehensive analysis with recommendations
+- **Custom Reports**: On-demand reporting for specific analysis needs
+
+#### 10.7.3 Borrower Analytics
+
+- **Borrower Segments**: Classification based on behavior and patterns
+- **Retention Analysis**: Study of repeat borrowing patterns
+- **Risk Scoring**: Proprietary algorithm to assess borrower reliability
+- **Default Prediction**: Machine learning models to identify high-risk loans
+
+### 10.8 User Experience Design
+
+The loan system is designed to be intuitive and accessible, even for users new to collateralized lending.
+
+#### 10.8.1 Key Interface Elements
+
+- **Loan Calculator**: Interactive tool to explore different loan scenarios
+- **Health Indicator**: Visual representation of loan health status
+- **Collateral Value Chart**: Historical value of collateral assets
+- **Repayment Planner**: Tool to schedule and optimize repayments
+- **Notification Center**: Centralized hub for all loan-related alerts
+
+#### 10.8.2 User Education
+
+- **Guided First Loan**: Step-by-step assistance for first-time borrowers
+- **Risk Explanation**: Clear descriptions of liquidation risks
+- **Video Tutorials**: Visual guides for each loan process
+- **Knowledge Base**: Comprehensive articles on lending concepts
+- **Loan Simulator**: Practice tool without actual financial risk
 
 ## 11. Security Measures
 
-### 11.1 Authentication Security
+Security is a foundational priority for NepaliPay, with comprehensive measures implemented across all components of the system. The platform employs a defense-in-depth approach, ensuring multiple layers of protection for user funds, data, and transactions.
 
-- Password hashing using scrypt with random salt
-- Session management with secure cookies
-- Rate limiting for login attempts
-- Two-factor authentication for sensitive operations
+### 11.1 Security Architecture Overview
 
-### 11.2 Transaction Security
+#### 11.1.1 Security Principles
 
-- Blockchain-level cryptographic security
-- Transaction signing requirements
-- Confirmation steps for large transfers
-- Fraud detection algorithms
+NepaliPay's security architecture is guided by the following core principles:
 
-### 11.3 Smart Contract Security
+1. **Defense in Depth**: Multiple security layers to prevent single points of failure
+2. **Principle of Least Privilege**: Entities have only the access rights necessary for their function
+3. **Secure by Default**: Security enabled from the start; insecure options require explicit activation
+4. **Security by Design**: Security integrated into system architecture from the beginning
+5. **Continuous Improvement**: Regular assessment and enhancement of security measures
+6. **Privacy by Design**: Data protection built into system functionality
 
-- Audited contract code
-- Emergency pause functionality
-- Role-based access control
-- Secure update mechanisms
+#### 11.1.2 Security Framework
 
-### 11.4 Data Security
+The platform implements a comprehensive security framework addressing all aspects of the application:
 
-- Encrypted sensitive information
-- Regular database backups
-- Input validation and sanitization
-- Protection against common web vulnerabilities
+```
+┌───────────────────────────────────────────────────────────────┐
+│                      External Security Layer                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Network and   │  │ Infrastructure  │  │   Operational   │ │
+│  │ Perimeter Sec.  │  │    Security     │  │    Security     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│                 Application Security Layer                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  Authentication │  │   Application   │  │      Data       │ │
+│  │   & Identity    │  │     Logic       │  │    Security     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+├───────────────────────────────────────────────────────────────┤
+│                    Blockchain Security Layer                   │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Smart Contract  │  │    Wallet &     │  │  Transaction    │ │
+│  │    Security     │  │   Key Security  │  │    Security     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└───────────────────────────────────────────────────────────────┘
+```
+
+#### 11.1.3 Security Team Structure
+
+NepaliPay maintains a dedicated security team with specialized roles:
+
+- **Security Architect**: Designs and maintains security architecture
+- **Security Engineers**: Implement and maintain security controls
+- **Security Analysts**: Monitor threats and respond to incidents
+- **Penetration Testers**: Regularly test system for vulnerabilities
+- **Security Compliance Officer**: Ensures regulatory compliance
+- **Blockchain Security Specialist**: Focuses on blockchain-specific security
+
+### 11.2 Authentication and Identity Security
+
+#### 11.2.1 Password Security
+
+NepaliPay implements state-of-the-art password security practices:
+
+- **Hashing Algorithm**: Scrypt with unique salt per user
+  ```typescript
+  // Password hashing implementation
+  async function hashPassword(password: string): Promise<string> {
+    // Generate a random salt (16 bytes converted to hex = 32 characters)
+    const salt = randomBytes(16).toString('hex');
+    
+    // Use scrypt with:
+    // - N=32768 (CPU/memory cost)
+    // - r=8 (block size)
+    // - p=1 (parallelization)
+    // - keylen=64 (output bytes)
+    const derivedKey = await scryptAsync(
+      password, 
+      salt, 
+      64, 
+      { N: 32768, r: 8, p: 1 }
+    ) as Buffer;
+    
+    // Return the hex-encoded derived key concatenated with the salt
+    return `${derivedKey.toString('hex')}.${salt}`;
+  }
+  
+  // Password verification
+  async function verifyPassword(
+    inputPassword: string, 
+    storedPassword: string
+  ): Promise<boolean> {
+    // Split stored password into hash and salt
+    const [storedHash, salt] = storedPassword.split('.');
+    
+    if (!storedHash || !salt) {
+      // Invalid stored password format
+      return false;
+    }
+    
+    // Hash the input password with the same salt
+    const derivedKey = await scryptAsync(
+      inputPassword, 
+      salt, 
+      64, 
+      { N: 32768, r: 8, p: 1 }
+    ) as Buffer;
+    
+    // Compare hashes using constant-time comparison
+    return timingSafeEqual(
+      Buffer.from(storedHash, 'hex'),
+      derivedKey
+    );
+  }
+  ```
+
+- **Password Policy**:
+  - Minimum 10 characters
+  - Required combination of uppercase, lowercase, numbers, and symbols
+  - Password strength estimation with zxcvbn
+  - Password history verification (no reuse of last 5 passwords)
+  - Maximum password age of 90 days
+  - Compromised password check against breach databases
+
+- **Storage Security**:
+  - Hashed passwords only, never plaintext
+  - Separate credential database with additional security
+  - Monitoring for suspicious credential access
+
+#### 11.2.2 Multi-Factor Authentication
+
+The platform offers multiple MFA options:
+
+- **Time-based One-Time Password (TOTP)**:
+  - Google Authenticator, Authy compatibility
+  - Secure key provisioning with QR codes
+  - Backup codes for account recovery
+
+- **SMS Verification**:
+  - Secondary authentication channel
+  - Rate limiting to prevent SMS flooding
+  - Fraud monitoring for suspicious verification attempts
+
+- **Email Verification**:
+  - Secure, unique links for verification
+  - Limited validity period (10 minutes)
+  - Single-use verification tokens
+
+- **Risk-based Authentication**:
+  - Adaptive MFA based on risk factors
+  - Additional verification for unusual login patterns
+  - Device fingerprinting for consistency checking
+
+- **WebAuthn / FIDO2 Support**:
+  - Support for hardware security keys
+  - Biometric authentication options
+  - Phishing-resistant authentication
+
+#### 11.2.3 Session Management
+
+Secure session handling with the following features:
+
+- **Session Identifiers**:
+  - Cryptographically secure random generation
+  - Sufficient length (128 bits minimum)
+  - Secure storage in HTTP-only cookies
+  - Secure and SameSite cookie flags
+
+- **Session Security**:
+  ```typescript
+  // Session configuration
+  const sessionConfig: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET!,
+    name: 'nepalipay_sid',
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+    store: new SessionStore({
+      // Database connection for session storage
+      // Automatic cleanup of expired sessions
+    }),
+    resave: false,
+    saveUninitialized: false,
+    unset: 'destroy',
+  };
+  ```
+
+- **Session Lifecycle**:
+  - Maximum session duration of 24 hours
+  - Automatic extension with activity
+  - Idle timeout after 30 minutes of inactivity
+  - Complete session termination on logout
+
+- **Session Compromise Protection**:
+  - IP binding for high-value operations
+  - User agent consistency checking
+  - Session regeneration after privileged actions
+  - Concurrent session detection and management
+
+#### 11.2.4 Access Control System
+
+Comprehensive role-based access control (RBAC) system:
+
+- **Role Hierarchy**:
+  - User: Base access to personal account features
+  - Admin: System management capabilities
+  - SuperAdmin: Complete system control
+  - Custom roles for specific needs
+
+- **Permission Framework**:
+  ```typescript
+  // Permission check middleware
+  function requirePermission(permission: string) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Unauthenticated' });
+      }
+      
+      const user = req.user as UserWithRoles;
+      
+      // Get all permissions for user's roles
+      const userPermissions = getRolePermissions(user.roles);
+      
+      if (userPermissions.includes(permission)) {
+        return next();
+      }
+      
+      // Log unauthorized access attempt
+      logger.warn('Unauthorized access attempt', {
+        userId: user.id,
+        permission,
+        path: req.path,
+      });
+      
+      return res.status(403).json({ error: 'Unauthorized' });
+    };
+  }
+  ```
+
+- **Least Privilege Implementation**:
+  - Granular permissions for specific actions
+  - Regular privilege auditing
+  - Just-in-time access for sensitive operations
+  - Automatic privilege expiration
+
+- **Administrative Access**:
+  - Separate authentication flow for admin portal
+  - Multi-factor authentication requirement
+  - Comprehensive action logging
+  - Four-eyes principle for critical operations
+
+#### 11.2.5 Authentication API Security
+
+The authentication API endpoints implement additional security measures:
+
+- **Rate Limiting**:
+  ```typescript
+  // Rate limiting middleware for login attempts
+  const loginRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per IP per 15 minutes
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    keyGenerator: (req) => {
+      // Use username + IP as the key to prevent username enumeration
+      return `${req.body.username}_${req.ip}`;
+    },
+    handler: (req, res) => {
+      logger.warn('Rate limit exceeded for login', {
+        ip: req.ip,
+        username: req.body.username,
+      });
+      
+      res.status(429).json({
+        error: 'Too many login attempts. Please try again later.',
+        retryAfter: Math.ceil(15 * 60 / 60), // minutes
+      });
+    },
+  });
+  ```
+
+- **Brute Force Protection**:
+  - Progressive delays after failed attempts
+  - Account lockout after multiple failures
+  - Notification to user on suspicious activity
+  - CAPTCHA for unrecognized devices
+
+- **Login Anomaly Detection**:
+  - Location-based anomaly detection
+  - Time-pattern analysis
+  - Device fingerprinting for consistency
+  - Behavioral biometrics (typing patterns, mouse movements)
+
+### 11.3 Transaction Security
+
+#### 11.3.1 Blockchain Transaction Security
+
+The platform implements multiple layers of security for blockchain transactions:
+
+- **Transaction Signing**:
+  - Multiple signature requirements for high-value transactions
+  - Hardware security module (HSM) for treasury wallet
+  - Threshold signature scheme for critical operations
+  - Air-gapped signing for system wallets
+
+- **Transaction Verification**:
+  ```typescript
+  // Transaction verification process
+  async function verifyTransaction(tx: Transaction): Promise<VerificationResult> {
+    // Validate transaction parameters
+    if (!isValidAddress(tx.receiverAddress)) {
+      return { valid: false, reason: 'INVALID_ADDRESS' };
+    }
+    
+    if (tx.amount <= 0) {
+      return { valid: false, reason: 'INVALID_AMOUNT' };
+    }
+    
+    // Check user balance
+    const userBalance = await getWalletBalance(tx.userId, tx.currency);
+    if (userBalance < tx.amount) {
+      return { valid: false, reason: 'INSUFFICIENT_BALANCE' };
+    }
+    
+    // Check transaction limits
+    const dailyLimit = getUserDailyLimit(tx.userId, tx.currency);
+    const dailyUsed = await getUserDailyTransactionTotal(tx.userId, tx.currency);
+    
+    if (dailyUsed + tx.amount > dailyLimit) {
+      return { 
+        valid: false, 
+        reason: 'DAILY_LIMIT_EXCEEDED',
+        remaining: Math.max(0, dailyLimit - dailyUsed)
+      };
+    }
+    
+    // Check recipient address blacklist
+    if (await isBlacklistedAddress(tx.receiverAddress)) {
+      return { valid: false, reason: 'BLACKLISTED_ADDRESS' };
+    }
+    
+    // Check additional risk factors
+    const riskScore = await calculateTransactionRisk(tx);
+    if (riskScore > HIGH_RISK_THRESHOLD) {
+      return { 
+        valid: false, 
+        reason: 'HIGH_RISK_TRANSACTION',
+        requiresApproval: true
+      };
+    }
+    
+    return { valid: true };
+  }
+  ```
+
+- **Transaction Monitoring**:
+  - Real-time transaction surveillance
+  - Pattern matching against known fraud schemes
+  - Unusual transaction detection
+  - Machine learning anomaly detection
+  - Blockchain analytics integration
+
+- **Approval Workflows**:
+  - Progressive authorization levels based on amount
+  - Multi-party approval for large transactions
+  - Time-locks for settlement of high-value transfers
+  - Whitelisted recipient addresses
+
+#### 11.3.2 Fraud Prevention
+
+Advanced fraud detection and prevention mechanisms:
+
+- **Risk Scoring System**:
+  - User behavioral baseline establishment
+  - Transaction velocity monitoring
+  - Pattern recognition for fraud indicators
+  - IP geolocation analysis
+  - Device consistency checking
+
+- **Anti-Money Laundering (AML) Controls**:
+  - Transaction amount monitoring
+  - Suspicious activity reporting
+  - Customer due diligence processes
+  - Ongoing transaction monitoring
+  - Integration with AML databases
+
+- **Behavioral Analysis**:
+  - User interaction patterns
+  - Transaction timing and frequency
+  - Typical transaction amounts
+  - Common recipients
+  - Device and location consistency
+
+- **Real-time Prevention**:
+  - Transaction blocking for high-risk activities
+  - Step-up authentication for suspicious transactions
+  - Temporary account restrictions for unusual activity
+  - Manual review process for flagged transactions
+
+### 11.4 Smart Contract Security
+
+#### 11.4.1 Contract Development Security
+
+Rigorous security practices in contract development:
+
+- **Secure Development Lifecycle**:
+  - Security requirements definition
+  - Threat modeling
+  - Secure coding standards
+  - Static analysis tools integration
+  - Manual code review
+  - Security testing
+
+- **Code Quality Standards**:
+  - Comprehensive test coverage (>95%)
+  - Solidity style guide conformance
+  - Modular design with clear separation of concerns
+  - Minimal external dependencies
+  - Extensive documentation
+
+- **Security Tools Integration**:
+  - Slither
+  - MythX
+  - Echidna
+  - Manticore
+  - Securify
+
+#### 11.4.2 Contract Auditing
+
+Multiple layers of contract verification:
+
+- **Internal Audit Process**:
+  - Initial developer review
+  - Secondary team review
+  - Full system integration testing
+  - Economic attack vector analysis
+
+- **External Audits**:
+  - Comprehensive audit by established security firms
+  - Published audit reports with findings
+  - Public bug bounty program
+  - Time-locked deployment after audit
+
+- **Ongoing Security Assessment**:
+  - Continuous monitoring for new vulnerability types
+  - Regular re-auditing with updated tools
+  - External security researcher engagement
+  - Formal verification for critical components
+
+#### 11.4.3 Contract Security Features
+
+Smart contracts incorporate multiple security mechanisms:
+
+- **Access Control Systems**:
+  ```solidity
+  // OpenZeppelin AccessControl integration
+  import "@openzeppelin/contracts/access/AccessControl.sol";
+  
+  contract SecureContract is AccessControl {
+      bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+      bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+      bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+      
+      constructor() {
+          _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+          _setupRole(ADMIN_ROLE, msg.sender);
+      }
+      
+      modifier onlyAdmin() {
+          require(hasRole(ADMIN_ROLE, msg.sender), "Restricted to admins");
+          _;
+      }
+      
+      modifier onlyOperator() {
+          require(hasRole(OPERATOR_ROLE, msg.sender), "Restricted to operators");
+          _;
+      }
+      
+      // Function to grant roles securely
+      function grantOperatorRole(address account) external onlyAdmin {
+          grantRole(OPERATOR_ROLE, account);
+      }
+  }
+  ```
+
+- **Emergency Controls**:
+  - Circuit breaker pattern for critical functions
+  - Time-locked execution for significant changes
+  - Fallback mechanisms for emergency situations
+  - Tiered control system for different risk levels
+
+- **Secure Update Mechanisms**:
+  - Proxy pattern for upgradeable contracts
+  - Time-locked upgrades
+  - Multi-signature upgrade authorization
+  - Transparent upgrade process
+
+#### 11.4.4 Contract Monitoring
+
+Continuous monitoring of deployed contracts:
+
+- **Event Monitoring**:
+  - Real-time tracking of contract events
+  - Anomaly detection for unusual activity
+  - Integration with alert systems
+  - Automated response for specific events
+
+- **On-chain Metrics**:
+  - Gas usage tracking
+  - Function call frequency analysis
+  - Value flow monitoring
+  - Error rate tracking
+
+- **Health Checks**:
+  - Regular contract state validation
+  - Balance reconciliation
+  - Permission integrity verification
+  - External oracle data validation
+
+### 11.5 Data Security
+
+#### 11.5.1 Data Protection Architecture
+
+Comprehensive protection of user and system data:
+
+- **Data Classification**:
+  - Public: General information (token prices, network status)
+  - Internal: System operational data (logs, metrics)
+  - Confidential: User account information (email, activity)
+  - Restricted: Sensitive financial data (balances, transactions)
+  - Critical: Authentication and encryption keys
+
+- **Encryption Strategy**:
+  - Data-at-rest encryption for databases
+  - End-to-end encryption for sensitive communications
+  - Transport layer security for all connections
+  - Field-level encryption for PII and financial data
+
+- **Key Management**:
+  - Hardware security modules for critical keys
+  - Key rotation schedules
+  - Split-knowledge procedures
+  - Secure key derivation for user-based encryption
+
+#### 11.5.2 Database Security
+
+Multiple layers of database protection:
+
+- **Access Controls**:
+  - Principle of least privilege for database accounts
+  - Role-based access with fine-grained permissions
+  - Connection encryption requirements
+  - Database activity monitoring
+
+- **Query Security**:
+  ```typescript
+  // Secure database query with parameterization
+  async function getUserByEmail(email: string): Promise<User | null> {
+    try {
+      // Use parameterized query to prevent SQL injection
+      const result = await db.query(
+        `SELECT * FROM users WHERE email = $1 LIMIT 1`,
+        [email.toLowerCase()]
+      );
+      
+      return result.rows[0] || null;
+    } catch (error) {
+      logger.error('Database error in getUserByEmail', { error });
+      throw new Error('Database error occurred');
+    }
+  }
+  ```
+
+- **Sensitive Data Handling**:
+  - Personally identifiable information (PII) encryption
+  - Financial data encryption
+  - Data masking for logs and reports
+  - Tokenization for payment information
+
+- **Audit and Logging**:
+  - Comprehensive database action logging
+  - Privileged user activity monitoring
+  - Anomalous access detection
+  - Automated log review
+
+#### 11.5.3 Application Data Security
+
+Protection of data within the application:
+
+- **Input Validation and Sanitization**:
+  ```typescript
+  // Input validation with Zod
+  const createUserSchema = z.object({
+    username: z.string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username cannot exceed 20 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+    email: z.string()
+      .email("Invalid email format")
+      .transform(val => val.toLowerCase()),
+    password: z.string()
+      .min(10, "Password must be at least 10 characters")
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/, 
+             "Password must include uppercase, lowercase, number, and special character"),
+  });
+  
+  // Validate and sanitize user input
+  function validateUserInput(input: unknown): CreateUserData {
+    try {
+      return createUserSchema.parse(input);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Extract and format validation errors
+        const validationErrors = error.errors.map(err => ({
+          path: err.path.join('.'),
+          message: err.message
+        }));
+        
+        throw new ValidationError('Invalid input data', validationErrors);
+      }
+      throw error;
+    }
+  }
+  ```
+
+- **Output Encoding**:
+  - Context-specific output encoding
+  - HTML entity encoding for web output
+  - JSON serialization security
+  - Safe rendering in frontend frameworks
+
+- **Content Security Policy**:
+  ```
+  Content-Security-Policy: default-src 'self'; 
+    script-src 'self' https://js.stripe.com; 
+    style-src 'self' 'unsafe-inline'; 
+    img-src 'self' data: https://secure.gravatar.com;
+    connect-src 'self' https://api.nepalipay.com wss://api.nepalipay.com;
+    frame-src https://js.stripe.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  ```
+
+- **Cross-Site Scripting (XSS) Prevention**:
+  - Content Security Policy implementation
+  - Framework-level XSS protection
+  - Input sanitization before storage
+  - Output encoding during rendering
+  - HTTP security headers
+
+#### 11.5.4 API Security
+
+Protection of application programming interfaces:
+
+- **Authentication and Authorization**:
+  - API key management for external access
+  - OAuth 2.0 / OpenID Connect for user context
+  - JWT validation with appropriate algorithms
+  - Scope-based authorization
+
+- **Request Validation**:
+  - Schema validation for all input
+  - Content type verification
+  - Size limits for payloads
+  - Rate limiting for all endpoints
+
+- **Response Security**:
+  - Minimal information disclosure
+  - Consistent error formats
+  - No sensitive data in responses
+  - Response verification before sending
+
+### 11.6 Infrastructure Security
+
+#### 11.6.1 Network Security
+
+Multiple layers of network protection:
+
+- **Perimeter Security**:
+  - Web application firewall (WAF)
+  - DDoS protection
+  - Network intrusion detection/prevention
+  - Advanced bot detection
+
+- **Traffic Encryption**:
+  - TLS 1.3 for all connections
+  - Certificate validation
+  - Perfect forward secrecy
+  - HSTS implementation
+
+- **Internal Network Security**:
+  - Network segmentation
+  - Zero-trust network architecture
+  - Microsegmentation for services
+  - Private service networking
+
+#### 11.6.2 Host and Container Security
+
+Security for servers and containers:
+
+- **Server Hardening**:
+  - Minimal base images
+  - Unnecessary service removal
+  - Regular security updates
+  - Endpoint protection
+
+- **Container Security**:
+  - Image vulnerability scanning
+  - Runtime security monitoring
+  - Read-only file systems
+  - Privilege limitations
+
+- **Secrets Management**:
+  - Secure vault for sensitive credentials
+  - Dynamic secret generation
+  - Limited secret lifetime
+  - Access auditing
+
+#### 11.6.3 Cloud Security
+
+Security for cloud-based infrastructure:
+
+- **Identity and Access Management**:
+  - Principle of least privilege
+  - Just-in-time access
+  - Multi-factor authentication
+  - Service account limitations
+
+- **Resource Protection**:
+  - Resource-level access controls
+  - Private networking
+  - Encryption for storage
+  - Secure service endpoints
+
+- **Compliance and Governance**:
+  - Infrastructure as code
+  - Policy as code
+  - Automated compliance checking
+  - Comprehensive resource tagging
+
+### 11.7 Security Monitoring and Incident Response
+
+#### 11.7.1 Security Monitoring
+
+Comprehensive security monitoring system:
+
+- **Log Management**:
+  - Centralized log collection
+  - Log integrity protection
+  - Retention policies
+  - Advanced search capabilities
+
+- **Security Information and Event Management (SIEM)**:
+  - Real-time event correlation
+  - Threat intelligence integration
+  - Behavioral analytics
+  - Anomaly detection
+
+- **Continuous Monitoring**:
+  - 24/7 security operations
+  - Automated alerting
+  - Escalation procedures
+  - Trend analysis
+
+#### 11.7.2 Incident Response
+
+Structured process for security incidents:
+
+- **Incident Response Plan**:
+  - Defined roles and responsibilities
+  - Communication procedures
+  - Containment strategies
+  - Recovery processes
+
+- **Response Process**:
+  1. Detection and Analysis
+  2. Containment
+  3. Eradication
+  4. Recovery
+  5. Post-Incident Analysis
+
+- **Business Continuity**:
+  - Disaster recovery planning
+  - Critical function identification
+  - Recovery time objectives
+  - Regular testing
+
+### 11.8 Compliance and Risk Management
+
+#### 11.8.1 Regulatory Compliance
+
+Adherence to relevant regulations:
+
+- **Financial Regulations**:
+  - Anti-Money Laundering (AML)
+  - Know Your Customer (KYC)
+  - Counter-Terrorist Financing (CTF)
+  - Financial reporting requirements
+
+- **Data Protection**:
+  - GDPR compliance
+  - CCPA compliance
+  - Data subject rights
+  - Privacy impact assessments
+
+- **Industry Standards**:
+  - PCI DSS for payment processing
+  - ISO 27001 information security
+  - NIST Cybersecurity Framework
+  - CIS Critical Security Controls
+
+#### 11.8.2 Security Testing
+
+Regular testing of security controls:
+
+- **Penetration Testing**:
+  - Annual full-scope tests
+  - Quarterly focused tests
+  - Post-major-change tests
+  - Red team exercises
+
+- **Vulnerability Assessment**:
+  - Weekly automated scans
+  - Monthly manual assessment
+  - Dependency analysis
+  - Configuration review
+
+- **Code Security Review**:
+  - Static application security testing
+  - Dynamic application security testing
+  - Interactive application security testing
+  - Manual code review
+
+#### 11.8.3 Security Awareness
+
+Human security element:
+
+- **Employee Training**:
+  - Security awareness program
+  - Role-specific security training
+  - Phishing simulations
+  - Secure coding practices
+
+- **User Education**:
+  - Security best practices
+  - Account protection guidance
+  - Social engineering awareness
+  - Safe transaction habits
+
+### 11.9 Security Roadmap
+
+Ongoing security enhancement plan:
+
+- **Short-term Initiatives** (0-6 months):
+  - Security automation improvements
+  - Enhanced anomaly detection
+  - Additional MFA options
+  - Advanced logging capabilities
+
+- **Medium-term Projects** (6-12 months):
+  - Zero-knowledge proof implementations
+  - Enhanced privacy features
+  - Formal verification expansion
+  - Advanced threat hunting
+
+- **Long-term Vision** (1-2 years):
+  - Quantum-resistant cryptography
+  - Decentralized identity integration
+  - Advanced secure multiparty computation
+  - AI-enhanced security monitoring
 
 ## 12. User Experience Design
 
@@ -4944,7 +6268,412 @@ If collateral value falls below threshold:
 - **Feature Evolution**: Continuous improvement of existing functionality
 - **Partnership Development**: Integration with complementary services
 
-## 19. Conclusion
+## 19. Frequently Asked Questions (FAQ)
+
+This section addresses common questions about the NepaliPay platform, providing concise answers for users, developers, and administrators.
+
+### 19.1 General Questions
+
+#### 19.1.1 What is NepaliPay?
+
+NepaliPay is a blockchain-powered digital wallet application designed specifically for the Nepali financial ecosystem. It enables users to manage NPT tokens (stablecoins pegged to the Nepalese Rupee), perform transfers, make payments, take loans, and track transaction history using blockchain technology.
+
+#### 19.1.2 How does NepaliPay work?
+
+NepaliPay uses blockchain technology to provide secure, transparent, and efficient financial services. Users can purchase NPT tokens using traditional payment methods, send and receive tokens, use collateralized loans, and perform various financial transactions. All transactions are recorded on the blockchain, ensuring transparency and security.
+
+#### 19.1.3 What cryptocurrencies does NepaliPay support?
+
+NepaliPay primarily focuses on NPT tokens, which are stablecoins pegged to the Nepalese Rupee (NPR). Additionally, the platform supports BNB, ETH, and BTC for collateral purposes in the loan system.
+
+#### 19.1.4 Is NepaliPay regulated?
+
+NepaliPay operates in compliance with relevant financial and cryptocurrency regulations. The platform implements comprehensive KYC (Know Your Customer) and AML (Anti-Money Laundering) procedures to ensure regulatory compliance.
+
+#### 19.1.5 How secure is NepaliPay?
+
+NepaliPay employs multiple layers of security, including:
+- Multi-factor authentication
+- Advanced encryption for sensitive data
+- Smart contract audits
+- Regular security testing
+- Transaction monitoring
+- Fraud detection systems
+
+The platform uses industry best practices and a defense-in-depth approach to protect user funds and data.
+
+### 19.2 User Account Questions
+
+#### 19.2.1 How do I create a NepaliPay account?
+
+To create a NepaliPay account:
+1. Visit the NepaliPay website or download the app
+2. Click on "Sign Up" or "Register"
+3. Enter your email address and create a strong password
+4. Verify your email address
+5. Complete the KYC process by providing required identification
+6. Set up two-factor authentication for additional security
+
+#### 19.2.2 What is KYC and why is it required?
+
+KYC (Know Your Customer) is a process that verifies the identity of users. NepaliPay requires KYC to:
+- Comply with financial regulations
+- Prevent fraud and identity theft
+- Ensure platform security
+- Protect legitimate users
+
+The KYC process typically involves providing identification documents and proof of address.
+
+#### 19.2.3 How can I reset my password?
+
+To reset your password:
+1. Click "Forgot Password" on the login page
+2. Enter your registered email address
+3. Check your email for a password reset link
+4. Click the link and follow instructions to create a new password
+5. Log in with your new password
+
+For security reasons, password reset links expire after 10 minutes.
+
+#### 19.2.4 What should I do if I suspect unauthorized access to my account?
+
+If you suspect unauthorized access:
+1. Change your password immediately
+2. Enable or reset two-factor authentication
+3. Check your transaction history for unauthorized activities
+4. Contact NepaliPay support immediately through the app or website
+5. Report any unauthorized transactions
+
+### 19.3 NPT Token Questions
+
+#### 19.3.1 What is NPT token?
+
+NPT (NepaliPay Token) is a stablecoin pegged to the Nepalese Rupee (NPR). Each NPT token is designed to maintain a value equivalent to 1 NPR, providing a stable digital currency for transactions within the NepaliPay ecosystem.
+
+#### 19.3.2 How can I purchase NPT tokens?
+
+You can purchase NPT tokens through the following methods:
+1. Credit/debit card payment through the NepaliPay app
+2. Bank transfer to NepaliPay's designated account
+3. Conversion from other supported cryptocurrencies
+4. Receiving NPT tokens from other NepaliPay users
+
+#### 19.3.3 How is the value of NPT maintained?
+
+The value of NPT is maintained through:
+- Treasury reserves of NPR and other stable assets
+- Smart contract mechanisms that regulate supply
+- Regular audits of reserve assets
+- Algorithmic stabilization mechanisms
+
+This ensures that 1 NPT consistently represents 1 NPR in value.
+
+#### 19.3.4 Where can I use NPT tokens?
+
+NPT tokens can be used:
+- For peer-to-peer transfers within the NepaliPay ecosystem
+- At partnered merchants who accept NPT payments
+- For utility bill payments and mobile recharges
+- As collateral for loans within the platform
+- For international remittances
+
+### 19.4 Wallet Questions
+
+#### 19.4.1 How do I access my NepaliPay wallet?
+
+Your NepaliPay wallet is automatically created when you register and complete the KYC process. You can access it by:
+1. Logging into your NepaliPay account
+2. Navigating to the "Wallet" section in the app or website
+3. Using the appropriate authentication methods (password, 2FA)
+
+#### 19.4.2 Is there a limit to how much I can store in my wallet?
+
+Basic accounts have the following limits:
+- Maximum balance: 500,000 NPT
+- Daily transaction limit: 100,000 NPT
+- Monthly transaction limit: 1,000,000 NPT
+
+These limits can be increased through additional verification or by upgrading to premium account tiers.
+
+#### 19.4.3 What happens if I lose access to my wallet?
+
+If you lose access to your wallet:
+1. Use the account recovery process via email
+2. Verify your identity through the KYC information you provided
+3. Use backup codes if you previously enabled 2FA
+4. Contact customer support with proof of identity
+
+Note that wallet recovery is only possible if you completed KYC verification.
+
+#### 19.4.4 How do I check my transaction history?
+
+To check your transaction history:
+1. Log in to your NepaliPay account
+2. Navigate to the "Transactions" or "Activity" section
+3. View all past transactions with details including:
+   - Transaction type
+   - Amount
+   - Date and time
+   - Status
+   - Transaction ID
+
+You can filter transactions by type, date range, and status.
+
+### 19.5 Transaction Questions
+
+#### 19.5.1 How do I send NPT to another user?
+
+To send NPT to another user:
+1. Log in to your NepaliPay account
+2. Navigate to the "Send" or "Transfer" section
+3. Enter the recipient's username, email, or wallet address
+4. Enter the amount to send
+5. Add a description (optional)
+6. Review the transaction details and confirm
+7. Complete any required security verifications
+
+#### 19.5.2 What fees are charged for transactions?
+
+NepaliPay implements the following fee structure:
+- Internal transfers (between NepaliPay users): 0-0.5%
+- External transfers (to external blockchain addresses): 0.5-1% plus gas fees
+- Token purchases: 2% service fee plus payment processing fees
+- Loan origination: 1-2% based on loan terms
+- Currency conversion: 0.5-1% spread
+
+Exact fees are displayed before confirming any transaction.
+
+#### 19.5.3 How long do transactions take to process?
+
+Transaction processing times vary by type:
+- Internal transfers: Near-instant (typically under 5 seconds)
+- External blockchain transfers: Dependent on network conditions (5-30 minutes)
+- Fiat deposits: 1-3 business days
+- Token purchases: 5-15 minutes after payment confirmation
+- Loan disbursements: Typically under 1 hour after approval
+
+#### 19.5.4 Can I cancel a transaction?
+
+Transaction cancellation depends on the status:
+- Pending transactions: May be cancelable depending on type
+- Processing transactions: Generally cannot be canceled
+- Completed transactions: Cannot be canceled or reversed
+- Failed transactions: Automatically reversed with funds returned
+
+For assistance with problematic transactions, contact customer support.
+
+### 19.6 Loan and Collateral Questions
+
+#### 19.6.1 How do collateralized loans work in NepaliPay?
+
+Collateralized loans in NepaliPay work as follows:
+1. You deposit supported cryptocurrency (BNB, ETH, or BTC) as collateral
+2. Based on the collateral value and loan-to-value ratio, the system calculates your maximum borrowing capacity
+3. You specify the loan amount and duration (up to the maximum)
+4. Upon approval, NPT tokens are transferred to your wallet
+5. You repay the loan with interest by the specified due date
+6. After full repayment, your collateral is returned to you
+
+#### 19.6.2 What happens if I can't repay my loan?
+
+If you cannot repay your loan:
+1. The system will send multiple warnings as the due date approaches
+2. You can request a loan extension (subject to approval and additional fees)
+3. If the loan remains unpaid, the system will initiate the liquidation process
+4. Your collateral will be sold to cover the outstanding loan amount plus fees
+5. Any remaining collateral value after liquidation will be returned to your wallet
+
+#### 19.6.3 What is the liquidation process?
+
+The liquidation process includes:
+1. Automatic monitoring of collateral value relative to loan amount
+2. Warnings when the health factor drops below safe thresholds
+3. Grace period opportunity to add collateral or repay partially
+4. If the health factor drops below 1.0, liquidation is triggered
+5. Collateral is sold at market rates to recover the loan amount
+6. A liquidation fee (typically 5%) is applied
+7. Any surplus value is returned to the borrower
+
+#### 19.6.4 How are interest rates determined?
+
+Interest rates are determined based on:
+- Current market conditions
+- Loan duration
+- Collateral type
+- Loan-to-value ratio
+- Borrower history and reputation
+
+Rates typically range from 5-8% APR for standard loans.
+
+### 19.7 Technical Questions
+
+#### 19.7.1 Which blockchain does NepaliPay use?
+
+NepaliPay primarily operates on the Binance Smart Chain (BSC) for its smart contracts and token operations. This choice provides:
+- Lower transaction fees compared to Ethereum
+- Faster transaction confirmation times
+- High compatibility with existing blockchain tools
+- Robust security and reliability
+
+#### 19.7.2 Are the smart contracts audited?
+
+Yes, all NepaliPay smart contracts undergo rigorous auditing:
+1. Internal code review and testing
+2. External audit by reputable blockchain security firms
+3. Published audit reports with addressed findings
+4. Ongoing monitoring for new vulnerabilities
+5. Regular re-auditing when contracts are updated
+
+#### 19.7.3 How does NepaliPay handle private keys?
+
+NepaliPay employs the following approaches to private key management:
+- User wallet keys are never stored on NepaliPay servers
+- Non-custodial options are available for advanced users
+- Custodial wallets use secure multi-party computation
+- System wallets employ hardware security modules (HSMs)
+- Treasury wallets require multi-signature authorization
+
+#### 19.7.4 Is there an API for developers?
+
+Yes, NepaliPay provides a comprehensive API for developers that enables:
+- Integration with third-party applications
+- Automated payments and transfers
+- Custom wallet implementations
+- Transaction monitoring
+- Custom financial services
+
+Developers can access documentation and request API access through the Developer Portal.
+
+### 19.8 Support Questions
+
+#### 19.8.1 How can I contact customer support?
+
+Customer support can be reached through multiple channels:
+- In-app chat support (available 24/7)
+- Email: support@nepalipay.com
+- Phone: +977-XXXX-XXXX (9 AM - 6 PM NPT, Monday-Friday)
+- Support ticket system via the website
+- Social media direct messages (@NepaliPaySupport)
+
+#### 19.8.2 What information should I provide when contacting support?
+
+To help resolve issues faster, provide:
+- Your registered email address
+- Transaction ID (if applicable)
+- Description of the issue
+- Screenshots of error messages
+- Steps you've taken to resolve the issue
+- Device and browser/app version
+
+Never share your password or 2FA codes with support staff.
+
+#### 19.8.3 How quickly can I expect a response from support?
+
+Response times vary by issue priority:
+- Critical issues (account access, security concerns): 1-2 hours
+- Transaction issues: 4-8 hours
+- General inquiries: 24-48 hours
+- Feature requests: 3-5 business days
+
+Support availability may be affected during holidays or maintenance periods.
+
+#### 19.8.4 Is there documentation or tutorials available?
+
+Yes, NepaliPay provides comprehensive documentation:
+- Knowledge Base with searchable articles
+- Video tutorials for common tasks
+- Step-by-step guides for all features
+- FAQs section for quick answers
+- Community forum for peer support
+
+### 19.9 Business Questions
+
+#### 19.9.1 Can businesses accept NPT payments?
+
+Yes, businesses can accept NPT payments through:
+- NepaliPay Business accounts
+- Integration with existing POS systems
+- Payment buttons on websites
+- QR code-based payment systems
+- API integration for custom solutions
+
+#### 19.9.2 What are the benefits for merchants?
+
+Merchants benefit from accepting NPT payments in several ways:
+- Lower transaction fees compared to traditional payment processors
+- Faster settlement times
+- No chargebacks
+- Access to a growing user base
+- Simplified cross-border transactions
+- Real-time transaction monitoring
+- Loyalty program integration
+
+#### 19.9.3 How can a business get started with NepaliPay?
+
+Businesses can get started by:
+1. Creating a NepaliPay Business account
+2. Completing business verification
+3. Integrating payment solutions (web, mobile, or in-person)
+4. Setting up financial reporting
+5. Training staff on the platform
+
+#### 19.9.4 Are there special features for businesses?
+
+NepaliPay offers several business-specific features:
+- Bulk payment processing
+- Employee salary disbursements
+- Expense management tools
+- Customer loyalty programs
+- Detailed financial reporting
+- Multi-user access with role-based permissions
+- API access for custom integrations
+
+### 19.10 Regulatory and Compliance Questions
+
+#### 19.10.1 How does NepaliPay handle user data?
+
+NepaliPay handles user data according to strict privacy principles:
+- Data is encrypted in transit and at rest
+- Personal information is stored separately from transaction data
+- Access to user data is strictly limited and audited
+- Data is only retained as long as necessary
+- Users can request data export or deletion
+- No data is sold to third parties
+
+#### 19.10.2 How does NepaliPay prevent money laundering?
+
+NepaliPay prevents money laundering through:
+- Comprehensive KYC verification
+- Transaction monitoring systems
+- Pattern recognition for suspicious activities
+- Limits on transaction volumes
+- Screening against sanction lists
+- Collaboration with financial authorities
+- Regular compliance audits
+
+#### 19.10.3 What regulations does NepaliPay comply with?
+
+NepaliPay complies with various regulations including:
+- Relevant cryptocurrency regulations
+- Anti-Money Laundering (AML) requirements
+- Counter-Terrorist Financing (CTF) provisions
+- Data protection regulations
+- Consumer protection laws
+- Banking regulations where applicable
+- International remittance regulations
+
+#### 19.10.4 How are taxes handled?
+
+While NepaliPay does not provide tax advice, the platform helps users with tax compliance by:
+- Providing detailed transaction records
+- Offering exportable transaction history in various formats
+- Recording transaction timestamps and values
+- Categorizing transactions by type
+- Providing year-end summaries
+
+Users are responsible for understanding and complying with their local tax requirements.
+
+## 20. Conclusion
 
 NepaliPay represents a sophisticated fusion of blockchain technology and traditional financial services, tailored specifically for the Nepali market. Its comprehensive feature set, robust security measures, and culturally sensitive design make it a powerful tool for digital financial management in Nepal's evolving economy.
 
