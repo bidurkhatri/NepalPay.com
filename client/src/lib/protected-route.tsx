@@ -24,7 +24,7 @@ export function ProtectedRoute({ path, children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (user === null || user === undefined) {
     console.log("No user detected, redirecting to auth page");
     return (
       <Route path={path}>
