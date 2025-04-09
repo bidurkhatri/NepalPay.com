@@ -45,6 +45,123 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get user loans
+  app.get('/api/loans', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const loans = await storage.getUserLoans(req.user.id);
+      return res.json(loans);
+    } catch (error) {
+      log(`Error fetching loans: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch loans' });
+    }
+  });
+
+  // Create a new loan
+  app.post('/api/loans', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const loanData = {
+        userId: req.user.id,
+        amount: req.body.amount,
+        interestRate: req.body.interestRate,
+        termDays: req.body.termDays,
+        status: 'pending',
+        originationFee: '0',
+        repaidAmount: '0',
+        collateralRequired: req.body.collateralRequired,
+      };
+
+      const loan = await storage.createLoan(loanData);
+      
+      // Broadcast loan application via WebSocket
+      broadcast({
+        type: 'loan_application',
+        data: {
+          loanId: loan.id,
+          userId: req.user.id,
+          username: req.user.username,
+          amount: loan.amount,
+        },
+      });
+      
+      return res.status(201).json(loan);
+    } catch (error) {
+      log(`Error creating loan: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create loan' });
+    }
+  });
+
+  // Get user collaterals
+  app.get('/api/collaterals', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const collaterals = await storage.getUserCollaterals(req.user.id);
+      return res.json(collaterals);
+    } catch (error) {
+      log(`Error fetching collaterals: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to fetch collaterals' });
+    }
+  });
+
+  // Create a new collateral
+  app.post('/api/collaterals', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      // Get the loan to check ownership
+      const loan = await storage.getLoan(req.body.loanId);
+      
+      if (!loan) {
+        return res.status(404).json({ error: 'Loan not found' });
+      }
+      
+      if (loan.userId !== req.user.id) {
+        return res.status(403).json({ error: 'Not authorized to add collateral to this loan' });
+      }
+      
+      const collateralData = {
+        userId: req.user.id,
+        loanId: req.body.loanId,
+        collateralType: req.body.collateralType,
+        amount: req.body.amount,
+        valueInNpt: req.body.valueInNpt,
+        valueToLoanRatio: req.body.valueToLoanRatio,
+        status: 'locked',
+      };
+
+      const collateral = await storage.createCollateral(collateralData);
+      
+      // Broadcast collateral creation via WebSocket
+      broadcast({
+        type: 'collateral_locked',
+        data: {
+          collateralId: collateral.id,
+          loanId: collateral.loanId,
+          userId: req.user.id,
+          collateralType: collateral.collateralType,
+          amount: collateral.amount,
+        },
+      });
+      
+      return res.status(201).json(collateral);
+    } catch (error) {
+      log(`Error creating collateral: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create collateral' });
+    }
+  });
+
   // Get user transactions
   app.get('/api/transactions', async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -75,35 +192,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get user collaterals
-  app.get('/api/collaterals', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    try {
-      const collaterals = await storage.getUserCollaterals(req.user.id);
-      return res.json(collaterals);
-    } catch (error) {
-      log(`Error fetching collaterals: ${error instanceof Error ? error.message : String(error)}`);
-      return res.status(500).json({ error: 'Failed to fetch collaterals' });
-    }
-  });
-
-  // Get user loans
-  app.get('/api/loans', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    try {
-      const loans = await storage.getUserLoans(req.user.id);
-      return res.json(loans);
-    } catch (error) {
-      log(`Error fetching loans: ${error instanceof Error ? error.message : String(error)}`);
-      return res.status(500).json({ error: 'Failed to fetch loans' });
-    }
-  });
+  // These were duplicated - routes already defined above
 
   // Get active ads
   app.get('/api/ads', async (req, res) => {
@@ -286,131 +375,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Create loan application
-  app.post('/api/loans', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    try {
-      const { amount, interestRate, termDays, collateralRequired = true } = req.body;
-      
-      if (!amount || !interestRate || !termDays) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-      
-      // Calculate loan-to-value ratio (typically 50-80% for crypto loans)
-      const loanToValueRatio = "0.75";
-      
-      // Calculate origination fee (typically 1-3% of loan amount)
-      const originationFee = (parseFloat(amount) * 0.02).toString();
-
-      const loan = await storage.createLoan({
-        userId: req.user.id,
-        amount: amount.toString(),
-        interestRate: interestRate.toString(),
-        termDays,
-        status: 'pending',
-        startDate: null,
-        dueDate: null,
-        endDate: null,
-        repaymentDate: null,
-        repaidAmount: "0",
-        loanToValueRatio,
-        originationFee,
-        collateralRequired,
-        metadata: {},
-      });
-
-      // Record activity
-      await storage.createActivity({
-        userId: req.user.id,
-        activityType: 'loan_action',
-        description: 'Loan application submitted',
-        ipAddress: null,
-        userAgent: null,
-        metadata: {
-          loanId: loan.id,
-          amount,
-          interestRate,
-          termDays,
-        },
-        transactionId: null,
-        loanId: loan.id,
-        collateralId: null,
-      });
-
-      // Broadcast to WebSocket clients
-      broadcast({
-        type: 'loan_application',
-        data: { loan },
-      });
-
-      return res.status(201).json(loan);
-    } catch (error) {
-      log(`Error creating loan: ${error instanceof Error ? error.message : String(error)}`);
-      return res.status(500).json({ error: 'Failed to create loan' });
-    }
-  });
-
-  // Create collateral
-  app.post('/api/collaterals', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    try {
-      const { loanId, collateralType, amount, valueInNpt, valueToLoanRatio } = req.body;
-      
-      if (!collateralType || !amount || !valueInNpt || !valueToLoanRatio) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      const collateral = await storage.createCollateral({
-        userId: req.user.id,
-        loanId: loanId || null,
-        collateralType,
-        amount: amount.toString(),
-        valueInNpt: valueInNpt.toString(),
-        status: 'active',
-        lockTimestamp: new Date(),
-        releaseTimestamp: null,
-        liquidationTimestamp: null,
-        valueToLoanRatio: valueToLoanRatio.toString(),
-        liquidationThreshold: null,
-        metadata: {},
-      });
-
-      // Record activity
-      await storage.createActivity({
-        userId: req.user.id,
-        activityType: 'collateral_action',
-        description: 'Collateral created',
-        ipAddress: null,
-        userAgent: null,
-        metadata: {
-          collateralId: collateral.id,
-          collateralType,
-          amount,
-          valueInNpt,
-        },
-        transactionId: null,
-        loanId: loanId || null,
-        collateralId: collateral.id,
-      });
-
-      // Broadcast to WebSocket clients
-      broadcast({
-        type: 'collateral_created',
-        data: { collateral },
-      });
-
-      return res.status(201).json(collateral);
-    } catch (error) {
-      log(`Error creating collateral: ${error instanceof Error ? error.message : String(error)}`);
-      return res.status(500).json({ error: 'Failed to create collateral' });
-    }
-  });
+  // These routes are already defined above
 
   // Create HTTP server
   const httpServer = createServer(app);

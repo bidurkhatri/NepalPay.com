@@ -1,227 +1,354 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRealTime } from '@/contexts/real-time-context';
 import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import {
+  CreditCard,
+  DollarSign,
+  ArrowRight,
+  Wallet,
+  Info,
+  Shield,
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-const purchaseSchema = z.object({
-  amount: z.string().min(1, { message: 'Amount is required' }),
-  walletAddress: z.string().min(1, { message: 'Wallet address is required' }),
+// Make sure STRIPE_PUBLIC_KEY is available
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  console.error('Missing required environment variable: VITE_STRIPE_PUBLIC_KEY');
+}
+
+// Initialize Stripe outside of component render
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
+
+// Form validation schema
+const formSchema = z.object({
+  amount: z.string()
+    .min(1, { message: 'Please enter an amount' })
+    .refine((val) => !isNaN(Number(val)), { 
+      message: 'Amount must be a number' 
+    })
+    .refine((val) => Number(val) >= 100, { 
+      message: 'Minimum purchase amount is 100 NPT' 
+    }),
+  paymentMethod: z.enum(['card', 'bank'], {
+    required_error: 'Please select a payment method',
+  }),
 });
 
-type PurchaseFormValues = z.infer<typeof purchaseSchema>;
+type FormData = z.infer<typeof formSchema>;
 
-// Make sure to call loadStripe outside of a component
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
-// Payment form component that uses Stripe Elements
-const CheckoutForm = ({ amount }: { amount: string }) => {
+const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: string }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const { sendMessage } = useRealTime();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!stripe || !elements) {
       return;
     }
-
+    
     setIsProcessing(true);
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Payment Failed",
-        description: error.message,
-        variant: "destructive",
+    
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/dashboard`,
+        },
       });
-    } else {
+      
+      if (error) {
+        toast({
+          title: 'Payment Failed',
+          description: error.message || 'An error occurred during payment processing',
+          variant: 'destructive',
+        });
+        
+        // Notify via WebSocket
+        sendMessage({
+          type: 'payment_failed',
+          data: {
+            amount,
+            error: error.message,
+          }
+        });
+      }
+    } catch (err: any) {
       toast({
-        title: "Payment Successful",
-        description: `You have purchased ${amount} NPT tokens!`,
+        title: 'Error',
+        description: err.message || 'Something went wrong',
+        variant: 'destructive',
       });
+    } finally {
+      setIsProcessing(false);
     }
-
-    setIsProcessing(false);
   };
-
+  
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
-      <Button 
-        type="submit" 
-        className="w-full gradient-button mt-6" 
-        disabled={!stripe || isProcessing}
-      >
-        {isProcessing ? "Processing..." : "Pay Now"}
-      </Button>
+      
+      <div className="pt-4">
+        <Button 
+          type="submit" 
+          disabled={!stripe || isProcessing} 
+          className="w-full"
+        >
+          {isProcessing ? 'Processing...' : `Pay and Purchase ${amount} NPT`}
+        </Button>
+      </div>
+      
+      <div className="text-xs text-muted-foreground flex items-start space-x-2">
+        <Shield className="h-4 w-4 flex-shrink-0 mt-0.5" />
+        <p>Your payment information is securely processed by Stripe. NepaliPay does not store your card details.</p>
+      </div>
     </form>
   );
 };
 
 const PurchaseTokensPage: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [purchaseAmount, setPurchaseAmount] = useState<string>("");
+  const [purchaseAmount, setPurchaseAmount] = useState<string>('');
   
-  const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseSchema),
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       amount: '',
-      walletAddress: '',
+      paymentMethod: 'card',
     },
   });
-
-  const onSubmit = async (data: PurchaseFormValues) => {
+  
+  const onSubmit = async (data: FormData) => {
     try {
-      // Convert amount to cents for Stripe
-      const amountInUSD = parseFloat(data.amount) * 100;
-      
-      // Create a payment intent
-      const response = await apiRequest("POST", "/api/create-payment-intent", {
-        amount: amountInUSD,
-        walletAddress: data.walletAddress
+      // Create payment intent on the server
+      const response = await apiRequest('POST', '/api/create-payment-intent', {
+        amount: Number(data.amount),
+        currency: 'npr',
+        paymentMethod: data.paymentMethod,
       });
       
-      const responseData = await response.json();
-      
-      if (responseData.clientSecret) {
-        setClientSecret(responseData.clientSecret);
-        setPurchaseAmount(data.amount);
-        toast({
-          title: 'Ready for Payment',
-          description: 'Please complete your payment to receive NPT tokens',
-        });
-      } else {
-        throw new Error('Failed to initialize payment');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create payment intent');
       }
-    } catch (error) {
+      
+      const { clientSecret: secret } = await response.json();
+      setClientSecret(secret);
+      setPurchaseAmount(data.amount);
+      
       toast({
-        title: 'Payment Setup Failed',
-        description: 'Could not initialize payment. Please try again.',
+        title: 'Ready for Payment',
+        description: `Please complete your purchase of ${data.amount} NPT`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to create payment intent',
         variant: 'destructive',
       });
     }
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold gradient-text mb-2">Purchase NPT Tokens</h1>
-        <p className="text-muted-foreground">Buy NPT tokens with your credit or debit card</p>
+    <div className="py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Purchase NPT Tokens</h1>
+        <p className="text-muted-foreground">
+          Buy NPT tokens using credit card or bank transfer
+        </p>
       </div>
       
-      <div className="grid gap-6">
-        {!clientSecret ? (
-          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
-            <CardHeader>
-              <CardTitle>Purchase Details</CardTitle>
-              <CardDescription>Enter the amount of NPT tokens you want to purchase</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (NPT)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            step="1" 
-                            placeholder="0" 
-                            className="bg-background/50" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="walletAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your Wallet Address</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="0x..." 
-                            className="bg-background/50" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full gradient-button"
-                    disabled={form.formState.isSubmitting}
-                  >
-                    {form.formState.isSubmitting ? 'Processing...' : 'Continue to Payment'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
-            <CardHeader>
-              <CardTitle>Complete Your Payment</CardTitle>
-              <CardDescription>You are purchasing {purchaseAmount} NPT tokens</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm amount={purchaseAmount} />
-              </Elements>
-            </CardContent>
-          </Card>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          {!clientSecret ? (
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+              <CardHeader>
+                <CardTitle>Token Purchase</CardTitle>
+                <CardDescription>Buy NPT tokens with card or bank transfer</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount (NPT)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                              <Input
+                                placeholder="Enter amount"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            1 NPT = 1 NPR (Nepalese Rupee)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Payment Method</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select payment method" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="card">
+                                <div className="flex items-center">
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  <span>Credit/Debit Card</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="bank">
+                                <div className="flex items-center">
+                                  <Wallet className="mr-2 h-4 w-4" />
+                                  <span>Bank Transfer</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit" className="w-full">
+                      Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+              <CardHeader>
+                <CardTitle>Complete Your Payment</CardTitle>
+                <CardDescription>Purchasing {purchaseAmount} NPT tokens</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm clientSecret={clientSecret} amount={purchaseAmount} />
+                </Elements>
+              </CardContent>
+            </Card>
+          )}
+        </div>
         
-        <Card className="bg-black/40 backdrop-blur-md border-primary/20">
-          <CardHeader>
-            <CardTitle>Token Information</CardTitle>
-            <CardDescription>About NPT tokens</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+        {/* Info Section */}
+        <div className="space-y-6">
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Info className="mr-2 h-5 w-5 text-primary" />
+                About NPT Tokens
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
               <div>
-                <h3 className="font-medium">What are NPT tokens?</h3>
-                <p className="text-sm text-muted-foreground">NPT tokens are the native cryptocurrency of the NepaliPay platform. Each NPT is pegged to 1 NPR (Nepalese Rupee).</p>
+                <h3 className="font-medium mb-1">What are NPT Tokens?</h3>
+                <p className="text-sm text-muted-foreground">
+                  NPT (NepaliPay Token) is a stablecoin pegged to the Nepalese Rupee (NPR). Each NPT token is worth exactly 1 NPR.
+                </p>
               </div>
+              
               <div>
-                <h3 className="font-medium">Token Utility</h3>
-                <p className="text-sm text-muted-foreground">NPT tokens can be used for payments, transfers, loans, and other financial services within the NepaliPay ecosystem.</p>
+                <h3 className="font-medium mb-1">Token Details</h3>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li className="flex justify-between">
+                    <span>Token Name:</span>
+                    <span className="font-medium">NepaliPay Token (NPT)</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Blockchain:</span>
+                    <span className="font-medium">Binance Smart Chain</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Price:</span>
+                    <span className="font-medium">1 NPT = 1 NPR</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Minimum Purchase:</span>
+                    <span className="font-medium">100 NPT</span>
+                  </li>
+                </ul>
               </div>
+              
               <div>
-                <h3 className="font-medium">Security</h3>
-                <p className="text-sm text-muted-foreground">NPT tokens are secured by blockchain technology running on the Binance Smart Chain.</p>
+                <h3 className="font-medium mb-1">What can you do with NPT?</h3>
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  <li>Send money instantly to anyone in Nepal</li>
+                  <li>Pay utility bills and merchant payments</li>
+                  <li>Apply for micro-loans and earn interest</li>
+                  <li>Participate in the NepaliPay ecosystem</li>
+                </ul>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Shield className="mr-2 h-5 w-5 text-primary" />
+                Security Guarantee
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                All purchases are protected with enterprise-grade security. Transactions are securely processed through Stripe and recorded on the blockchain for complete transparency.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

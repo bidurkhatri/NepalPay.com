@@ -132,6 +132,78 @@ export class PgStorage implements IStorage {
     return result[0];
   }
   
+  /**
+   * Update wallet balance for a specific currency
+   */
+  async updateWalletBalance(userId: number, currency: string, amount: number): Promise<Wallet | undefined> {
+    await this.ensureDbInitialized();
+    
+    // Get the user's wallet
+    const wallet = await this.getWalletByUserId(userId);
+    if (!wallet) {
+      return undefined;
+    }
+    
+    // Update the appropriate balance field based on currency
+    let updatedWallet: Wallet | undefined;
+    
+    if (currency === 'NPT') {
+      const currentBalance = parseFloat(wallet.nptBalance || '0');
+      const newBalance = (currentBalance + amount).toString();
+      
+      const result = await db
+        .update(wallets)
+        .set({ 
+          nptBalance: newBalance,
+          updatedAt: new Date()
+        })
+        .where(eq(wallets.id, wallet.id))
+        .returning();
+      updatedWallet = result[0];
+    } else if (currency === 'BNB') {
+      const currentBalance = parseFloat(wallet.bnbBalance || '0');
+      const newBalance = (currentBalance + amount).toString();
+      
+      const result = await db
+        .update(wallets)
+        .set({ 
+          bnbBalance: newBalance,
+          updatedAt: new Date()
+        })
+        .where(eq(wallets.id, wallet.id))
+        .returning();
+      updatedWallet = result[0];
+    } else if (currency === 'ETH') {
+      const currentBalance = parseFloat(wallet.ethBalance || '0');
+      const newBalance = (currentBalance + amount).toString();
+      
+      const result = await db
+        .update(wallets)
+        .set({ 
+          ethBalance: newBalance,
+          updatedAt: new Date()
+        })
+        .where(eq(wallets.id, wallet.id))
+        .returning();
+      updatedWallet = result[0];
+    } else if (currency === 'BTC') {
+      const currentBalance = parseFloat(wallet.btcBalance || '0');
+      const newBalance = (currentBalance + amount).toString();
+      
+      const result = await db
+        .update(wallets)
+        .set({ 
+          btcBalance: newBalance,
+          updatedAt: new Date()
+        })
+        .where(eq(wallets.id, wallet.id))
+        .returning();
+      updatedWallet = result[0];
+    }
+    
+    return updatedWallet;
+  }
+  
   // ====== Transaction Methods ======
   
   async getTransaction(id: number): Promise<Transaction | undefined> {

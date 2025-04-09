@@ -1,510 +1,429 @@
-import { useState, useEffect } from 'react';
-import { useWallet } from '@/contexts/wallet-context';
-import { useBlockchain } from '@/contexts/blockchain-context';
-import { useToast } from '@/hooks/use-toast';
-import { Transaction } from '@/types';
-import NepaliWalletVisualization from '@/components/nepali-wallet-visualization';
-import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Wallet, 
-  ArrowRightLeft, 
-  Download, 
-  Upload, 
-  Send, 
-  Loader2, 
-  Check, 
-  X,
-  Clock,
-  Info,
-  CreditCard,
-  History,
-  Link as LinkIcon
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRealTime } from '@/contexts/real-time-context';
 import { Link } from 'wouter';
-import { formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import {
+  Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
+  Download,
+  Search,
+  Filter,
+  Copy,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  Info,
+  ArrowRight,
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert';
+import {
+  Badge,
+} from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-// Transaction component
-const TransactionItem = ({ transaction }: { transaction: Transaction }) => {
-  const getStatusIcon = () => {
-    switch (transaction.status) {
-      case 'completed':
-        return <Check className="h-4 w-4 text-green-500" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'failed':
-        return <X className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTransactionTypeIcon = () => {
-    switch (transaction.type) {
-      case 'send':
-        return <Send className="h-4 w-4" />;
-      case 'receive':
-        return <Download className="h-4 w-4" />;
-      case 'deposit':
-        return <Upload className="h-4 w-4" />;
-      case 'withdraw':
-        return <Download className="h-4 w-4" />;
-      case 'purchase':
-        return <CreditCard className="h-4 w-4" />;
-      default:
-        return <ArrowRightLeft className="h-4 w-4" />;
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between py-3">
-      <div className="flex items-center gap-3">
-        <div className={`
-          rounded-full p-2 
-          ${transaction.type === 'receive' || transaction.type === 'withdraw' 
-            ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' 
-            : 'bg-primary/10 text-primary'}
-        `}>
-          {getTransactionTypeIcon()}
-        </div>
-        <div>
-          <div className="font-medium">{transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}</div>
-          <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-            {transaction.description || 
-              (transaction.type === 'send' 
-                ? `To: ${transaction.to.substring(0, 6)}...${transaction.to.substring(transaction.to.length - 4)}` 
-                : transaction.type === 'receive' 
-                  ? `From: ${transaction.from.substring(0, 6)}...${transaction.from.substring(transaction.from.length - 4)}`
-                  : `${transaction.hash.substring(0, 8)}...${transaction.hash.substring(transaction.hash.length - 6)}`
-              )
-            }
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex flex-col items-end">
-        <div className="flex items-center gap-1.5">
-          <span className={`font-medium ${transaction.type === 'receive' || transaction.type === 'withdraw' ? 'text-green-600 dark:text-green-400' : ''}`}>
-            {transaction.type === 'send' ? '-' : transaction.type === 'receive' ? '+' : ''}
-            {transaction.amount} {transaction.token}
-          </span>
-          <div className="text-muted-foreground">{getStatusIcon()}</div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {formatDistanceToNow(new Date(transaction.timestamp), { addSuffix: true })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Send Tokens Dialog
-const SendTokensDialog = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOpen: boolean) => void }) => {
+const WalletPage: React.FC = () => {
+  const { user } = useAuth();
+  const { wsStatus, lastMessage } = useRealTime();
   const { toast } = useToast();
-  const blockchain = useBlockchain();
-  const [amount, setAmount] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSend = async () => {
-    try {
-      setIsLoading(true);
-      setError('');
-
-      // Basic validation
-      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        throw new Error('Please enter a valid amount');
-      }
-
-      if (!recipient || !/^0x[a-fA-F0-9]{40}$/.test(recipient)) {
-        throw new Error('Please enter a valid recipient address');
-      }
-
-      // Check if amount is greater than balance
-      if (parseFloat(amount) > parseFloat(blockchain.tokenBalance)) {
-        throw new Error('Insufficient balance');
-      }
-
-      // Send tokens using blockchain context
-      const txHash = await blockchain.sendTokens(recipient, amount);
-
-      toast({
-        title: 'Tokens Sent',
-        description: `Successfully sent ${amount} NPT to ${recipient.substring(0, 6)}...${recipient.substring(recipient.length - 4)}`,
-        variant: 'default',
-      });
-
-      // Reset form and close dialog
-      setAmount('');
-      setRecipient('');
-      setIsOpen(false);
-
-    } catch (error: any) {
-      console.error('Error sending tokens:', error);
-      setError(error.message || 'Failed to send tokens');
-      toast({
-        title: 'Transaction Failed',
-        description: error.message || 'Failed to send tokens',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Send NPT Tokens</DialogTitle>
-          <DialogDescription>
-            Enter the recipient's wallet address and the amount of NPT tokens to send.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="recipient">Recipient Address</Label>
-            <Input
-              id="recipient"
-              placeholder="0x..."
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="amount">Amount (NPT)</Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Available: {blockchain.tokenBalance} NPT
-            </p>
-          </div>
-          
-          {error && (
-            <div className="text-sm font-medium text-destructive">{error}</div>
-          )}
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSend} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Send Tokens
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// Wallet Page
-const WalletPage = () => {
-  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [transactionType, setTransactionType] = useState<'all' | 'sent' | 'received' | 'purchase'>('all');
+  
+  // Fetch wallet data
   const { 
-    address, 
-    balance, 
-    transactions, 
-    isConnected, 
-    isLoading, 
-    connectWallet, 
-    fetchTransactions 
-  } = useWallet();
+    data: wallet,
+    isLoading: walletLoading,
+    error: walletError,
+    refetch: refetchWallet
+  } = useQuery({
+    queryKey: ['/api/wallet'],
+    retry: 1,
+  });
   
-  const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
+  // Fetch transactions
+  const {
+    data: transactions,
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions
+  } = useQuery({
+    queryKey: ['/api/transactions'],
+    retry: 1,
+  });
   
-  // Fetch transactions on mount
-  useEffect(() => {
-    if (isConnected) {
-      fetchTransactions();
+  // Listen for real-time updates
+  React.useEffect(() => {
+    if (lastMessage?.type === 'transaction_completed' || lastMessage?.type === 'balance_update') {
+      refetchWallet();
+      refetchTransactions();
     }
-  }, [isConnected, fetchTransactions]);
+  }, [lastMessage, refetchWallet, refetchTransactions]);
   
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">My Wallet</h1>
+  // Copy wallet address to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: 'Copied to clipboard',
+      description: 'Wallet address copied to clipboard',
+    });
+  };
+  
+  // Filter transactions based on search and type filter
+  const filteredTransactions = React.useMemo(() => {
+    if (!transactions) return [];
+    
+    return transactions.filter((tx: any) => {
+      // Filter by type
+      if (transactionType !== 'all') {
+        if (transactionType === 'sent' && tx.type !== 'sent') return false;
+        if (transactionType === 'received' && tx.type !== 'received') return false;
+        if (transactionType === 'purchase' && tx.type !== 'purchase') return false;
+      }
       
-      {!isConnected ? (
-        <Card className="bg-background/30 backdrop-blur-sm border-border/50">
-          <CardHeader>
-            <CardTitle>Connect Your Wallet</CardTitle>
-            <CardDescription>
-              Connect your wallet to view your balance and transactions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Wallet className="h-16 w-16 text-primary/70 mb-4" />
-            <p className="text-center text-muted-foreground mb-6">
-              Your wallet is not connected. Connect your wallet to access all features.
-            </p>
-            <Button onClick={connectWallet} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
-                </>
+      // Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          tx.txHash?.toLowerCase().includes(query) ||
+          tx.description?.toLowerCase().includes(query) ||
+          tx.senderName?.toLowerCase().includes(query) ||
+          tx.recipientName?.toLowerCase().includes(query)
+        );
+      }
+      
+      return true;
+    });
+  }, [transactions, searchQuery, transactionType]);
+  
+  // Format transaction date
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'MMM dd, yyyy • HH:mm');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+  
+  // Render transaction status badge
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Completed</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Pending</Badge>;
+      case 'failed':
+        return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20">Failed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  return (
+    <div className="py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Wallet</h1>
+        <p className="text-muted-foreground">
+          Manage your NPT tokens and view transaction history
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Wallet Card */}
+        <div className="lg:col-span-1">
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Wallet className="mr-2 h-5 w-5 text-primary" />
+                Your Wallet
+              </CardTitle>
+              <CardDescription>Manage your digital assets</CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              {walletLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : walletError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>Failed to load wallet information</AlertDescription>
+                </Alert>
               ) : (
                 <>
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Connect Wallet
+                  <div className="bg-primary/5 rounded-lg p-4">
+                    <div className="text-sm text-muted-foreground mb-1">NPT Balance</div>
+                    <div className="text-3xl font-bold mb-1">{wallet?.nptBalance || 0} NPT</div>
+                    <div className="text-sm text-muted-foreground">≈ {wallet?.nptBalance || 0} NPR</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Wallet Address</div>
+                    <div className="flex items-center">
+                      <div className="text-sm font-mono bg-muted p-2 rounded flex-1 truncate">
+                        {wallet?.address || '0x...'}
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => copyToClipboard(wallet?.address || '')}
+                              className="ml-1"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy Address</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="ml-1"
+                              asChild
+                            >
+                              <a 
+                                href={`https://bscscan.com/address/${wallet?.address}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View on BscScan</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Button asChild>
+                      <Link href="/purchase">
+                        Buy NPT Tokens
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/send">
+                        Send Tokens
+                      </Link>
+                    </Button>
+                  </div>
                 </>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Wallet Info */}
-          <Card className="md:col-span-1 bg-background/30 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Wallet Details</CardTitle>
-              <CardDescription>
-                Your wallet info and quick actions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Wallet Address</Label>
-                <div className="flex items-center mt-1 bg-muted/40 rounded-md p-2">
-                  <code className="text-xs font-mono truncate flex-1">
-                    {address}
-                  </code>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => {
-                      if (address) navigator.clipboard.writeText(address);
-                      toast({
-                        title: "Address Copied",
-                        description: "Your wallet address has been copied to clipboard.",
-                      });
-                    }}
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">NPT Balance</Label>
-                  <p className="text-xl font-semibold">{parseFloat(balance.npt).toLocaleString()} NPT</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">BNB Balance</Label>
-                  <p className="text-xl font-semibold">{parseFloat(balance.bnb).toLocaleString()} BNB</p>
-                </div>
-              </div>
-              
-              <p className="text-xs text-muted-foreground mt-2">
-                <Info className="h-3 w-3 inline mr-1 mb-0.5" />
-                BNB is used for gas fees. Make sure you have enough BNB to perform transactions.
-              </p>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-2">
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <Button onClick={() => setIsSendDialogOpen(true)}>
-                  <Send className="mr-2 h-4 w-4" />
-                  Send
-                </Button>
-                <Link href="/buy-tokens">
-                  <Button variant="outline" className="w-full">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Buy Tokens
-                  </Button>
-                </Link>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 w-full">
-                <Button variant="outline">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Deposit
-                </Button>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Withdraw
-                </Button>
-              </div>
-            </CardFooter>
           </Card>
-          
-          {/* Transactions */}
-          <Card className="md:col-span-2 bg-background/30 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Transactions</CardTitle>
-              <CardDescription>
-                Your recent transaction history
-              </CardDescription>
-            </CardHeader>
-            <Tabs defaultValue="all">
-              <div className="px-6">
-                <TabsList className="w-full">
-                  <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                  <TabsTrigger value="sent" className="flex-1">Sent</TabsTrigger>
-                  <TabsTrigger value="received" className="flex-1">Received</TabsTrigger>
-                  <TabsTrigger value="other" className="flex-1">Other</TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="all" className="m-0">
-                <ScrollArea className="h-[400px]">
-                  <CardContent>
-                    {transactions.length > 0 ? (
-                      <div className="space-y-1">
-                        {transactions.map((transaction) => (
-                          <div key={transaction.id}>
-                            <TransactionItem transaction={transaction} />
-                            <Separator />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 flex flex-col items-center justify-center text-center">
-                        <History className="h-10 w-10 text-muted-foreground mb-3" />
-                        <p className="text-muted-foreground">No transactions found</p>
-                        <p className="text-xs text-muted-foreground">
-                          Your transaction history will appear here
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="sent" className="m-0">
-                <ScrollArea className="h-[400px]">
-                  <CardContent>
-                    {transactions.filter(t => t.type === 'send').length > 0 ? (
-                      <div className="space-y-1">
-                        {transactions
-                          .filter(t => t.type === 'send')
-                          .map((transaction) => (
-                            <div key={transaction.id}>
-                              <TransactionItem transaction={transaction} />
-                              <Separator />
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 flex flex-col items-center justify-center text-center">
-                        <Send className="h-10 w-10 text-muted-foreground mb-3" />
-                        <p className="text-muted-foreground">No sent transactions</p>
-                        <p className="text-xs text-muted-foreground">
-                          Transactions you send will appear here
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="received" className="m-0">
-                <ScrollArea className="h-[400px]">
-                  <CardContent>
-                    {transactions.filter(t => t.type === 'receive').length > 0 ? (
-                      <div className="space-y-1">
-                        {transactions
-                          .filter(t => t.type === 'receive')
-                          .map((transaction) => (
-                            <div key={transaction.id}>
-                              <TransactionItem transaction={transaction} />
-                              <Separator />
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 flex flex-col items-center justify-center text-center">
-                        <Download className="h-10 w-10 text-muted-foreground mb-3" />
-                        <p className="text-muted-foreground">No received transactions</p>
-                        <p className="text-xs text-muted-foreground">
-                          Transactions you receive will appear here
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="other" className="m-0">
-                <ScrollArea className="h-[400px]">
-                  <CardContent>
-                    {transactions.filter(t => t.type !== 'send' && t.type !== 'receive').length > 0 ? (
-                      <div className="space-y-1">
-                        {transactions
-                          .filter(t => t.type !== 'send' && t.type !== 'receive')
-                          .map((transaction) => (
-                            <div key={transaction.id}>
-                              <TransactionItem transaction={transaction} />
-                              <Separator />
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 flex flex-col items-center justify-center text-center">
-                        <ArrowRightLeft className="h-10 w-10 text-muted-foreground mb-3" />
-                        <p className="text-muted-foreground">No other transactions</p>
-                        <p className="text-xs text-muted-foreground">
-                          Deposits, withdrawals and other transactions will appear here
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </Card>
-          
-          {/* Wallet Visualization */}
-          <div className="md:col-span-3">
-            <NepaliWalletVisualization />
-          </div>
         </div>
-      )}
-      
-      <SendTokensDialog 
-        isOpen={isSendDialogOpen} 
-        setIsOpen={setIsSendDialogOpen} 
-      />
+        
+        {/* Transactions Section */}
+        <div className="lg:col-span-2">
+          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+            <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>View your past transactions</CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Tabs defaultValue="all" className="w-full" onValueChange={(value) => setTransactionType(value as any)}>
+                <div className="flex items-center justify-between mb-4">
+                  <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="sent">Sent</TabsTrigger>
+                    <TabsTrigger value="received">Received</TabsTrigger>
+                    <TabsTrigger value="purchase">Purchases</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search transactions..."
+                      className="pl-9 w-[250px]"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <TabsContent value="all" className="mt-0">
+                  {transactionsLoading ? (
+                    <div className="flex items-center justify-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : transactionsError ? (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error</AlertTitle>
+                      <AlertDescription>Failed to load transaction history</AlertDescription>
+                    </Alert>
+                  ) : !filteredTransactions.length ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <div className="rounded-full bg-primary/10 p-3 mb-4">
+                        <Info className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-1">No transactions found</h3>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        {searchQuery 
+                          ? 'No transactions match your search criteria. Try adjusting your search terms.'
+                          : 'You have not made any transactions yet. Start by buying tokens or sending them to others.'}
+                      </p>
+                      {!searchQuery && (
+                        <Button className="mt-4" asChild>
+                          <Link href="/purchase">
+                            Buy NPT Tokens <ArrowRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Details</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredTransactions.map((tx: any) => (
+                            <TableRow key={tx.id}>
+                              <TableCell>
+                                <div className="flex items-center">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                                    tx.type === 'received' ? 'bg-green-500/10 text-green-500' :
+                                    tx.type === 'sent' ? 'bg-blue-500/10 text-blue-500' :
+                                    'bg-purple-500/10 text-purple-500'
+                                  }`}>
+                                    {tx.type === 'received' ? <ArrowDownRight className="h-4 w-4" /> :
+                                     tx.type === 'sent' ? <ArrowUpRight className="h-4 w-4" /> :
+                                     <Download className="h-4 w-4" />}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium capitalize">{tx.type}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className={`font-medium ${
+                                  tx.type === 'received' ? 'text-green-500' :
+                                  tx.type === 'sent' ? 'text-blue-500' :
+                                  ''
+                                }`}>
+                                  {tx.type === 'received' ? '+' : tx.type === 'sent' ? '-' : ''}
+                                  {tx.amount} {tx.currency}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="max-w-[200px]">
+                                  {tx.type === 'sent' && (
+                                    <div className="text-sm">To: {tx.recipientName || 'Unknown'}</div>
+                                  )}
+                                  {tx.type === 'received' && (
+                                    <div className="text-sm">From: {tx.senderName || 'Unknown'}</div>
+                                  )}
+                                  {tx.type === 'purchase' && (
+                                    <div className="text-sm">Purchase via {tx.paymentMethod || 'Stripe'}</div>
+                                  )}
+                                  {tx.description && (
+                                    <div className="text-xs text-muted-foreground truncate" title={tx.description}>
+                                      {tx.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{formatDate(tx.createdAt)}</div>
+                              </TableCell>
+                              <TableCell>
+                                {renderStatusBadge(tx.status)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="sent" className="mt-0">
+                  {/* Same content as "all" tab, filtered for sent transactions */}
+                </TabsContent>
+                
+                <TabsContent value="received" className="mt-0">
+                  {/* Same content as "all" tab, filtered for received transactions */}
+                </TabsContent>
+                
+                <TabsContent value="purchase" className="mt-0">
+                  {/* Same content as "all" tab, filtered for purchase transactions */}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            
+            {!transactionsLoading && filteredTransactions.length > 0 && (
+              <CardFooter className="flex justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {filteredTransactions.length} transactions
+                </div>
+                <Button variant="outline" size="sm">
+                  Export CSV <Download className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            )}
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
