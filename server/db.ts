@@ -8,20 +8,24 @@ import { log } from './vite';
 // Get database connection string from environment variables
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/nepalipay';
 
-// Create postgres client for drizzle ORM
+// Create postgres client for drizzle ORM with optimized settings
 export const client = postgres(connectionString, {
-  max: 10, // Maximum connection pool size
-  idle_timeout: 20, // Idle connection timeout in seconds
-  connect_timeout: 10, // Connection timeout in seconds
-  prepare: false,
+  max: 5, // Reduced connection pool size for lower resource usage
+  idle_timeout: 10, // Reduced idle timeout for quicker release of connections
+  connect_timeout: 5, // Reduced connection timeout for faster failures
+  prepare: false, // Disable prepared statements to reduce initial overhead
+  debug: false, // Disable debug logging
+  max_lifetime: 60 * 30, // 30 minutes maximum connection lifetime
+  fetch_types: false, // Disable type fetching for improved startup performance
 });
 
-// Create pg Pool for session store and other direct queries
+// Create pg Pool for session store and other direct queries with optimized settings
 export const pool = new pg.Pool({
   connectionString,
-  max: 10, // Maximum connection pool size
-  idleTimeoutMillis: 20000, // Idle connection timeout in milliseconds
-  connectionTimeoutMillis: 10000, // Connection timeout in milliseconds
+  max: 5, // Reduced connection pool size for lower resource usage
+  idleTimeoutMillis: 10000, // Reduced idle timeout for quicker release of connections
+  connectionTimeoutMillis: 5000, // Reduced connection timeout
+  allowExitOnIdle: true, // Allow connections to exit on idle to free resources
 });
 
 // Create drizzle ORM instance
@@ -32,23 +36,18 @@ export const db = drizzle(client, { schema });
  */
 export async function initializeDatabase(): Promise<boolean> {
   try {
-    // Test the connection
-    const connected = await testConnection();
-    if (!connected) {
-      return false;
-    }
-
+    // We don't need to test connection again here as it's done before calling this function
     try {
       // Create database tables if they don't exist
-      await createTables();
-      log('Database tables verified/created');
+      // This is a lighter version that doesn't check for existence first
+      await createTablesIfNotExist();
+      return true;
     } catch (err) {
       log(`Error creating tables: ${err instanceof Error ? err.message : String(err)}`);
       // Don't fail the whole initialization if table creation fails
       // Some functionality may still work
+      return false;
     }
-
-    return true;
   } catch (error) {
     log(`Database initialization error: ${error instanceof Error ? error.message : String(error)}`);
     return false;
@@ -67,6 +66,43 @@ export async function testConnection(): Promise<boolean> {
   } catch (error) {
     log(`Database connection error: ${error instanceof Error ? error.message : String(error)}`);
     return false;
+  }
+}
+
+/**
+ * Create database tables if they don't exist (optimized version)
+ * This function is more lightweight than createTables() because it uses
+ * a more efficient approach to check for table existence
+ */
+export async function createTablesIfNotExist(): Promise<void> {
+  try {
+    // First check if tables already exist to avoid unnecessary work
+    const tablesExistQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      ) as users_exist,
+      EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'wallets'
+      ) as wallets_exist;
+    `;
+    
+    const tablesExistResult = await pool.query(tablesExistQuery);
+    
+    // If main tables already exist, skip table creation
+    if (tablesExistResult.rows[0].users_exist && tablesExistResult.rows[0].wallets_exist) {
+      log('Database tables already exist, skipping creation');
+      return;
+    }
+    
+    // Use the original function to create tables
+    await createTables();
+  } catch (error) {
+    log(`Error checking/creating tables: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
   }
 }
 

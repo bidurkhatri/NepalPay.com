@@ -56,36 +56,14 @@ export const users = pgTable('users', {
 
 // User relations
 export const usersRelations = relations(users, ({ one, many }) => ({
-  wallet: one(wallets, {
-    fields: [users.id],
-    references: [wallets.userId],
-  }),
-  sentTransactions: many(transactions, { 
-    fields: [users.id],
-    references: [transactions.senderId],
-    relationName: 'sentTransactions',
-  }),
-  receivedTransactions: many(transactions, { 
-    fields: [users.id],
-    references: [transactions.recipientId],
-    relationName: 'receivedTransactions',
-  }),
-  activities: many(activities, {
-    fields: [users.id],
-    references: [activities.userId],
-  }),
-  collaterals: many(collaterals, {
-    fields: [users.id],
-    references: [collaterals.userId],
-  }),
-  loans: many(loans, {
-    fields: [users.id],
-    references: [loans.userId],
-  }),
-  ads: many(ads, {
-    fields: [users.id],
-    references: [ads.userId],
-  }),
+  wallet: one(wallets),
+  sentTransactions: many(transactions),
+  receivedTransactions: many(transactions),
+  activities: many(activities),
+  collaterals: many(collaterals),
+  loans: many(loans),
+  approvedLoans: many(loans),
+  ads: many(ads)
 }));
 
 // Wallets table
@@ -110,15 +88,8 @@ export const wallets = pgTable('wallets', {
 
 // Wallet relations
 export const walletsRelations = relations(wallets, ({ one, many }) => ({
-  user: one(users, {
-    fields: [wallets.userId],
-    references: [users.id],
-  }),
-  transactions: many(transactions, { 
-    fields: [wallets.id],
-    references: [transactions.walletId],
-    relationName: 'wallet_transactions',
-  }),
+  user: one(users),
+  transactions: many(transactions)
 }));
 
 // Transactions table
@@ -149,29 +120,11 @@ export const transactions = pgTable('transactions', {
 
 // Transaction relations
 export const transactionsRelations = relations(transactions, ({ one }) => ({
-  sender: one(users, {
-    fields: [transactions.senderId],
-    references: [users.id],
-    relationName: 'sentTransactions',
-  }),
-  recipient: one(users, {
-    fields: [transactions.recipientId],
-    references: [users.id],
-    relationName: 'receivedTransactions',
-  }),
-  wallet: one(wallets, {
-    fields: [transactions.walletId],
-    references: [wallets.id],
-    relationName: 'wallet_transactions',
-  }),
-  loan: one(loans, {
-    fields: [transactions.loanId],
-    references: [loans.id],
-  }),
-  collateral: one(collaterals, {
-    fields: [transactions.collateralId],
-    references: [collaterals.id],
-  }),
+  sender: one(users),
+  recipient: one(users),
+  wallet: one(wallets),
+  loan: one(loans),
+  collateral: one(collaterals)
 }));
 
 // Activities table
@@ -191,22 +144,10 @@ export const activities = pgTable('activities', {
 
 // Activity relations
 export const activitiesRelations = relations(activities, ({ one }) => ({
-  user: one(users, {
-    fields: [activities.userId],
-    references: [users.id],
-  }),
-  transaction: one(transactions, {
-    fields: [activities.transactionId],
-    references: [transactions.id],
-  }),
-  loan: one(loans, {
-    fields: [activities.loanId],
-    references: [loans.id],
-  }),
-  collateral: one(collaterals, {
-    fields: [activities.collateralId],
-    references: [collaterals.id],
-  }),
+  user: one(users),
+  transaction: one(transactions),
+  loan: one(loans),
+  collateral: one(collaterals)
 }));
 
 // Collaterals table
@@ -230,22 +171,10 @@ export const collaterals = pgTable('collaterals', {
 
 // Collateral relations
 export const collateralsRelations = relations(collaterals, ({ one, many }) => ({
-  user: one(users, {
-    fields: [collaterals.userId],
-    references: [users.id],
-  }),
-  loan: one(loans, {
-    fields: [collaterals.loanId],
-    references: [loans.id],
-  }),
-  transactions: many(transactions, {
-    fields: [collaterals.id],
-    references: [transactions.collateralId],
-  }),
-  activities: many(activities, {
-    fields: [collaterals.id],
-    references: [activities.collateralId],
-  }),
+  user: one(users),
+  loan: one(loans),
+  transactions: many(transactions),
+  activities: many(activities)
 }));
 
 // Loans table
@@ -275,7 +204,7 @@ export const loansRelations = relations(loans, ({ one, many }) => ({
   approver: one(users),
   collaterals: many(collaterals),
   transactions: many(transactions),
-  activities: many(activities),
+  activities: many(activities)
 }));
 
 // Ads table

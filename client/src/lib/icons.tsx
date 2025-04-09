@@ -11,7 +11,11 @@ import {
   Wallet,
   CreditCard,
   Bell,
-  Search
+  Search,
+  ShoppingBag,
+  Shield,
+  ArrowUp,
+  MoreHorizontal
 } from 'lucide-react';
 
 // Utility function to get user initials from their name
@@ -57,3 +61,18 @@ export const NotificationIcon = Bell;
 
 // Search icon
 export const SearchIcon = Search;
+
+// Shopping/purchase icon
+export const ShoppingIcon = ShoppingBag;
+
+// Funds/savings icon
+export const FundsIcon = DollarSign;
+
+// Safe/secure icon
+export const SafeIcon = Shield;
+
+// Up arrow icon
+export const ArrowUpIcon = ArrowUp;
+
+// More options icon
+export const MoreIcon = MoreHorizontal;

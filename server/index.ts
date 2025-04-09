@@ -1,8 +1,8 @@
 import express from 'express';
 import { createServer } from 'http';
-import { initializeDatabase } from './db';
+import { initializeDatabase, testConnection } from './db';
 import { registerRoutes } from './routes';
-import { log } from './vite';
+import { log, setupVite } from './vite';
 import cors from 'cors';
 
 // Initialize Express application
@@ -16,22 +16,45 @@ app.use(cors());
 // Start server function
 async function startServer() {
   try {
-    // Initialize database connection
-    const dbConnected = await initializeDatabase();
-    if (!dbConnected) {
-      log('Failed to connect to database, server will start but might have limited functionality');
-    }
-
-    // Register API routes and create HTTP server
+    // Register API routes and create HTTP server first
     const httpServer = registerRoutes(app);
 
-    // Determine port from environment variable or use default
-    const PORT = parseInt(process.env.PORT || '3001', 10);
+    // Determine port from environment variable or use default (must be 5000 for Replit workflow)
+    const PORT = parseInt(process.env.PORT || '5000', 10);
     
-    // Start listening for requests
+    // Set up Vite for serving client application
+    await setupVite(app, httpServer);
+    
+    // Start listening for requests immediately
     httpServer.listen(PORT, () => {
       log(`Server running on http://0.0.0.0:${PORT}`);
     });
+
+    // Initialize database connection in the background
+    // This will not block server startup
+    testConnection()
+      .then(connected => {
+        if (connected) {
+          log('Database connected successfully');
+          // Initialize database tables in the background
+          initializeDatabase()
+            .then(dbInitialized => {
+              if (dbInitialized) {
+                log('Database tables verified/created');
+              } else {
+                log('Database tables initialization skipped or failed');
+              }
+            })
+            .catch(err => {
+              log(`Database tables initialization error: ${err instanceof Error ? err.message : String(err)}`);
+            });
+        } else {
+          log('Failed to connect to database, server will operate with limited functionality');
+        }
+      })
+      .catch(err => {
+        log(`Database connection error: ${err instanceof Error ? err.message : String(err)}`);
+      });
 
     // Handle graceful shutdown
     const gracefulShutdown = () => {
