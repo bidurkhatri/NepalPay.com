@@ -227,19 +227,34 @@ export function setupAuth(app: Express): void {
 
   // Login endpoint (handled by passport)
   app.post('/api/login', (req, res, next) => {
+    // Log incoming login request
+    console.log('Login attempt for:', req.body.username);
+    
+    if (!req.body.username || !req.body.password) {
+      console.log('Login failed: Missing username or password');
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
     passport.authenticate('local', (err, user, info) => {
       if (err) {
-        return next(err);
+        console.error('Login error:', err);
+        return res.status(500).json({ error: 'Internal server error during authentication' });
       }
+      
       if (!user) {
+        console.log('Login failed: Invalid credentials for', req.body.username);
         return res.status(401).json({ error: 'Invalid username or password' });
       }
-      req.login(user, (err) => {
-        if (err) {
-          return next(err);
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error('Login session error:', loginErr);
+          return res.status(500).json({ error: 'Failed to create login session' });
         }
+        
         // Return user data (excluding password)
         const { password, ...userWithoutPassword } = user;
+        console.log('Login successful for:', user.username);
         return res.json(userWithoutPassword);
       });
     })(req, res, next);

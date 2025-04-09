@@ -60,13 +60,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ['/api/user'],
     queryFn: async ({ queryKey }) => {
       try {
-        const res = await apiRequest('GET', queryKey[0] as string);
+        const res = await fetch(queryKey[0] as string, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
         if (res.status === 401) {
+          console.log('User not authenticated');
           return null;
         }
+        
+        if (!res.ok) {
+          console.error('User query error:', res.status);
+          return null;
+        }
+        
         const userData = await res.json();
+        console.log('User data received:', userData);
         return userData;
       } catch (error) {
+        console.error('User query error:', error);
         return null;
       }
     },
@@ -79,12 +95,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest('POST', '/api/login', credentials);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Login failed');
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(credentials),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Login failed');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error('Login error:', error);
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(['/api/user'], user);
@@ -106,12 +136,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest('POST', '/api/register', userData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Registration failed');
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(userData),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Registration failed');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error('Registration error:', error);
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(['/api/user'], user);
@@ -133,10 +177,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/logout');
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Logout failed');
+      try {
+        const res = await fetch('/api/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || 'Logout failed');
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+        throw error;
       }
     },
     onSuccess: () => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,42 +11,73 @@ export default function AuthPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
 
   // Use useEffect to handle redirection instead of doing it in render
   useEffect(() => {
     if (user) {
-      setLocation('/dashboard');
       console.log("User authenticated, redirecting to dashboard");
+      setLocation('/dashboard');
     }
   }, [user, setLocation]);
 
+  // Direct form submission to the server without using mutations
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
       if (isLogin) {
-        loginMutation.mutate(
-          { username, password },
-          {
-            onError: (error) => {
-              setError(error.message);
-            },
-          }
-        );
+        console.log('Attempting login with:', { username });
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          console.error('Login error:', data);
+          setError(data.error || 'Login failed');
+          return;
+        }
+        
+        console.log('Login successful:', data);
+        window.location.href = '/dashboard'; // Force page reload
       } else {
-        registerMutation.mutate(
-          { username, password, email, firstName, lastName },
-          {
-            onError: (error) => {
-              setError(error.message);
-            },
-          }
-        );
+        console.log('Attempting registration with:', { username, email });
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            username, 
+            password, 
+            email, 
+            fullName: `${firstName} ${lastName}`.trim() 
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          console.error('Registration error:', data);
+          setError(data.error || 'Registration failed');
+          return;
+        }
+        
+        console.log('Registration successful:', data);
+        window.location.href = '/dashboard'; // Force page reload
       }
     } catch (err) {
+      console.error('Form submission error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
@@ -55,6 +87,15 @@ export default function AuthPage() {
     setError('');
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   // If user is already logged in, don't render the form
   if (user) {
     return null;
