@@ -1,165 +1,110 @@
-/* Glass-morphic UI styles */
-
-.glass-morphic {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
-}
-
-.glass-morphic-dark {
-  background: rgba(20, 20, 20, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-}
-
+/* Glass-morphic styling elements */
 .glass-card {
-  @apply rounded-xl overflow-hidden transition-all duration-300;
-}
-
-.glass-card-light {
-  @apply glass-morphic bg-white/80 hover:bg-white/90;
-}
-
-.glass-card-dark {
-  @apply glass-morphic-dark bg-gray-900/80 hover:bg-gray-900/90;
-}
-
-.glass-button {
-  @apply rounded-lg px-4 py-2 font-medium transition-all duration-300;
-}
-
-.glass-button-primary {
-  background: linear-gradient(135deg, rgba(15, 125, 232, 0.9), rgba(15, 125, 232, 0.7));
-  @apply text-white shadow-md hover:shadow-lg hover:bg-primary/80;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.glass-button-secondary {
-  @apply glass-morphic text-foreground hover:bg-background/20;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
 }
 
 .glass-navbar {
-  @apply fixed top-0 left-0 right-0 z-50 transition-all duration-300;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.glass-navbar-dark {
-  background: rgba(20, 20, 20, 0.7);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-sidebar {
-  @apply fixed top-0 left-0 h-full transition-all duration-300;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #0F7DE8, #6ebfff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glass-button {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.glass-button-primary {
+  background: rgba(15, 125, 232, 0.2);
+  border: 1px solid rgba(15, 125, 232, 0.3);
+  color: #0F7DE8;
+}
+
+.glass-button-primary:hover {
+  background: rgba(15, 125, 232, 0.3);
+}
+
+.glass-navbar-dark {
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-sidebar-dark {
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Gradient text */
-.gradient-text {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(135deg, #0F7DE8, #60a5fa);
-}
-
-.gradient-text-accent {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(135deg, #7c3aed, #3b82f6);
-}
-
-/* Dashboard cards */
-.dashboard-card {
-  @apply glass-card p-6 transition-all duration-300 flex flex-col h-full;
-}
-
-.dashboard-card-light {
-  @apply glass-card-light;
-}
-
-.dashboard-card-dark {
-  @apply glass-card-dark;
-}
-
-/* Input and Form styling */
-.glass-input {
-  @apply rounded-lg px-4 py-2 w-full transition-all duration-300;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glass-input-dark {
-  background: rgba(20, 20, 20, 0.3);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.glass-input:focus, .glass-input-dark:focus {
-  @apply outline-none ring-2 ring-primary/30;
-  border-color: rgba(15, 125, 232, 0.5);
-}
-
-/* Admin and Superadmin specific colors */
-.admin-primary {
-  @apply bg-blue-600 text-white;
-}
-
-.superadmin-primary {
-  @apply bg-teal-600 text-white;
-}
-
-/* Apple-inspired smooth animations */
 .apple-transition {
-  @apply transition-all duration-300 ease-out;
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-.apple-hover {
-  @apply hover:scale-105 transition-transform duration-300 ease-out;
+.gradient-border {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(
+    to right bottom,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0)
+  );
+  z-index: 1;
+  overflow: hidden;
 }
 
-/* Gradient background patterns */
-.gradient-bg {
-  background: linear-gradient(135deg, rgba(15, 125, 232, 0.05), rgba(15, 125, 232, 0.01));
-}
-
-/* Futuristic accent elements */
-.accent-border {
-  @apply relative overflow-hidden;
-}
-
-.accent-border::after {
-  content: '';
+.gradient-border::before {
+  content: "";
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(15, 125, 232, 0.7), transparent);
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(
+    to right bottom,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
-/* Floating labels */
-.floating-label {
-  @apply transition-all duration-300 transform -translate-y-2 scale-75 text-xs text-primary absolute left-3 origin-[0] pointer-events-none;
+.glow {
+  box-shadow: 0 0 10px rgba(15, 125, 232, 0.2);
 }

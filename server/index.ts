@@ -1,8 +1,6 @@
 import express from "express";
 import cors from "cors";
 import { Server } from "http";
-import { registerRoutes } from "./routes";
-import { runMigrations } from "./db";
 import path from "path";
 import { setupVite } from "./vite";
 
@@ -13,17 +11,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Simple health check endpoint
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "UP" });
+});
+
 // Configure routes 
 let httpServer: Server;
 
 // Start the server
 async function startServer() {
   try {
-    // Run database migrations
-    await runMigrations();
-    
-    // Set up application routes
-    httpServer = registerRoutes(app);
+    // Create HTTP server
+    httpServer = new Server(app);
     
     // Set up Vite middleware to serve frontend
     await setupVite(app, httpServer);
@@ -31,7 +31,7 @@ async function startServer() {
     // Listen on host 0.0.0.0 to make the server accessible from outside the container
     const PORT = process.env.PORT || 5000;
     httpServer.listen(PORT, () => {
-      console.log(`Server is running at http://0.0.0.0:${PORT}`);
+      console.log(`Simple server is running at http://0.0.0.0:${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

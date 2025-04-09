@@ -1,89 +1,22 @@
 import React from 'react';
-import { Route, Switch } from 'wouter';
-import { Toaster } from '@/components/ui/toaster';
-
-// Pages
-import HomePage from '@/pages/home-page';
-import AuthPage from '@/pages/auth-page';
-import DashboardPage from '@/pages/dashboard';
-import WalletPage from '@/pages/wallet';
-import TransactionsPage from '@/pages/transactions';
-import LoansPage from '@/pages/loans';
-import CollateralsPage from '@/pages/collaterals';
-import AdsPage from '@/pages/ads';
-import BuyTokensPage from '@/pages/buy-tokens';
-import PaymentSuccessPage from '@/pages/payment-success';
-import NotFoundPage from '@/pages/not-found';
-import SupportPage from '@/pages/support';
-import FAQPage from '@/pages/support/faq';
-import KnowledgeBasePage from '@/pages/support/knowledgebase';
-import ContactPage from '@/pages/support/contact';
-
-// Components
-import { ProtectedRoute } from '@/lib/protected-route';
-import DashboardLayout from '@/components/layouts/dashboard-layout';
-import SupportLayout from '@/components/layouts/support-layout';
-
-// Define the dashboard routes that use the dashboard layout
-const dashboardRoutes = [
-  { path: '/dashboard', component: DashboardPage },
-  { path: '/wallet', component: WalletPage },
-  { path: '/transactions', component: TransactionsPage },
-  { path: '/loans', component: LoansPage },
-  { path: '/collaterals', component: CollateralsPage },
-  { path: '/ads', component: AdsPage },
-  { path: '/buy-tokens', component: BuyTokensPage },
-  { path: '/payment-success', component: PaymentSuccessPage },
-];
-
-// Define the support routes that use the support layout
-const supportRoutes = [
-  { path: '/support', component: SupportPage, exact: true },
-  { path: '/support/faq', component: FAQPage },
-  { path: '/support/knowledgebase', component: KnowledgeBasePage },
-  { path: '/support/contact', component: ContactPage },
-];
 
 function App() {
   return (
-    <>
-      <Switch>
-        {/* Public Routes */}
-        <Route path="/" component={HomePage} />
-        <Route path="/auth" component={AuthPage} />
-
-        {/* Dashboard Routes - Protected with layout */}
-        {dashboardRoutes.map(({ path, component }) => (
-          <ProtectedRoute
-            key={path}
-            path={path}
-            component={() => (
-              <DashboardLayout>
-                {React.createElement(component)}
-              </DashboardLayout>
-            )}
-          />
-        ))}
-
-        {/* Support Routes - Protected with layout */}
-        {supportRoutes.map(({ path, component, exact }) => (
-          <ProtectedRoute
-            key={path}
-            path={path}
-            component={() => (
-              <SupportLayout>
-                {React.createElement(component)}
-              </SupportLayout>
-            )}
-          />
-        ))}
-
-        {/* 404 Page */}
-        <Route component={NotFoundPage} />
-      </Switch>
-
-      <Toaster />
-    </>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-900 to-gray-800">
+      <div className="max-w-md w-full p-8 bg-gray-800/50 backdrop-blur-lg rounded-xl shadow-xl border border-gray-700/50">
+        <h1 className="text-4xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-300">NepaliPay</h1>
+        <p className="text-gray-300 text-center mb-8">
+          Blockchain-powered digital wallet for the Nepali financial ecosystem.
+        </p>
+        <div className="flex justify-center">
+          <button
+            className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-blue-600/30"
+          >
+            Get Started
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
