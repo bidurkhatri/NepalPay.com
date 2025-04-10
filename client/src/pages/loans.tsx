@@ -114,8 +114,14 @@ const LoansPage: React.FC = () => {
   const [currentLoan, setCurrentLoan] = useState<any>(null);
   const [currentTab, setCurrentTab] = useState<string>('active');
   
-  // Use the blockchain contract for rates
-  const { tokenContract, nepaliPayContract } = useBlockchain();
+  // Get blockchain context with all required values
+  const { 
+    tokenContract, 
+    nepaliPayContract, 
+    demoMode, 
+    isConnected, 
+    toggleDemoMode 
+  } = useBlockchain();
   
   // Calculate loan amount based on collateral
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0);
@@ -271,8 +277,8 @@ const LoansPage: React.FC = () => {
   const collateralAmount = form.watch('collateralAmount');
   const loanAmount = form.watch('amount');
   
-  // Get blockchain context and the demoMode flag
-  const { demoMode } = useBlockchain();
+  // Already have blockchain context at the top of the file
+  // const { demoMode, nepaliPayContract, isConnected, toggleDemoMode } = useBlockchain();
   
   // Use blockchain contract to get collateral calculations
   const updateCollateralCalculations = useCallback(async () => {
@@ -291,19 +297,60 @@ const LoansPage: React.FC = () => {
       
       // Check if we have a contract
       if (!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') {
-        console.log("NepaliPay contract not available");
-        toast({
-          title: "Smart Contract Not Available",
-          description: "Connect your wallet or activate demo mode to access the NepaliPay smart contract for calculations",
-          variant: "destructive"
-        });
+        console.log("NepaliPay contract not available, activating demo mode automatically");
         
-        setCalculatedLoanAmount(0);
-        setCalculatedLtvRatio(0);
-        setCalculatedCollateralValueInNpt(0);
-        setLiquidationThreshold(0);
-        setCurrentLoanToValue(0);
-        return null;
+        // Try activating demo mode if not already in demo mode
+        if (!demoMode && !isConnected) {
+          try {
+            await toggleDemoMode();
+            console.log("Demo mode activated, checking contract availability again");
+            
+            // Check if contract is now available
+            if (!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') {
+              console.error("Contract still not available after toggling demo mode");
+              toast({
+                title: "Smart Contract Not Available",
+                description: "Unable to connect to blockchain contracts. Please try again later.",
+                variant: "destructive"
+              });
+              
+              setCalculatedLoanAmount(0);
+              setCalculatedLtvRatio(0);
+              setCalculatedCollateralValueInNpt(0);
+              setLiquidationThreshold(0);
+              setCurrentLoanToValue(0);
+              return null;
+            }
+          } catch (demoError) {
+            console.error("Error activating demo mode:", demoError);
+            toast({
+              title: "Smart Contract Not Available",
+              description: "Connect your wallet or try again later to access the smart contract features",
+              variant: "destructive"
+            });
+            
+            setCalculatedLoanAmount(0);
+            setCalculatedLtvRatio(0);
+            setCalculatedCollateralValueInNpt(0);
+            setLiquidationThreshold(0);
+            setCurrentLoanToValue(0);
+            return null;
+          }
+        } else {
+          // If already in demo mode or connected but contract not available
+          toast({
+            title: "Smart Contract Not Available",
+            description: "Unable to connect to blockchain contracts. Please try again later.",
+            variant: "destructive"
+          });
+          
+          setCalculatedLoanAmount(0);
+          setCalculatedLtvRatio(0);
+          setCalculatedCollateralValueInNpt(0);
+          setLiquidationThreshold(0);
+          setCurrentLoanToValue(0);
+          return null;
+        }
       }
       
       console.log("Contract methods available:", 

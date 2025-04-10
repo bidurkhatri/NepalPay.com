@@ -24,7 +24,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   
   // Force demo mode activation directly without relying on state updates
   useEffect(() => {
-    const activateDemoMode = () => {
+    const activateDemoMode = async () => {
       // Only attempt to activate demo mode on initial render if we haven't already tried
       // and only if we're not already connected or in demo mode
       if (!isConnected && !demoMode && !attemptedDemoActivation.current) {
@@ -34,10 +34,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         // Call toggleDemoMode - don't rely on state for condition
         try {
           console.log("Directly calling toggleDemoMode()");
-          toggleDemoMode();
+          await toggleDemoMode();
           
           // Force a state check after toggling demo mode
-          setTimeout(() => {
+          setTimeout(async () => {
             console.log("Checking demo mode status after forced activation:", {
               isConnected, 
               demoMode, 
@@ -45,8 +45,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             });
             
             if (!nepaliPayContract) {
-              console.error("Contract still not available after toggling demo mode!");
-              toggleDemoMode(); // Try one more time
+              console.error("Contract still not available after toggling demo mode, trying again");
+              await toggleDemoMode(); // Try one more time
             }
           }, 1000);
           
