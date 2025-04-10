@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRealTime } from '@/contexts/real-time-context';
+import { useBlockchain } from '@/contexts/blockchain-context';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -67,6 +68,23 @@ const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: 
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const { sendMessage } = useRealTime();
+  const { account, isConnected, connectWallet, sendTokens } = useBlockchain();
+  
+  // Check if wallet is connected
+  useEffect(() => {
+    if (!isConnected && !isProcessing) {
+      // Prompt user to connect wallet if not already connected
+      toast({
+        title: 'Connect Wallet',
+        description: 'Please connect your wallet to receive tokens after payment',
+        action: (
+          <Button size="sm" variant="outline" onClick={connectWallet}>
+            Connect
+          </Button>
+        ),
+      });
+    }
+  }, [isConnected, isProcessing, connectWallet, toast]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,11 +93,21 @@ const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: 
       return;
     }
     
+    if (!isConnected || !account) {
+      toast({
+        title: 'Wallet Not Connected',
+        description: 'Please connect your wallet to receive tokens',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsProcessing(true);
     
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
+        redirect: 'if_required',
         confirmParams: {
           return_url: `${window.location.origin}/dashboard`,
         },
@@ -100,6 +128,40 @@ const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: 
             error: error.message,
           }
         });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment successful, now transfer tokens from treasury
+        try {
+          // Record the successful payment in the database
+          await apiRequest('POST', '/api/token-purchase-success', {
+            amount,
+            paymentIntentId: paymentIntent.id,
+            walletAddress: account,
+          });
+          
+          // Notify via WebSocket for real-time updates
+          sendMessage({
+            type: 'payment_succeeded',
+            data: {
+              amount,
+              walletAddress: account,
+              txId: paymentIntent.id,
+            }
+          });
+          
+          toast({
+            title: 'Payment Successful',
+            description: `You've successfully purchased ${amount} NPT tokens!`,
+          });
+          
+          window.location.href = '/dashboard';
+        } catch (transferError: any) {
+          console.error('Token transfer error:', transferError);
+          toast({
+            title: 'Payment Succeeded, Token Transfer Pending',
+            description: 'Your payment was successful, but token transfer is still processing. Tokens will be sent to your wallet soon.',
+            variant: 'default',
+          });
+        }
       }
     } catch (err: any) {
       toast({

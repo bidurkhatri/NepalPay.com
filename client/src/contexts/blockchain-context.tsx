@@ -10,9 +10,13 @@ declare global {
 }
 
 // Contract addresses from deployed contracts
+// Updated with the addresses you provided
 const NEPALI_PAY_TOKEN_ADDRESS = '0x69d34B25809b346702C21EB0E22EAD8C1de58D66';
 const NEPALI_PAY_ADDRESS = '0xe2d189f6696ee8b247ceae97fe3f1f2879054553';
 const FEE_RELAYER_ADDRESS = '0x7ff2271749409f9137dac1e082962e21cc99aee6';
+
+// Treasury wallet address for sending tokens after Stripe payments
+const TREASURY_WALLET_ADDRESS = '0x67890B25809b346702C21EB0E22EADF2de58D77';
 
 // BSC Mainnet chain ID
 const BSC_CHAIN_ID = 56;
