@@ -224,14 +224,25 @@ export class PgStorage implements IStorage {
   
   async getUserTransactions(userId: number): Promise<Transaction[]> {
     await this.ensureDbInitialized();
-    return await db.select().from(transactions)
-      .where(
-        or(
-          eq(transactions.senderId, userId),
-          eq(transactions.receiverId, userId)
+    try {
+      console.log(`Fetching transactions for user ID: ${userId}`);
+      const query = db.select().from(transactions)
+        .where(
+          or(
+            eq(transactions.senderId, userId),
+            eq(transactions.receiverId, userId)
+          )
         )
-      )
-      .orderBy(desc(transactions.createdAt));
+        .orderBy(desc(transactions.createdAt));
+      
+      console.log('Transaction query:', query.toSQL());
+      return await query;
+    } catch (error) {
+      console.error('Error in getUserTransactions:', error);
+      console.error('SQL Error details:', error instanceof Error ? error.message : String(error));
+      console.error('User ID:', userId);
+      throw error;
+    }
   }
   
   async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
@@ -267,9 +278,20 @@ export class PgStorage implements IStorage {
   
   async getUserActivities(userId: number): Promise<Activity[]> {
     await this.ensureDbInitialized();
-    return await db.select().from(activities)
-      .where(eq(activities.userId, userId))
-      .orderBy(desc(activities.createdAt));
+    try {
+      console.log(`Fetching activities for user ID: ${userId}`);
+      const query = db.select().from(activities)
+        .where(eq(activities.userId, userId))
+        .orderBy(desc(activities.createdAt));
+      
+      console.log('Activity query:', query.toSQL());
+      return await query;
+    } catch (error) {
+      console.error('Error in getUserActivities:', error);
+      console.error('SQL Error details:', error instanceof Error ? error.message : String(error));
+      console.error('User ID:', userId);
+      throw error;
+    }
   }
   
   async createActivity(activityData: InsertActivity): Promise<Activity> {

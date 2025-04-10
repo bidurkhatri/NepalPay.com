@@ -113,11 +113,7 @@ export const activities = pgTable('activities', {
   description: text('description').notNull(),
   ipAddress: varchar('ip_address', { length: 50 }),
   userAgent: text('user_agent'),
-  metadata: json('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  transactionId: integer('transaction_id').references(() => transactions.id),
-  loanId: integer('loan_id').references(() => loans.id),
-  collateralId: integer('collateral_id').references(() => collaterals.id),
 });
 
 // Activity relations

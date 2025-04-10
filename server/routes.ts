@@ -92,8 +92,10 @@ export function registerRoutes(app: Express): Server {
 
       const loan = await storage.createLoan(loanData);
       
-      // Get user display name for notifications
-      const displayName = req.user.username || req.user.walletAddress?.substring(0, 8) || `User ${req.user.id}`;
+      // Get user ID for notifications
+      const userId = req.user.id;
+      // Create a display name from the user ID
+      const displayName = `User ${userId}`;
       
       // Broadcast loan application to admins
       broadcast({
