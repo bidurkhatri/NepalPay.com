@@ -216,7 +216,8 @@ const PurchaseTokensPage: React.FC = () => {
     getTokenPrice, 
     tokenPrice, 
     calculateFiatAmount,
-    feeStructure 
+    feeStructure,
+    account
   } = useBlockchain();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [purchaseAmount, setPurchaseAmount] = useState<string>('');

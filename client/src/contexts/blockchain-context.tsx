@@ -442,7 +442,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           const accounts = await web3Provider.listAccounts();
           if (accounts.length > 0) {
             // Get signer and set account
-            const address = accounts[0];
+            const address = accounts[0].address;
             setAccount(address);
             const signer = await web3Provider.getSigner();
             setSigner(signer);
@@ -452,7 +452,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
             await loadContracts(signer);
             
             // Get balances
-            const bnbBalance = await web3Provider.getBalance(accounts[0]);
+            const bnbBalance = await web3Provider.getBalance(accounts[0].address);
             setBalance(ethers.formatEther(bnbBalance));
             
             const tokenContract = new ethers.Contract(
@@ -460,7 +460,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
               ["function balanceOf(address) view returns (uint256)"],
               signer
             );
-            const nptBalance = await tokenContract.balanceOf(accounts[0]);
+            const nptBalance = await tokenContract.balanceOf(accounts[0].address);
             setTokenBalance(ethers.formatUnits(nptBalance, 18));
           }
         }
