@@ -319,7 +319,7 @@ export function registerRoutes(app: Express): Server {
         receiverId: req.user.id,
         amount: amount.toString(),
         currency: 'NPT',
-        type: 'deposit',
+        type: 'TOPUP', // Using allowed enum value from database
         status: 'pending',
         txHash: null,
         description: 'NPT token purchase via Stripe',
@@ -330,7 +330,7 @@ export function registerRoutes(app: Express): Server {
       // Record activity
       await storage.createActivity({
         userId: req.user.id,
-        action: 'transaction',
+        action: 'TOPUP', // Using allowed enum value from database
         description: 'Started NPT token purchase',
         ipAddress: null,
         userAgent: null,
@@ -633,7 +633,7 @@ async function handleSuccessfulPayment(paymentIntent: any): Promise<void> {
     // Record activity
     await storage.createActivity({
       userId: parseInt(userId, 10),
-      action: 'transaction',
+      action: 'TOPUP', // Using allowed enum value from database
       description: 'NPT token purchase completed',
       ipAddress: null,
       userAgent: null,
