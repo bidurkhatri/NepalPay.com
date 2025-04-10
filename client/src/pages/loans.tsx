@@ -153,17 +153,103 @@ const LoansPage: React.FC = () => {
     retry: 1,
   });
   
-  // Listen for real-time updates
+  // Monitor collateral values in real-time
+  const [collateralMonitoringActive, setCollateralMonitoringActive] = useState<boolean>(false);
+  const [realTimeCollateralValues, setRealTimeCollateralValues] = useState<{[key: number]: number}>({});
+  const [liquidationThresholds, setLiquidationThresholds] = useState<{[key: number]: number}>({});
+  const [collateralHealthStatus, setCollateralHealthStatus] = useState<{[key: number]: 'healthy' | 'warning' | 'danger'}>({});
+  
+  // Real-time monitoring effect
+  React.useEffect(() => {
+    if (!collateralMonitoringActive || !Array.isArray(collaterals) || !nepaliPayContract) return;
+    
+    // Define the monitoring function
+    const checkCollaterals = async () => {
+      try {
+        const newValues: {[key: number]: number} = {};
+        const newThresholds: {[key: number]: number} = {};
+        const newHealthStatus: {[key: number]: 'healthy' | 'warning' | 'danger'} = {};
+        
+        // Process each collateral
+        for (const collateral of collaterals) {
+          // Skip if not active or missing required data
+          if (!collateral.id || !collateral.collateralType || !collateral.amount) continue;
+          
+          // Get current value from blockchain
+          const currentValue = await nepaliPayContract.getCollateralValue(
+            collateral.collateralType,
+            ethers.parseEther(collateral.amount.toString())
+          );
+          
+          // Get liquidation threshold from blockchain
+          const liquidationThreshold = await nepaliPayContract.getLiquidationThreshold(collateral.collateralType);
+          
+          // Convert to numbers
+          const valueInNpt = Number(ethers.formatEther(currentValue));
+          const thresholdRatio = Number(ethers.formatUnits(liquidationThreshold, 2)) / 100;
+          
+          // Calculate health status
+          const loanId = collateral.loanId;
+          const loansArray = Array.isArray(loans) ? loans : [];
+          const loan = loansArray.find((l: any) => l.id === loanId && l.status === 'active');
+          if (loan) {
+            const loanAmount = parseFloat(loan.amount);
+            const currentLtv = loanAmount / valueInNpt;
+            
+            let healthStatus: 'healthy' | 'warning' | 'danger' = 'healthy';
+            if (currentLtv > thresholdRatio * 0.9) {
+              healthStatus = 'warning';
+            }
+            if (currentLtv > thresholdRatio) {
+              healthStatus = 'danger';
+            }
+            
+            // Store the calculated values
+            newValues[collateral.id] = valueInNpt;
+            newThresholds[collateral.id] = thresholdRatio;
+            newHealthStatus[collateral.id] = healthStatus;
+          }
+        }
+        
+        // Update state with new values
+        setRealTimeCollateralValues(newValues);
+        setLiquidationThresholds(newThresholds);
+        setCollateralHealthStatus(newHealthStatus);
+      } catch (error) {
+        console.error("Error monitoring collateral values:", error);
+      }
+    };
+    
+    // Initial check
+    checkCollaterals();
+    
+    // Set up an interval to monitor collateral values
+    const monitorInterval = setInterval(checkCollaterals, 60000); // Check every minute
+    
+    // Clean up interval on unmount
+    return () => clearInterval(monitorInterval);
+  }, [collateralMonitoringActive, collaterals, loans, nepaliPayContract]);
+  
+  // Listen for real-time updates from WebSocket
   React.useEffect(() => {
     if (
       lastMessage?.type === 'loan_approved' || 
       lastMessage?.type === 'loan_rejected' ||
-      lastMessage?.type === 'collateral_locked'
+      lastMessage?.type === 'collateral_locked' ||
+      lastMessage?.type === 'loan_repaid' ||
+      lastMessage?.type === 'collateral_liquidated'
     ) {
       refetchLoans();
       refetchCollaterals();
+      
+      // Enable monitoring when loans are active
+      if (Array.isArray(loans) && loans.some((loan: any) => loan.status === 'active')) {
+        setCollateralMonitoringActive(true);
+      } else {
+        setCollateralMonitoringActive(false);
+      }
     }
-  }, [lastMessage, refetchLoans, refetchCollaterals]);
+  }, [lastMessage, refetchLoans, refetchCollaterals, loans]);
   
   // Loan application form
   const form = useForm<LoanFormData>({
@@ -348,8 +434,104 @@ const LoansPage: React.FC = () => {
   const calculateRepaymentAmount = (loan: any) => {
     const principal = parseFloat(loan.amount);
     const interest = principal * parseFloat(loan.interestRate);
-    const originationFee = parseFloat(loan.originationFee);
+    const originationFee = parseFloat(loan.originationFee) || 0;
     return (principal + interest + originationFee).toFixed(2);
+  };
+  
+  // Dialog state for loan repayment
+  const [repaymentDialogOpen, setRepaymentDialogOpen] = useState<boolean>(false);
+  const [loanToRepay, setLoanToRepay] = useState<any>(null);
+  const [repaymentLoading, setRepaymentLoading] = useState<boolean>(false);
+  
+  // Handle loan repayment
+  const handleRepayLoan = (loan: any) => {
+    setLoanToRepay(loan);
+    setRepaymentDialogOpen(true);
+  };
+  
+  // Process loan repayment with blockchain
+  const processRepayment = async () => {
+    if (!loanToRepay || !tokenContract || !nepaliPayContract || !user) {
+      toast({
+        title: "Error",
+        description: "Missing loan details or blockchain connection",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      setRepaymentLoading(true);
+      
+      const repaymentAmount = calculateRepaymentAmount(loanToRepay);
+      
+      // 1. Get collateral information
+      const collateral = getLoanCollateral(loanToRepay.id);
+      if (!collateral) {
+        throw new Error("Collateral not found for this loan");
+      }
+      
+      // 2. Approve NPT token transfer to smart contract
+      const amountToRepay = ethers.parseEther(repaymentAmount);
+      const approveTx = await tokenContract.approve(nepaliPayContract.address, amountToRepay);
+      await approveTx.wait();
+      
+      // 3. Call repayLoan function on the smart contract
+      const repayTx = await nepaliPayContract.repayLoan(
+        loanToRepay.id,
+        amountToRepay,
+        collateral.collateralType,
+        ethers.parseEther(collateral.amount)
+      );
+      await repayTx.wait();
+      
+      // 4. Update loan status in database
+      const updateResponse = await apiRequest('PATCH', `/api/loans/${loanToRepay.id}`, {
+        status: 'repaid',
+        repaidAmount: loanToRepay.amount,
+        repaymentDate: new Date().toISOString()
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update loan status");
+      }
+      
+      // 5. Update collateral status
+      await apiRequest('PATCH', `/api/collaterals/${collateral.id}`, {
+        status: 'released'
+      });
+      
+      // 6. Send WebSocket notification
+      sendMessage({
+        type: 'loan_repaid',
+        data: {
+          loanId: loanToRepay.id,
+          userId: user.id
+        }
+      });
+      
+      toast({
+        title: "Loan Repaid Successfully",
+        description: "Your collateral has been released",
+      });
+      
+      // Refresh data
+      refetchLoans();
+      refetchCollaterals();
+      
+      // Close dialog
+      setRepaymentDialogOpen(false);
+      setLoanToRepay(null);
+    } catch (error: any) {
+      console.error("Loan repayment error:", error);
+      toast({
+        title: "Repayment Failed",
+        description: error.message || "Failed to process loan repayment",
+        variant: "destructive"
+      });
+    } finally {
+      setRepaymentLoading(false);
+    }
   };
   
   return (
@@ -468,7 +650,16 @@ const LoansPage: React.FC = () => {
                   {filteredLoans.map((loan: any) => {
                     const collateral = getLoanCollateral(loan.id);
                     return (
-                      <Card key={loan.id} className="bg-card/50 backdrop-blur-sm border-primary/10">
+                      <Card 
+                        key={loan.id} 
+                        className={`bg-card/50 backdrop-blur-sm ${
+                          collateral && collateral.id && collateralHealthStatus[collateral.id] === 'danger'
+                            ? 'border-red-500/30'
+                            : collateral && collateral.id && collateralHealthStatus[collateral.id] === 'warning'
+                            ? 'border-yellow-500/30'
+                            : 'border-primary/10'
+                        }`}
+                      >
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-center">
                             <CardTitle className="text-lg">Loan #{loan.id}</CardTitle>
@@ -550,9 +741,51 @@ const LoansPage: React.FC = () => {
                               
                               {loan.status === 'active' && (
                                 <div className="flex flex-col space-y-2">
-                                  <Button>
+                                  <Button 
+                                    onClick={() => handleRepayLoan(loan)}
+                                    disabled={walletLoading || !wallet || parseFloat((wallet as any)?.nptBalance || '0') < parseFloat(calculateRepaymentAmount(loan))}
+                                  >
+                                    <BadgeDollarSign className="mr-2 h-4 w-4" />
                                     Repay Loan
                                   </Button>
+                                  
+                                  {/* Collateral Health Indicator */}
+                                  {collateral && collateral.id && (
+                                    <div className={`rounded-md p-3 mt-2 text-sm
+                                      ${collateralHealthStatus[collateral.id] === 'danger' 
+                                        ? 'bg-red-500/10 border border-red-500/20 text-red-500' 
+                                        : collateralHealthStatus[collateral.id] === 'warning'
+                                        ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-500'
+                                        : 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                      }
+                                    `}>
+                                      <div className="flex items-center justify-between">
+                                        <div className="font-medium">
+                                          {collateralHealthStatus[collateral.id] === 'danger' 
+                                            ? 'At Risk of Liquidation' 
+                                            : collateralHealthStatus[collateral.id] === 'warning'
+                                            ? 'Approaching Liquidation' 
+                                            : 'Healthy'
+                                          }
+                                        </div>
+                                        {realTimeCollateralValues[collateral.id] && (
+                                          <div className="text-xs">
+                                            Current Value: {realTimeCollateralValues[collateral.id].toFixed(2)} NPT
+                                          </div>
+                                        )}
+                                      </div>
+                                      {collateralHealthStatus[collateral.id] === 'danger' && (
+                                        <div className="text-xs mt-1">
+                                          Urgent: Your collateral is at risk of liquidation. Please repay your loan or add more collateral.
+                                        </div>
+                                      )}
+                                      {collateralHealthStatus[collateral.id] === 'warning' && (
+                                        <div className="text-xs mt-1">
+                                          Warning: Your collateral value is dropping close to the liquidation threshold.
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -612,6 +845,62 @@ const LoansPage: React.FC = () => {
           </Tabs>
         </div>
       </div>
+      
+      {/* Loan Repayment Dialog */}
+      <Dialog open={repaymentDialogOpen} onOpenChange={setRepaymentDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Loan Repayment</DialogTitle>
+            <DialogDescription>
+              Repay your loan to release your collateral. This will interact with the blockchain smart contract.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {loanToRepay && (
+            <div className="space-y-4 my-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Loan Amount</div>
+                  <div className="font-medium">{parseFloat(loanToRepay.amount).toFixed(2)} NPT</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Repayment Amount</div>
+                  <div className="font-medium">{calculateRepaymentAmount(loanToRepay)} NPT</div>
+                </div>
+              </div>
+              
+              <Alert className="bg-primary/5 border-primary/10">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This will use NPT tokens from your wallet and release your collateral through the blockchain smart contract.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRepaymentDialogOpen(false)} disabled={repaymentLoading}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={processRepayment} 
+              disabled={repaymentLoading || !loanToRepay || !wallet?.nptBalance || parseFloat(wallet.nptBalance) < parseFloat(calculateRepaymentAmount(loanToRepay || {}))}
+            >
+              {repaymentLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <BadgeDollarSign className="mr-2 h-4 w-4" />
+                  Confirm Repayment
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Loan Application Dialog */}
       <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
