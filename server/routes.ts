@@ -67,28 +67,50 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Validate required fields
+      const { amount, interestRate, termDays, collateralRequired } = req.body;
+      
+      if (!amount || !interestRate || !termDays) {
+        return res.status(400).json({ 
+          error: 'Missing required loan fields', 
+          details: 'Amount, interest rate, and term days are required' 
+        });
+      }
+      
+      // Create loan with proper types
       const loanData = {
         userId: req.user.id,
-        amount: req.body.amount,
-        interestRate: req.body.interestRate,
-        termDays: req.body.termDays,
-        status: 'pending',
+        amount: String(amount),
+        interestRate: String(interestRate),
+        termDays: Number(termDays),
+        loanToValueRatio: '0.8', // Default loan-to-value ratio
+        status: 'pending' as const, // Type assertion for enum
         originationFee: '0',
         repaidAmount: '0',
-        collateralRequired: req.body.collateralRequired,
+        collateralRequired: Boolean(collateralRequired),
       };
 
       const loan = await storage.createLoan(loanData);
       
-      // Broadcast loan application via WebSocket
+      // Get user display name for notifications
+      const displayName = req.user.username || req.user.walletAddress?.substring(0, 8) || `User ${req.user.id}`;
+      
+      // Broadcast loan application to admins
       broadcast({
         type: 'loan_application',
         data: {
           loanId: loan.id,
           userId: req.user.id,
-          username: req.user.username,
+          displayName: displayName,
           amount: loan.amount,
+          timestamp: new Date(),
         },
+      });
+      
+      // Also send confirmation to the user
+      broadcastToUser(req.user.id, {
+        type: 'loan_created',
+        data: loan
       });
       
       return res.status(201).json(loan);
@@ -131,14 +153,32 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: 'Not authorized to add collateral to this loan' });
       }
       
+      // Validate collateral data
+      const { collateralType, amount, valueInNpt } = req.body;
+      
+      if (!collateralType || !amount || !valueInNpt) {
+        return res.status(400).json({ 
+          error: 'Missing required collateral fields' 
+        });
+      }
+      
+      // Validate collateral type
+      if (!['BNB', 'ETH', 'BTC'].includes(collateralType)) {
+        return res.status(400).json({ 
+          error: 'Invalid collateral type', 
+          validTypes: ['BNB', 'ETH', 'BTC'] 
+        });
+      }
+      
+      // Create collateral with proper types
       const collateralData = {
         userId: req.user.id,
-        loanId: req.body.loanId,
-        collateralType: req.body.collateralType,
-        amount: req.body.amount,
-        valueInNpt: req.body.valueInNpt,
-        valueToLoanRatio: req.body.valueToLoanRatio,
-        status: 'locked',
+        loanId: Number(req.body.loanId),
+        collateralType: collateralType as 'BNB' | 'ETH' | 'BTC',
+        amount: String(amount),
+        valueInNpt: String(valueInNpt),
+        valueToLoanRatio: String(req.body.valueToLoanRatio || '0.8'),
+        status: 'locked' as const,
       };
 
       const collateral = await storage.createCollateral(collateralData);
@@ -363,12 +403,32 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
   // Create WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    // Add proper error handling
+    clientTracking: true,
+    perMessageDeflate: {
+      zlibDeflateOptions: {
+        chunkSize: 1024,
+        memLevel: 7,
+        level: 3
+      },
+      zlibInflateOptions: {
+        chunkSize: 10 * 1024
+      },
+      threshold: 1024, // Only compress messages larger than this
+    }
+  });
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
     // Add client to set
     clients.add(ws);
-    log('WebSocket client connected');
+    const clientIp = req.socket.remoteAddress || 'unknown';
+    log(`WebSocket client connected from ${clientIp}`);
+
+    // Associate user ID with connection for targeted messaging
+    let userId: number | null = null;
 
     // Handle messages from client
     ws.on('message', (message) => {
@@ -380,6 +440,43 @@ export function registerRoutes(app: Express): Server {
         if (data.type === 'ping') {
           ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
         }
+        else if (data.type === 'auth' && data.userId) {
+          userId = parseInt(data.userId, 10);
+          log(`WebSocket authenticated for user ID: ${userId}`);
+          
+          // Register this connection with the user's ID
+          if (!isNaN(userId)) {
+            // Add to userSockets map
+            if (!userSockets.has(userId)) {
+              userSockets.set(userId, new Set());
+            }
+            userSockets.get(userId)!.add(ws);
+            
+            // Send wallet info
+            storage.getWalletByUserId(userId)
+              .then(wallet => {
+                if (wallet && ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ 
+                    type: 'wallet_update', 
+                    data: wallet 
+                  }));
+                }
+              })
+              .catch(err => log(`Error fetching wallet for WebSocket: ${err}`));
+              
+            // Also send transactions info
+            storage.getUserTransactions(userId)
+              .then(transactions => {
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(JSON.stringify({ 
+                    type: 'transactions_update', 
+                    data: transactions 
+                  }));
+                }
+              })
+              .catch(err => log(`Error fetching transactions for WebSocket: ${err}`));
+          }
+        }
       } catch (error) {
         log(`WebSocket message error: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -387,26 +484,110 @@ export function registerRoutes(app: Express): Server {
 
     // Handle client disconnect
     ws.on('close', () => {
+      // Remove from general clients set
       clients.delete(ws);
-      log('WebSocket client disconnected');
+      
+      // Remove from user socket mapping if authenticated
+      if (userId !== null) {
+        const userClients = userSockets.get(userId);
+        if (userClients) {
+          userClients.delete(ws);
+          // If no more connections for this user, remove the user entry
+          if (userClients.size === 0) {
+            userSockets.delete(userId);
+          }
+        }
+      }
+      
+      log(`WebSocket client disconnected ${userId ? `(user ID: ${userId})` : ''}`);
+    });
+
+    // Handle errors
+    ws.on('error', (error) => {
+      log(`WebSocket error: ${error instanceof Error ? error.message : String(error)}`);
+      
+      // Remove from general clients set
+      clients.delete(ws);
+      
+      // Remove from user socket mapping if authenticated
+      if (userId !== null) {
+        const userClients = userSockets.get(userId);
+        if (userClients) {
+          userClients.delete(ws);
+          // If no more connections for this user, remove the user entry
+          if (userClients.size === 0) {
+            userSockets.delete(userId);
+          }
+        }
+      }
     });
 
     // Send welcome message
-    ws.send(JSON.stringify({ type: 'welcome', message: 'Connected to NepaliPay WebSocket server' }));
+    try {
+      ws.send(JSON.stringify({ 
+        type: 'welcome', 
+        message: 'Connected to NepaliPay WebSocket server',
+        timestamp: Date.now() 
+      }));
+    } catch (error) {
+      log(`Error sending welcome message: ${error instanceof Error ? error.message : String(error)}`);
+    }
   });
 
   return httpServer;
 }
 
+// Store user ID to WebSocket client mapping
+const userSockets: Map<number, Set<WebSocket>> = new Map();
+
 /**
  * Broadcast a message to all connected WebSocket clients
  */
 function broadcast(data: any): void {
+  let successCount = 0;
+  let errorCount = 0;
+  
   clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+      try {
+        client.send(JSON.stringify(data));
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        log(`Error broadcasting to client: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   });
+  
+  log(`Broadcast complete: ${successCount} successful, ${errorCount} failed`);
+}
+
+/**
+ * Broadcast a message to a specific user by their ID
+ */
+function broadcastToUser(userId: number, data: any): void {
+  const userClients = userSockets.get(userId);
+  if (!userClients || userClients.size === 0) {
+    log(`No active WebSocket connections for user ID: ${userId}`);
+    return;
+  }
+
+  let successCount = 0;
+  let errorCount = 0;
+  
+  userClients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      try {
+        client.send(JSON.stringify(data));
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        log(`Error broadcasting to user ${userId}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  });
+  
+  log(`User broadcast complete for user ${userId}: ${successCount} successful, ${errorCount} failed`);
 }
 
 /**
@@ -458,12 +639,17 @@ async function handleSuccessfulPayment(paymentIntent: any): Promise<void> {
       userAgent: null,
     });
 
-    // Broadcast to WebSocket clients
-    broadcast({
+    // Get updated wallet data to send to client
+    const updatedWallet = await storage.getWalletByUserId(parseInt(userId, 10));
+    
+    // Broadcast specifically to this user
+    const parsedUserId = parseInt(userId, 10);
+    broadcastToUser(parsedUserId, {
       type: 'transaction_completed',
       data: { 
         transactionId: transaction.id,
-        userId: parseInt(userId, 10)
+        userId: parsedUserId,
+        wallet: updatedWallet
       },
     });
 
@@ -511,12 +697,13 @@ async function handleFailedPayment(paymentIntent: any): Promise<void> {
       userAgent: null,
     });
 
-    // Broadcast to WebSocket clients
-    broadcast({
+    // Broadcast specifically to this user
+    const parsedUserId = parseInt(userId, 10);
+    broadcastToUser(parsedUserId, {
       type: 'transaction_failed',
       data: { 
         transactionId: transaction.id,
-        userId: parseInt(userId, 10),
+        userId: parsedUserId,
         error: paymentIntent.last_payment_error?.message || 'Payment failed'
       },
     });

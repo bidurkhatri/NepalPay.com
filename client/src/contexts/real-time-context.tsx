@@ -36,10 +36,18 @@ export const RealTimeProvider: React.FC<{ children: ReactNode }> = ({ children }
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws`;
         
+        console.log(`Attempting to connect WebSocket to: ${wsUrl}`);
         setWsStatus('connecting');
+        
+        // Close existing connection if any
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+        
         const ws = new WebSocket(wsUrl);
         
         ws.onopen = () => {
+          console.log('WebSocket connection established');
           setWsStatus('connected');
           toast({
             title: "Connected",
@@ -49,10 +57,15 @@ export const RealTimeProvider: React.FC<{ children: ReactNode }> = ({ children }
           
           // Send authentication message after connection
           if (user) {
-            ws.send(JSON.stringify({
-              type: 'auth',
-              userId: user.id,
-            }));
+            try {
+              ws.send(JSON.stringify({
+                type: 'auth',
+                userId: user.id,
+              }));
+              console.log(`Authentication message sent for user ID: ${user.id}`);
+            } catch (sendError) {
+              console.error('Error sending authentication message:', sendError);
+            }
           }
         };
         
