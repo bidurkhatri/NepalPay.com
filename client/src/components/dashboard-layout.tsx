@@ -31,30 +31,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         console.log("No wallet connection detected, forcing demo mode activation");
         attemptedDemoActivation.current = true;
         
+        // Small delay to ensure React has updated all state
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Call toggleDemoMode - don't rely on state for condition
         try {
           console.log("Directly calling toggleDemoMode()");
           await toggleDemoMode();
           
-          // Force a state check after toggling demo mode
-          setTimeout(async () => {
+          // Force a state check after toggling demo mode with a longer delay
+          setTimeout(() => {
             console.log("Checking demo mode status after forced activation:", {
               isConnected, 
               demoMode, 
               hasNepaliPayContract: !!nepaliPayContract
             });
             
-            if (!nepaliPayContract) {
-              console.error("Contract still not available after toggling demo mode, trying again");
-              await toggleDemoMode(); // Try one more time
+            // If the contract still isn't available, show a message to the user
+            if (!nepaliPayContract && !demoMode) {
+              toast({
+                title: "Demo Mode Not Activated",
+                description: "Try clicking the Demo Mode toggle button manually.",
+                variant: "destructive",
+                duration: 5000,
+              });
+            } else {
+              toast({
+                title: "Demo Mode Active",
+                description: "Using simulated blockchain connections for testing.",
+                duration: 5000,
+              });
             }
-          }, 1000);
-          
-          toast({
-            title: "Using Real Smart Contracts",
-            description: "Connected to real NepaliPay contracts on BSC mainnet in read-only mode.",
-            duration: 5000,
-          });
+          }, 1500);
         } catch (err) {
           console.error("Error activating demo mode:", err);
         }
