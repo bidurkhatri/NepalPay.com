@@ -98,6 +98,12 @@ const defaultContextValue: BlockchainContextType = {
     EUR: 143.25,
     GBP: 167.40
   },
+  feeStructure: {
+    purchaseFee: 0.02,    // 2% default
+    transferFee: 0.01,    // 1% default
+    paymentFee: 0.015,    // 1.5% default
+    withdrawalFee: 0.025  // 2.5% default
+  },
   connectWallet: async () => {},
   disconnectWallet: () => {},
   refreshBalances: async () => {},

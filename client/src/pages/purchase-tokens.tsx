@@ -62,13 +62,25 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: string }) => {
+const CheckoutForm = ({ 
+  clientSecret, 
+  amount, 
+  walletAddress 
+}: { 
+  clientSecret: string, 
+  amount: string, 
+  walletAddress: string | null 
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const { sendMessage } = useRealTime();
-  const { account, isConnected, connectWallet, sendTokens } = useBlockchain();
+  const { 
+    account, 
+    isConnected, 
+    connectWallet 
+  } = useBlockchain();
   
   // Check if wallet is connected
   useEffect(() => {
@@ -199,6 +211,13 @@ const CheckoutForm = ({ clientSecret, amount }: { clientSecret: string, amount: 
 const PurchaseTokensPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { 
+    isConnected, 
+    getTokenPrice, 
+    tokenPrice, 
+    calculateFiatAmount,
+    feeStructure 
+  } = useBlockchain();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [purchaseAmount, setPurchaseAmount] = useState<string>('');
   const [realTimePrice, setRealTimePrice] = useState<{
@@ -269,8 +288,12 @@ const PurchaseTokensPage: React.FC = () => {
     const paymentMethod = form.watch('paymentMethod');
     
     if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-      // Calculate fee based on payment method (2% for card, 1% for bank)
-      const feePercentage = paymentMethod === 'card' ? 0.02 : 0.01;
+      // Use fee from smart contract, adjusted for payment method
+      // Smart contract's purchaseFee is the base fee
+      // Add a small additional fee for card payments
+      const feePercentage = paymentMethod === 'card' 
+        ? feeStructure.purchaseFee + 0.01 // Card payment adds 1% extra
+        : feeStructure.purchaseFee;       // Base fee for bank transfers
       
       // Get token amount using smart contract exchange rate
       const nptAmount = Number(amount);
@@ -279,7 +302,7 @@ const PurchaseTokensPage: React.FC = () => {
       // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
       const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
       
-      // Calculate processing fee
+      // Calculate processing fee using the smart contract's fee structure
       const fees = fiatAmount * feePercentage;
       
       // Calculate total (fiat amount + fees)
@@ -306,7 +329,7 @@ const PurchaseTokensPage: React.FC = () => {
         total: 0
       });
     }
-  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice]);
+  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice, feeStructure, calculateFiatAmount]);
 
   return (
     <div className="py-6 space-y-6">
@@ -424,7 +447,11 @@ const PurchaseTokensPage: React.FC = () => {
               
               <CardContent>
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm clientSecret={clientSecret} amount={purchaseAmount} />
+                  <CheckoutForm 
+                    clientSecret={clientSecret} 
+                    amount={purchaseAmount} 
+                    walletAddress={account} 
+                  />
                 </Elements>
               </CardContent>
             </Card>
@@ -479,6 +506,31 @@ const PurchaseTokensPage: React.FC = () => {
                   <li>Apply for micro-loans and earn interest</li>
                   <li>Participate in the NepaliPay ecosystem</li>
                 </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-1">Fee Structure</h3>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li className="flex justify-between">
+                    <span>Purchase Fee:</span>
+                    <span className="font-medium">{(feeStructure.purchaseFee * 100).toFixed(2)}%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Transfer Fee:</span>
+                    <span className="font-medium">{(feeStructure.transferFee * 100).toFixed(2)}%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Payment Fee:</span>
+                    <span className="font-medium">{(feeStructure.paymentFee * 100).toFixed(2)}%</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Withdrawal Fee:</span>
+                    <span className="font-medium">{(feeStructure.withdrawalFee * 100).toFixed(2)}%</span>
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Fees are retrieved directly from the smart contract and may change based on market conditions.
+                </p>
               </div>
             </CardContent>
           </Card>
