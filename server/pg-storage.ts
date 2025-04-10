@@ -226,16 +226,22 @@ export class PgStorage implements IStorage {
     await this.ensureDbInitialized();
     try {
       console.log(`Fetching transactions for user ID: ${userId}`);
-      // Use simpler SQL query approach
-      const { rows } = await pool.query(
-        `SELECT * FROM transactions 
-         WHERE sender_id = $1 OR receiver_id = $1 
-         ORDER BY created_at DESC`,
-        [userId]
+      
+      // Try a simpler approach without WHERE clause first to debug
+      const { rows } = await pool.query(`
+        SELECT * FROM transactions 
+        ORDER BY created_at DESC
+      `);
+      
+      // Filter in JavaScript after fetching all results
+      const userTransactions = rows.filter(tx => 
+        tx.sender_id === userId || tx.receiver_id === userId
       );
       
-      console.log(`Found ${rows.length} transactions`);
-      return rows as Transaction[];
+      console.log(`Found ${userTransactions.length} transactions for user ID ${userId} out of ${rows.length} total`);
+      
+      // Cast to proper type
+      return userTransactions as unknown as Transaction[];
     } catch (error) {
       console.error('Error in getUserTransactions:', error);
       console.error('SQL Error details:', error instanceof Error ? error.message : String(error));
