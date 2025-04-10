@@ -681,9 +681,79 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       setBalance('1000');
       setTokenBalance('5000');
       
+      // Create a mock contract with the methods needed
+      const mockTokenContract = {
+        getTokenPrice: async () => ethers.parseUnits('1', 18),
+        getTokenPriceInUSD: async () => ethers.parseUnits('0.0075', 18),
+        getTokenPriceInEUR: async () => ethers.parseUnits('0.007', 18),
+        getTokenPriceInGBP: async () => ethers.parseUnits('0.006', 18),
+        getExchangeRate: async (currency: string) => {
+          const rates = {
+            'USD': ethers.parseUnits('133.05', 6),
+            'EUR': ethers.parseUnits('143.25', 6),
+            'GBP': ethers.parseUnits('167.40', 6),
+            'NPR': ethers.parseUnits('1', 6)
+          };
+          return rates[currency] || ethers.parseUnits('1', 6);
+        },
+        getPurchaseFee: async () => ethers.parseUnits('0.02', 6),
+        getTransferFee: async () => ethers.parseUnits('0.01', 6),
+        getPaymentFee: async () => ethers.parseUnits('0.015', 6),
+        getWithdrawalFee: async () => ethers.parseUnits('0.025', 6),
+        balanceOf: async () => ethers.parseUnits('5000', 18),
+        transfer: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        approve: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) })
+      };
+      
+      // Create a mock NepaliPay contract
+      const mockNepaliPayContract = {
+        address: NEPALI_PAY_ADDRESS,
+        getCollateralValue: async (collateralType: string, amount: ethers.BigNumberish) => {
+          const rates = {
+            'BNB': 450,
+            'ETH': 900,
+            'BTC': 12000
+          };
+          const valuePerUnit = rates[collateralType] || 1;
+          const amountNumber = Number(ethers.formatEther(amount));
+          return ethers.parseEther((amountNumber * valuePerUnit).toString());
+        },
+        getLoanToValueRatio: async (collateralType: string) => {
+          const ratios = {
+            'BNB': 70,
+            'ETH': 75,
+            'BTC': 80
+          };
+          return ethers.parseUnits((ratios[collateralType] || 50).toString(), 2);
+        },
+        getLiquidationThreshold: async (collateralType: string) => {
+          const thresholds = {
+            'BNB': 80,
+            'ETH': 85,
+            'BTC': 90
+          };
+          return ethers.parseUnits((thresholds[collateralType] || 75).toString(), 2);
+        },
+        depositTokens: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        withdrawTokens: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        setUsername: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        addCollateral: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        takeLoan: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        repayLoan: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        claimReferralReward: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) }),
+        claimCashback: async () => ({ wait: async () => ({ hash: '0xdemo-transaction-hash' }) })
+      };
+      
+      // Set the mock contracts
+      setTokenContract(mockTokenContract as unknown as ethers.Contract);
+      setNepaliPayContract(mockNepaliPayContract as unknown as ethers.Contract);
+      
+      // Get prices and rates immediately
+      getTokenPrice();
+      
       toast({
         title: 'Demo Mode Activated',
-        description: 'You are now using NepaliPay in demo mode',
+        description: 'You are now using NepaliPay in demo mode with simulated blockchain',
         variant: 'default',
       });
     } else {
@@ -692,6 +762,9 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       setIsConnected(false);
       setBalance('0');
       setTokenBalance('0');
+      setTokenContract(null);
+      setNepaliPayContract(null);
+      setFeeRelayerContract(null);
       
       toast({
         title: 'Demo Mode Deactivated',
