@@ -659,7 +659,11 @@ const LoansPage: React.FC = () => {
     }
   };
   
-  // Using the handleActivateDemo function defined earlier
+  // Using activatingDemo and handleActivateDemo defined earlier
+    } finally {
+      setActivatingDemo(false);
+    }
+  };
   
   return (
     <div className="py-6 space-y-6">
