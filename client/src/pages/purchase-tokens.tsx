@@ -293,68 +293,103 @@ const PurchaseTokensPage: React.FC = () => {
       paymentMethod, 
       tokenPrice, 
       feeStructure, 
-      isConnected 
+      isConnected,
+      hasTokenContract: !!tokenContract,
+      hasPriceFunction: tokenContract && typeof tokenContract.getTokenPrice === 'function'
     });
     
     if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-      // Use demo mode if blockchain isn't connected yet
-      if (!isConnected) {
-        console.log("Using demo mode for price calculations");
+      try {
+        // First try to use real smart contract functions, even in demo mode
+        if (tokenContract && typeof tokenContract.getExchangeRate === 'function') {
+          console.log("Using real smart contract for price calculations");
+          
+          // Use fee from smart contract, adjusted for payment method
+          // Smart contract's purchaseFee is the base fee
+          // Add a small additional fee for card payments
+          const feePercentage = paymentMethod === 'card' 
+            ? (feeStructure.purchaseFee + 0.01) || 0.02 // Card payment adds 1% extra
+            : feeStructure.purchaseFee || 0.01;         // Base fee for bank transfers
+          
+          console.log("Using fee percentage from contract:", feePercentage);
+          
+          // Get token amount using smart contract exchange rate
+          const nptAmount = Number(amount);
+          
+          // Convert to fiat amount using the exchange rate from smart contract
+          // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
+          const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
+          console.log("Calculated fiat amount from contract:", fiatAmount);
+          
+          // If fiat amount is still 0, use direct conversion as fallback
+          const finalFiatAmount = fiatAmount > 0 ? fiatAmount : nptAmount;
+          
+          // Calculate processing fee using the smart contract's fee structure
+          const fees = finalFiatAmount * feePercentage;
+          
+          // Calculate total (fiat amount + fees)
+          const total = finalFiatAmount + fees;
+          
+          // Set real-time price data using blockchain values
+          setRealTimePrice({
+            nptAmount,
+            fiatAmount: finalFiatAmount,
+            fiatCurrency: 'NPR',
+            exchangeRate: tokenPrice.nprRate || 1,
+            fees,
+            total
+          });
+          
+          console.log("Real smart contract calculation results:", {
+            nptAmount,
+            fiatAmount: finalFiatAmount,
+            feePercentage,
+            fees,
+            total,
+            exchangeRate: tokenPrice.nprRate || 1
+          });
+        } else {
+          // Fallback if contract isn't available
+          console.log("Smart contract not available, using fallback calculations");
+          const nptAmount = Number(amount);
+          const fiatAmount = nptAmount; // 1:1 rate for NPR as fallback
+          const feePercentage = 0.02; // 2% fee as fallback
+          const fees = fiatAmount * feePercentage;
+          const total = fiatAmount + fees;
+          
+          console.log("Fallback price calculation results:", {
+            nptAmount,
+            fiatAmount,
+            feePercentage,
+            fees,
+            total
+          });
+          
+          setRealTimePrice({
+            nptAmount,
+            fiatAmount,
+            fiatCurrency: 'NPR',
+            exchangeRate: 1,
+            fees,
+            total
+          });
+        }
+      } catch (error) {
+        console.error("Error calculating token prices:", error);
+        
+        // Fallback calculation on error
         const nptAmount = Number(amount);
-        const fiatAmount = nptAmount; // 1:1 rate for NPR in demo mode
-        const feePercentage = 0.01; // 1% fee in demo mode
+        const fiatAmount = nptAmount; // 1:1 rate for NPR as fallback on error
+        const feePercentage = 0.02; // 2% fee as fallback
         const fees = fiatAmount * feePercentage;
         const total = fiatAmount + fees;
-        
-        console.log("Demo price calculation results:", {
-          nptAmount,
-          fiatAmount,
-          feePercentage,
-          fees,
-          total
-        });
-        
-        setRealTimePrice({
-          nptAmount,
-          fiatAmount,
-          fiatCurrency: 'NPR',
-          exchangeRate: 1,
-          fees,
-          total
-        });
-      } else {
-        // Use fee from smart contract, adjusted for payment method
-        // Smart contract's purchaseFee is the base fee
-        // Add a small additional fee for card payments
-        const feePercentage = paymentMethod === 'card' 
-          ? (feeStructure.purchaseFee + 0.01) || 0.02 // Card payment adds 1% extra
-          : feeStructure.purchaseFee || 0.01;         // Base fee for bank transfers
-        
-        console.log("Using fee percentage:", feePercentage);
-        
-        // Get token amount using smart contract exchange rate
-        const nptAmount = Number(amount);
-        
-        // Convert to fiat amount using the exchange rate from smart contract
-        // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
-        const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
-        console.log("Calculated fiat amount:", fiatAmount);
-        
-        // If fiat amount is still 0, use direct conversion as fallback
-        const finalFiatAmount = fiatAmount > 0 ? fiatAmount : nptAmount;
-        
-        // Calculate processing fee using the smart contract's fee structure
-        const fees = finalFiatAmount * feePercentage;
-        
-        // Calculate total (fiat amount + fees)
-        const total = finalFiatAmount + fees;
         
         // Current exchange rate from smart contract
         const currentRate = tokenPrice.nprRate || 1;
         
-        console.log("Final price calculation results:", {
+        console.log("Error handler price calculation results:", {
           nptAmount,
-          finalFiatAmount,
+          fiatAmount,
           feePercentage,
           fees,
           total,
@@ -363,7 +398,7 @@ const PurchaseTokensPage: React.FC = () => {
         
         setRealTimePrice({
           nptAmount,
-          fiatAmount: finalFiatAmount,
+          fiatAmount,
           fiatCurrency: 'NPR',
           exchangeRate: currentRate,
           fees,
