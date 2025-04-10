@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useRef } from 'react';
 import Sidebar from './sidebar';
 import MobileNavigation from './mobile-navigation';
 import { useLocation } from 'wouter';
@@ -20,16 +20,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { toast } = useToast();
   
   // Auto-activate demo mode if not connected to a wallet
+  const attemptedDemoActivation = useRef(false);
+  
   useEffect(() => {
-    if (!isConnected && !demoMode) {
+    // Only attempt to activate demo mode on initial render if we haven't already tried
+    if (!isConnected && !demoMode && !attemptedDemoActivation.current) {
       console.log("No wallet connection detected, auto-activating demo mode");
-      toggleDemoMode();
+      attemptedDemoActivation.current = true;
       
-      toast({
-        title: "Demo Mode Activated",
-        description: "You're using NepaliPay in demo mode. Connect a wallet to use real blockchain features.",
-        duration: 5000,
-      });
+      // Use setTimeout to ensure this runs after component is fully mounted
+      setTimeout(() => {
+        toggleDemoMode();
+        
+        toast({
+          title: "Demo Mode Activated",
+          description: "You're using NepaliPay in demo mode with a simulated blockchain. Connect a wallet to use real blockchain features.",
+          duration: 5000,
+        });
+      }, 100);
     }
   }, [isConnected, demoMode, toggleDemoMode, toast]);
   
