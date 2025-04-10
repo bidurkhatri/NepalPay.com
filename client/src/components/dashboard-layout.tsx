@@ -22,23 +22,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Auto-activate demo mode if not connected to a wallet
   const attemptedDemoActivation = useRef(false);
   
+  // Force demo mode activation directly without relying on state updates
   useEffect(() => {
-    // Only attempt to activate demo mode on initial render if we haven't already tried
-    if (!isConnected && !demoMode && !attemptedDemoActivation.current) {
-      console.log("No wallet connection detected, auto-activating demo mode");
-      attemptedDemoActivation.current = true;
-      
-      // Use setTimeout to ensure this runs after component is fully mounted
-      setTimeout(() => {
-        toggleDemoMode();
+    const activateDemoMode = () => {
+      // Only attempt to activate demo mode on initial render if we haven't already tried
+      // and only if we're not already connected or in demo mode
+      if (!isConnected && !demoMode && !attemptedDemoActivation.current) {
+        console.log("No wallet connection detected, forcing demo mode activation");
+        attemptedDemoActivation.current = true;
         
-        toast({
-          title: "Demo Mode Activated",
-          description: "You're using NepaliPay in demo mode with a simulated blockchain. Connect a wallet to use real blockchain features.",
-          duration: 5000,
-        });
-      }, 100);
-    }
+        // Call toggleDemoMode - don't rely on state for condition
+        try {
+          toggleDemoMode();
+          
+          toast({
+            title: "Demo Mode Activated",
+            description: "You're using NepaliPay in demo mode with a simulated blockchain. All contract functions will work for demonstration purposes.",
+            duration: 5000,
+          });
+        } catch (err) {
+          console.error("Error activating demo mode:", err);
+        }
+      }
+    };
+    
+    // Slight delay to ensure component is fully mounted and blockchain context is initialized
+    const timer = setTimeout(activateDemoMode, 200);
+    
+    return () => clearTimeout(timer);
   }, [isConnected, demoMode, toggleDemoMode, toast]);
   
   // Log when dashboard layout renders and if contracts are available

@@ -262,84 +262,118 @@ const LoansPage: React.FC = () => {
     },
   });
   
+  // Additional state for loan calculations
+  const [liquidationThreshold, setLiquidationThreshold] = useState<number>(0);
+  const [currentLoanToValue, setCurrentLoanToValue] = useState<number>(0);
+  
   // Update calculated loan amount and LTV when form changes
   const collateralType = form.watch('collateralType');
   const collateralAmount = form.watch('collateralAmount');
+  const loanAmount = form.watch('amount');
   
-  // Remove these unused helper functions that are causing errors
+  // Get blockchain context and the demoMode flag
+  const { demoMode } = useBlockchain();
   
   // Use blockchain contract to get collateral calculations
   const updateCollateralCalculations = useCallback(async () => {
-    console.log("Starting collateral calculations with:", { collateralType, collateralAmount, nepaliPayContract });
+    console.log("Starting collateral calculations with:", { collateralType, collateralAmount, nepaliPayContract, demoMode });
     
     try {
-      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0 && nepaliPayContract) {
-        // Get rates from smart contract
-        console.log("Calling smart contract getCollateralValue with:", collateralType, collateralAmount);
-        const collateralValue = await nepaliPayContract.getCollateralValue(
-          collateralType,
-          ethers.parseEther(collateralAmount.toString())
-        );
-        console.log("Got collateralValue from contract:", collateralValue);
-        
-        // Get loan-to-value ratio from smart contract
-        console.log("Calling smart contract getLoanToValueRatio with:", collateralType);
-        const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
-        console.log("Got ltvRatio from contract:", ltvRatio);
-        
-        // Get liquidation threshold from contract
-        console.log("Calling smart contract getLiquidationThreshold with:", collateralType);
-        const liquidationThreshold = await nepaliPayContract.getLiquidationThreshold(collateralType);
-        console.log("Got liquidationThreshold from contract:", liquidationThreshold);
-        
-        // Convert from BigNumber to numbers
-        const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
-        const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
-        const liquidationThresholdDecimal = Number(ethers.formatUnits(liquidationThreshold, 2));
-        
-        // Calculate max loan amount based on contract values
-        const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
-        
-        console.log("Blockchain collateral calculation results:", {
-          collateralValueInNpt,
-          ltvRatioDecimal,
-          liquidationThresholdDecimal,
-          maxLoanAmount
-        });
-        
-        // Update state with calculated values from blockchain
-        setCalculatedLoanAmount(maxLoanAmount);
-        setCalculatedLtvRatio(ltvRatioDecimal);
-        setCalculatedCollateralValueInNpt(collateralValueInNpt);
-      } else {
-        console.log("Invalid collateral inputs or missing contract, setting zeros");
-        setCalculatedLoanAmount(0);
-        setCalculatedLtvRatio(0);
-        setCalculatedCollateralValueInNpt(0);
-        
-        // If we have collateral info but no contract, something's wrong with connectivity
-        if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0 && !nepaliPayContract) {
+      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
+        // Check if we have a contract or if we're in demo mode
+        if (nepaliPayContract) {
+          // Get rates from smart contract
+          console.log(`Calling smart contract getCollateralValue with: ${collateralType}, ${collateralAmount}`);
+          const collateralValue = await nepaliPayContract.getCollateralValue(
+            collateralType,
+            ethers.parseEther(collateralAmount.toString())
+          );
+          console.log("Got collateralValue from contract:", ethers.formatEther(collateralValue));
+          
+          // Get loan-to-value ratio from smart contract
+          console.log(`Calling smart contract getLoanToValueRatio with: ${collateralType}`);
+          const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
+          console.log("Got ltvRatio from contract:", ethers.formatUnits(ltvRatio, 2));
+          
+          // Get liquidation threshold from contract
+          console.log(`Calling smart contract getLiquidationThreshold with: ${collateralType}`);
+          const liquidationThreshold = await nepaliPayContract.getLiquidationThreshold(collateralType);
+          console.log("Got liquidationThreshold from contract:", ethers.formatUnits(liquidationThreshold, 2));
+          
+          // Convert from BigNumber to numbers
+          const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
+          const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
+          const liquidationThresholdDecimal = Number(ethers.formatUnits(liquidationThreshold, 2));
+          
+          // Calculate max loan amount based on contract values
+          const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+          
+          console.log("Blockchain collateral calculation results:", {
+            collateralValueInNpt,
+            ltvRatioDecimal,
+            liquidationThresholdDecimal,
+            maxLoanAmount
+          });
+          
+          // Update state with calculated values from blockchain
+          setCalculatedLoanAmount(maxLoanAmount);
+          setCalculatedLtvRatio(ltvRatioDecimal);
+          setCalculatedCollateralValueInNpt(collateralValueInNpt);
+          
+          // Update liquidation threshold too
+          setLiquidationThreshold(liquidationThresholdDecimal);
+          
+          // Calculate current LTV for health indicator
+          if (loanAmount && !isNaN(Number(loanAmount))) {
+            const currentLoanAmount = parseFloat(loanAmount);
+            const currentLtv = (currentLoanAmount / collateralValueInNpt) * 100;
+            setCurrentLoanToValue(currentLtv);
+          } else {
+            setCurrentLoanToValue(0);
+          }
+          
+          return {
+            collateralValueInNpt,
+            ltvRatioDecimal,
+            liquidationThresholdDecimal,
+            maxLoanAmount
+          };
+        } else {
+          console.log("NepaliPay contract not available");
           toast({
             title: "Smart Contract Not Available",
-            description: "Connect your wallet to access the NepaliPay smart contract for accurate calculations",
+            description: "Connect your wallet or activate demo mode to access the NepaliPay smart contract for calculations",
             variant: "destructive"
           });
         }
       }
+      
+      console.log("Invalid collateral inputs or missing contract, setting zeros");
+      setCalculatedLoanAmount(0);
+      setCalculatedLtvRatio(0);
+      setCalculatedCollateralValueInNpt(0);
+      setLiquidationThreshold(0);
+      setCurrentLoanToValue(0);
+      
+      return null;
     } catch (error) {
       console.error("Error calculating collateral values from blockchain:", error);
       // Set default values in case of error
       setCalculatedLoanAmount(0);
       setCalculatedLtvRatio(0);
       setCalculatedCollateralValueInNpt(0);
+      setLiquidationThreshold(0);
+      setCurrentLoanToValue(0);
       
       toast({
         title: "Calculation Error",
         description: "Failed to get calculations from the smart contract. Try again or contact support.",
         variant: "destructive"
       });
+      
+      return null;
     }
-  }, [collateralType, collateralAmount, nepaliPayContract, toast]);
+  }, [collateralType, collateralAmount, loanAmount, nepaliPayContract, toast]);
   
   React.useEffect(() => {
     updateCollateralCalculations();
