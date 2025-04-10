@@ -297,60 +297,17 @@ const LoansPage: React.FC = () => {
       
       // Check if we have a contract
       if (!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') {
-        console.log("NepaliPay contract not available, activating demo mode automatically");
+        console.log("NepaliPay contract not available");
         
-        // Try activating demo mode if not already in demo mode
-        if (!demoMode && !isConnected) {
-          try {
-            await toggleDemoMode();
-            console.log("Demo mode activated, checking contract availability again");
-            
-            // Check if contract is now available
-            if (!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') {
-              console.error("Contract still not available after toggling demo mode");
-              toast({
-                title: "Smart Contract Not Available",
-                description: "Unable to connect to blockchain contracts. Please try again later.",
-                variant: "destructive"
-              });
-              
-              setCalculatedLoanAmount(0);
-              setCalculatedLtvRatio(0);
-              setCalculatedCollateralValueInNpt(0);
-              setLiquidationThreshold(0);
-              setCurrentLoanToValue(0);
-              return null;
-            }
-          } catch (demoError) {
-            console.error("Error activating demo mode:", demoError);
-            toast({
-              title: "Smart Contract Not Available",
-              description: "Connect your wallet or try again later to access the smart contract features",
-              variant: "destructive"
-            });
-            
-            setCalculatedLoanAmount(0);
-            setCalculatedLtvRatio(0);
-            setCalculatedCollateralValueInNpt(0);
-            setLiquidationThreshold(0);
-            setCurrentLoanToValue(0);
-            return null;
-          }
-        } else {
-          // If already in demo mode or connected but contract not available
-          toast({
-            title: "Smart Contract Not Available",
-            description: "Unable to connect to blockchain contracts. Please try again later.",
-            variant: "destructive"
-          });
-          
-          setCalculatedLoanAmount(0);
-          setCalculatedLtvRatio(0);
-          setCalculatedCollateralValueInNpt(0);
-          setLiquidationThreshold(0);
-          setCurrentLoanToValue(0);
-          return null;
-        }
+        // No need to show toast here, we'll display a UI element instead
+        setCalculatedLoanAmount(0);
+        setCalculatedLtvRatio(0);
+        setCalculatedCollateralValueInNpt(0);
+        setLiquidationThreshold(0);
+        setCurrentLoanToValue(0);
+        
+        // Return early - we'll show a dedicated UI component for activation
+        return null;
       }
       
       console.log("Contract methods available:", 
@@ -677,13 +634,80 @@ const LoansPage: React.FC = () => {
     }
   };
   
+  // Check if blockchain is connected
+  const [activatingDemo, setActivatingDemo] = useState(false);
+  
+  // Function to handle demo mode activation
+  const handleActivateDemo = async () => {
+    try {
+      setActivatingDemo(true);
+      await toggleDemoMode();
+      toast({
+        title: "Demo Mode Activated",
+        description: "You can now use the loan features with simulated blockchain data.",
+      });
+      
+      // Force recalculation after demo mode is activated
+      setTimeout(() => {
+        updateCollateralCalculations();
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to activate demo mode:", error);
+      toast({
+        title: "Activation Failed",
+        description: "Could not activate demo mode. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setActivatingDemo(false);
+    }
+  };
+  
   return (
     <div className="py-6 space-y-6">
+      {/* Blockchain Connection Alert */}
+      {(!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') && (
+        <Alert variant="destructive" className="mb-6 border-red-500/50 bg-red-500/10">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Smart Contract Not Available</AlertTitle>
+          <AlertDescription className="flex flex-col space-y-2">
+            <p>Unable to connect to blockchain contracts. This affects loan calculations and collateral processing.</p>
+            <div className="flex items-center mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleActivateDemo}
+                disabled={activatingDemo || demoMode}
+                className="text-white bg-red-500/20 hover:bg-red-500/30 border-red-500/40"
+              >
+                {activatingDemo ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Activating Demo Mode...
+                  </>
+                ) : demoMode ? (
+                  <>
+                    <Info className="mr-2 h-4 w-4" />
+                    Demo Mode Active
+                  </>
+                ) : (
+                  <>
+                    <Info className="mr-2 h-4 w-4" />
+                    Activate Demo Mode
+                  </>
+                )}
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Loans</h1>
           <p className="text-muted-foreground">
             Borrow NPT tokens using crypto collateral
+            {demoMode && <span className="ml-2 text-xs font-medium text-yellow-500">(Demo Mode)</span>}
           </p>
         </div>
         
