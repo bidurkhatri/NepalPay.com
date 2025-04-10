@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { setupAuth } from './auth';
 import { storage } from './storage';
 import { log } from './vite';
+import { pool } from './db';
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -466,17 +467,41 @@ export function registerRoutes(app: Express): Server {
               })
               .catch(err => log(`Error fetching wallet for WebSocket: ${err}`));
               
-            // Also send transactions info
-            storage.getUserTransactions(userId)
-              .then(transactions => {
+            // Also send transactions info using direct SQL query
+            try {
+              pool.query(
+                'SELECT * FROM transactions WHERE sender_id = $1 OR receiver_id = $1 ORDER BY created_at DESC LIMIT 100',
+                [userId]
+              ).then(result => {
+                if (ws.readyState === WebSocket.OPEN) {
+                  log(`Found ${result.rows.length} transactions for user ID ${userId}`);
+                  ws.send(JSON.stringify({ 
+                    type: 'transactions_update', 
+                    data: result.rows 
+                  }));
+                }
+              }).catch(err => {
+                log(`Database error loading transactions: ${err}`);
+                // Send empty array to prevent client from waiting
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.send(JSON.stringify({ 
                     type: 'transactions_update', 
-                    data: transactions 
+                    data: [],
+                    error: "Failed to load transactions" 
                   }));
                 }
-              })
-              .catch(err => log(`Error fetching transactions for WebSocket: ${err}`));
+              });
+            } catch (err) {
+              log(`Error preparing transactions query: ${err}`);
+              // Send empty array to prevent client from waiting
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ 
+                  type: 'transactions_update', 
+                  data: [],
+                  error: "Failed to load transactions"
+                }));
+              }
+            }
           }
         }
       } catch (error) {
