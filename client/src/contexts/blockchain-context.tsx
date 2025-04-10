@@ -44,6 +44,12 @@ type BlockchainContextType = {
   exchangeRates: {
     [currency: string]: number;
   };
+  feeStructure: {
+    purchaseFee: number;
+    transferFee: number;
+    paymentFee: number;
+    withdrawalFee: number;
+  };
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshBalances: () => Promise<void>;
@@ -153,6 +159,17 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     EUR: 143.25,
     GBP: 167.40
   });
+  const [feeStructure, setFeeStructure] = useState<{
+    purchaseFee: number;
+    transferFee: number;
+    paymentFee: number;
+    withdrawalFee: number;
+  }>({
+    purchaseFee: 0.02,    // 2% default
+    transferFee: 0.01,    // 1% default
+    paymentFee: 0.015,    // 1.5% default
+    withdrawalFee: 0.025  // 2.5% default
+  });
 
   // Load contracts function
   const loadContracts = async (signer: ethers.JsonRpcSigner) => {
@@ -168,7 +185,11 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           "function getTokenPriceInUSD() view returns (uint256)",
           "function getTokenPriceInEUR() view returns (uint256)",
           "function getTokenPriceInGBP() view returns (uint256)",
-          "function getExchangeRate(string memory currency) view returns (uint256)"
+          "function getExchangeRate(string memory currency) view returns (uint256)",
+          "function getPurchaseFee() view returns (uint256)",
+          "function getTransferFee() view returns (uint256)",
+          "function getPaymentFee() view returns (uint256)",
+          "function getWithdrawalFee() view returns (uint256)"
         ],
         signer
       );
@@ -234,6 +255,20 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           USD: parseFloat(ethers.formatUnits(usdExchangeRate, 6)),
           EUR: parseFloat(ethers.formatUnits(eurExchangeRate, 6)),
           GBP: parseFloat(ethers.formatUnits(gbpExchangeRate, 6))
+        });
+        
+        // Get fee structure from smart contract
+        const purchaseFee = await tokenContract.getPurchaseFee();
+        const transferFee = await tokenContract.getTransferFee();
+        const paymentFee = await tokenContract.getPaymentFee();
+        const withdrawalFee = await tokenContract.getWithdrawalFee();
+        
+        // Set fee structure
+        setFeeStructure({
+          purchaseFee: parseFloat(ethers.formatUnits(purchaseFee, 6)),
+          transferFee: parseFloat(ethers.formatUnits(transferFee, 6)),
+          paymentFee: parseFloat(ethers.formatUnits(paymentFee, 6)),
+          withdrawalFee: parseFloat(ethers.formatUnits(withdrawalFee, 6))
         });
       } catch (priceError) {
         console.error("Error getting token prices:", priceError);
@@ -329,6 +364,20 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
         USD: parseFloat(ethers.formatUnits(usdExchangeRate, 6)),
         EUR: parseFloat(ethers.formatUnits(eurExchangeRate, 6)),
         GBP: parseFloat(ethers.formatUnits(gbpExchangeRate, 6))
+      });
+      
+      // Get fee structure from smart contract
+      const purchaseFee = await tokenContract.getPurchaseFee();
+      const transferFee = await tokenContract.getTransferFee();
+      const paymentFee = await tokenContract.getPaymentFee();
+      const withdrawalFee = await tokenContract.getWithdrawalFee();
+      
+      // Set fee structure
+      setFeeStructure({
+        purchaseFee: parseFloat(ethers.formatUnits(purchaseFee, 6)),
+        transferFee: parseFloat(ethers.formatUnits(transferFee, 6)),
+        paymentFee: parseFloat(ethers.formatUnits(paymentFee, 6)),
+        withdrawalFee: parseFloat(ethers.formatUnits(withdrawalFee, 6))
       });
     } catch (error: any) {
       console.error('Error getting token price:', error);
@@ -986,6 +1035,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     toggleDemoMode,
     tokenPrice,
     exchangeRates,
+    feeStructure,
     getTokenPrice,
     calculateTokenAmount,
     calculateFiatAmount,
