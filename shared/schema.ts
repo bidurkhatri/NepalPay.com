@@ -19,10 +19,10 @@ import { z } from 'zod';
 
 // Enum definitions
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'superadmin']);
-export const kycStatusEnum = pgEnum('kyc_status', ['not_submitted', 'pending', 'approved', 'rejected']);
-export const transactionTypeEnum = pgEnum('transaction_type', ['TOPUP', 'TRANSFER', 'UTILITY', 'deposit']);
+export const kycStatusEnum = pgEnum('kyc_status', ['not_submitted', 'pending', 'approved', 'rejected', 'verified']);
+export const transactionTypeEnum = pgEnum('transaction_type', ['TOPUP', 'TRANSFER', 'UTILITY']);
 export const transactionStatusEnum = pgEnum('transaction_status', ['COMPLETED', 'pending', 'completed', 'failed']);
-export const activityTypeEnum = pgEnum('activity_type', ['LOGIN', 'REGISTER', 'PAYMENT', 'TOPUP', 'TRANSFER', 'transaction']);
+export const activityTypeEnum = pgEnum('activity_type', ['LOGIN', 'REGISTER', 'PAYMENT', 'TOPUP', 'TRANSFER']);
 export const walletTypeEnum = pgEnum('wallet_type', ['custodial', 'non_custodial']);
 export const collateralTypeEnum = pgEnum('collateral_type', ['BNB', 'ETH', 'BTC']);
 export const collateralStatusEnum = pgEnum('collateral_status', ['active', 'locked', 'released', 'liquidated']);
