@@ -19,24 +19,19 @@ const Sidebar: React.FC = () => {
 
   if (!user) return null;
 
-  // Get user initials from fullName
-  const getInitials = (fullName: string | null | undefined) => {
-    if (!fullName) return '';
-    const nameParts = fullName.split(' ');
-    if (nameParts.length > 1) {
-      return `${nameParts[0].charAt(0) || ''}${nameParts[nameParts.length - 1].charAt(0) || ''}`;
-    }
-    return fullName.charAt(0) || '';
+  // Get user initials from first and last name
+  const getInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
+    if (!firstName && !lastName) return '';
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`;
   };
 
-  const initials = getInitials(user.fullName);
+  const initials = getInitials(user.firstName, user.lastName);
 
   const menuItems = [
     { href: '/dashboard', icon: <LayoutDashboard className="mr-2 h-5 w-5" />, label: 'Dashboard' },
     { href: '/wallet', icon: <WalletIcon className="mr-2 h-5 w-5" />, label: 'My Wallet' },
     { href: '/send', icon: <SendIcon className="mr-2 h-5 w-5" />, label: 'Send Funds' },
     { href: '/purchase', icon: <CardIcon className="mr-2 h-5 w-5" />, label: 'Purchase NPT' },
-    { href: '/payments', icon: <PaymentIcon className="mr-2 h-5 w-5" />, label: 'Payments' },
     { href: '/loans', icon: <Coins className="mr-2 h-5 w-5" />, label: 'Loans' },
     { href: '/analytics', icon: <BarChart3 className="mr-2 h-5 w-5" />, label: 'Analytics' },
     { href: '/rewards', icon: <BadgePercent className="mr-2 h-5 w-5" />, label: 'Rewards' },
@@ -66,7 +61,7 @@ const Sidebar: React.FC = () => {
             <span className="text-white font-semibold">{initials}</span>
           </div>
           <div>
-            <p className="font-medium text-white">{user.fullName || user.username}</p>
+            <p className="font-medium text-white">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
             <p className="text-xs text-primary/80">{user.email}</p>
           </div>
         </div>

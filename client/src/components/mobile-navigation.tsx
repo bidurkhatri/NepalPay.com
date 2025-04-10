@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Wallet, Settings, User, BarChart3 } from 'lucide-react';
-import { SendIcon, PaymentIcon, CardIcon } from '@/lib/icons';
+import { LayoutDashboard, Wallet, User, Coins } from 'lucide-react';
+import { SendIcon, CardIcon } from '@/lib/icons';
 
 const MobileNavigation: React.FC = () => {
   const [location] = useLocation();
@@ -11,7 +11,7 @@ const MobileNavigation: React.FC = () => {
     { href: '/wallet', icon: <Wallet className="h-5 w-5" />, label: 'Wallet' },
     { href: '/send', icon: <SendIcon className="h-5 w-5" />, label: 'Send' },
     { href: '/purchase', icon: <CardIcon className="h-5 w-5" />, label: 'Purchase' },
-    { href: '/profile', icon: <User className="h-5 w-5" />, label: 'Profile' },
+    { href: '/loans', icon: <Coins className="h-5 w-5" />, label: 'Loans' },
   ];
 
   return (
