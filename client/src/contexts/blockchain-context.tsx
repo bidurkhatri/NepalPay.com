@@ -688,7 +688,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
         getTokenPriceInEUR: async () => ethers.parseUnits('0.007', 18),
         getTokenPriceInGBP: async () => ethers.parseUnits('0.006', 18),
         getExchangeRate: async (currency: string) => {
-          const rates = {
+          const rates: Record<string, bigint> = {
             'USD': ethers.parseUnits('133.05', 6),
             'EUR': ethers.parseUnits('143.25', 6),
             'GBP': ethers.parseUnits('167.40', 6),
@@ -709,7 +709,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       const mockNepaliPayContract = {
         address: NEPALI_PAY_ADDRESS,
         getCollateralValue: async (collateralType: string, amount: ethers.BigNumberish) => {
-          const rates = {
+          const rates: Record<string, number> = {
             'BNB': 450,
             'ETH': 900,
             'BTC': 12000
@@ -719,7 +719,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           return ethers.parseEther((amountNumber * valuePerUnit).toString());
         },
         getLoanToValueRatio: async (collateralType: string) => {
-          const ratios = {
+          const ratios: Record<string, number> = {
             'BNB': 70,
             'ETH': 75,
             'BTC': 80
@@ -727,7 +727,7 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           return ethers.parseUnits((ratios[collateralType] || 50).toString(), 2);
         },
         getLiquidationThreshold: async (collateralType: string) => {
-          const thresholds = {
+          const thresholds: Record<string, number> = {
             'BNB': 80,
             'ETH': 85,
             'BTC': 90
