@@ -440,21 +440,33 @@ export class PgStorage implements IStorage {
       userId: demoUser.id,
       address: demoUser.walletAddress!,
       nptBalance: '5000',
-      bnbBalance: '1000'
+      bnbBalance: '1000',
+      balance: '5000',
+      currency: 'NPT',
+      lastUpdated: new Date(),
+      isPrimary: true
     });
     
     const adminWallet = await this.createWallet({
       userId: adminUser.id,
       address: adminUser.walletAddress!,
       nptBalance: '10000',
-      bnbBalance: '5000'
+      bnbBalance: '5000',
+      balance: '10000',
+      currency: 'NPT',
+      lastUpdated: new Date(),
+      isPrimary: true
     });
     
     const superadminWallet = await this.createWallet({
       userId: superadminUser.id,
       address: superadminUser.walletAddress!,
       nptBalance: '100000',
-      bnbBalance: '10000'
+      bnbBalance: '10000',
+      balance: '100000',
+      currency: 'NPT',
+      lastUpdated: new Date(),
+      isPrimary: true
     });
     
     // Create demo transactions
@@ -462,8 +474,8 @@ export class PgStorage implements IStorage {
       senderId: superadminUser.id,
       receiverId: demoUser.id,
       amount: '1000',
-      status: 'completed',
-      type: 'transfer',
+      status: 'COMPLETED',
+      type: 'TRANSFER',
       currency: 'NPT',
       txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
     });
@@ -472,8 +484,8 @@ export class PgStorage implements IStorage {
       senderId: demoUser.id,
       receiverId: adminUser.id,
       amount: '500',
-      status: 'completed',
-      type: 'payment',
+      status: 'COMPLETED',
+      type: 'UTILITY',
       currency: 'NPT',
       txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
     });
@@ -481,34 +493,37 @@ export class PgStorage implements IStorage {
     // Create demo activities
     await this.createActivity({
       userId: demoUser.id,
-      action: 'login',
+      action: 'LOGIN',
       description: 'User logged in from web app'
     });
     
     await this.createActivity({
       userId: demoUser.id,
-      action: 'transaction',
+      action: 'TRANSFER',
       description: 'Sent 500 NPT to admin'
     });
     
     // Create demo collateral
     await this.createCollateral({
       userId: demoUser.id,
-      type: 'BNB',
+      collateralType: 'BNB',
       amount: '2',
-      ltv: 75,
+      valueInNpt: '500',
+      valueToLoanRatio: '0.75',
       status: 'active'
     });
     
     // Create demo loan
     await this.createLoan({
       userId: demoUser.id,
-      collateralId: 1,
       amount: '450',
-      interest: '5',
-      term: 30,
+      interestRate: '5',
+      termDays: 30,
+      loanToValueRatio: '0.8',
+      originationFee: '10',
       status: 'active',
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      collateralRequired: true
     });
     
     // Create demo ad

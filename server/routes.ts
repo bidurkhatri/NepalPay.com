@@ -276,42 +276,24 @@ export function registerRoutes(app: Express): Server {
       // Create a pending transaction
       const transaction = await storage.createTransaction({
         senderId: null, // System/treasury
-        recipientId: req.user.id,
-        walletId: (await storage.getWalletByUserId(req.user.id))?.id || null,
+        receiverId: req.user.id,
         amount: amount.toString(),
         currency: 'NPT',
-        fee: '0',
-        transactionType: 'deposit',
+        type: 'deposit',
         status: 'pending',
         txHash: null,
-        blockNumber: null,
-        networkFee: null,
-        exchangeRate: null,
-        exchangeAmount: amount.toString(),
-        exchangeCurrency: currency.toUpperCase(),
         description: 'NPT token purchase via Stripe',
-        metadata: {
-          paymentIntentId: paymentIntent.id,
-        },
-        loanId: null,
-        collateralId: null,
+        note: `Purchase of ${amount} NPT tokens via Stripe`,
+        stripePaymentId: paymentIntent.id,
       });
 
       // Record activity
       await storage.createActivity({
         userId: req.user.id,
-        activityType: 'transaction',
+        action: 'transaction',
         description: 'Started NPT token purchase',
         ipAddress: null,
         userAgent: null,
-        metadata: {
-          paymentIntentId: paymentIntent.id,
-          amount,
-          currency,
-        },
-        transactionId: transaction.id,
-        loanId: null,
-        collateralId: null,
       });
 
       // Return client secret to complete payment on the client
@@ -443,9 +425,7 @@ async function handleSuccessfulPayment(paymentIntent: any): Promise<void> {
     const transactions = await storage.getUserTransactions(parseInt(userId, 10));
     const transaction = transactions.find(
       (t) => t.status === 'pending' && 
-             t.metadata && 
-             typeof t.metadata === 'object' && 
-             t.metadata.paymentIntentId === paymentIntent.id
+             t.stripePaymentId === paymentIntent.id
     );
 
     if (!transaction) {
@@ -472,17 +452,10 @@ async function handleSuccessfulPayment(paymentIntent: any): Promise<void> {
     // Record activity
     await storage.createActivity({
       userId: parseInt(userId, 10),
-      activityType: 'transaction',
+      action: 'transaction',
       description: 'NPT token purchase completed',
       ipAddress: null,
       userAgent: null,
-      metadata: {
-        paymentIntentId: paymentIntent.id,
-        amount: tokenAmount,
-      },
-      transactionId: transaction.id,
-      loanId: null,
-      collateralId: null,
     });
 
     // Broadcast to WebSocket clients
@@ -516,9 +489,7 @@ async function handleFailedPayment(paymentIntent: any): Promise<void> {
     const transactions = await storage.getUserTransactions(parseInt(userId, 10));
     const transaction = transactions.find(
       (t) => t.status === 'pending' && 
-             t.metadata && 
-             typeof t.metadata === 'object' && 
-             t.metadata.paymentIntentId === paymentIntent.id
+             t.stripePaymentId === paymentIntent.id
     );
 
     if (!transaction) {
@@ -534,17 +505,10 @@ async function handleFailedPayment(paymentIntent: any): Promise<void> {
     // Record activity
     await storage.createActivity({
       userId: parseInt(userId, 10),
-      activityType: 'transaction',
+      action: 'transaction',
       description: 'NPT token purchase failed',
       ipAddress: null,
       userAgent: null,
-      metadata: {
-        paymentIntentId: paymentIntent.id,
-        failureReason: paymentIntent.last_payment_error?.message || 'Unknown error',
-      },
-      transactionId: transaction.id,
-      loanId: null,
-      collateralId: null,
     });
 
     // Broadcast to WebSocket clients

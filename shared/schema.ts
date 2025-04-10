@@ -20,9 +20,9 @@ import { z } from 'zod';
 // Enum definitions
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'superadmin']);
 export const kycStatusEnum = pgEnum('kyc_status', ['not_submitted', 'pending', 'approved', 'rejected']);
-export const transactionTypeEnum = pgEnum('transaction_type', ['deposit', 'withdrawal', 'transfer', 'payment', 'exchange', 'fee', 'loan_disbursal', 'loan_repayment', 'collateral_lock', 'collateral_release']);
-export const transactionStatusEnum = pgEnum('transaction_status', ['pending', 'processing', 'completed', 'failed', 'cancelled']);
-export const activityTypeEnum = pgEnum('activity_type', ['login', 'password_change', 'password_reset_request', 'password_reset', 'profile_update', 'transaction', 'kyc_update', 'settings_change', 'wallet_create', 'loan_action', 'collateral_action']);
+export const transactionTypeEnum = pgEnum('transaction_type', ['TOPUP', 'TRANSFER', 'UTILITY', 'deposit']);
+export const transactionStatusEnum = pgEnum('transaction_status', ['COMPLETED', 'pending', 'completed', 'failed']);
+export const activityTypeEnum = pgEnum('activity_type', ['LOGIN', 'REGISTER', 'PAYMENT', 'TOPUP', 'TRANSFER', 'transaction']);
 export const walletTypeEnum = pgEnum('wallet_type', ['custodial', 'non_custodial']);
 export const collateralTypeEnum = pgEnum('collateral_type', ['BNB', 'ETH', 'BTC']);
 export const collateralStatusEnum = pgEnum('collateral_status', ['active', 'locked', 'released', 'liquidated']);
@@ -53,8 +53,8 @@ export const users = pgTable('users', {
 // User relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   wallet: one(wallets),
-  sentTransactions: many(transactions),
-  receivedTransactions: many(transactions),
+  sentTransactions: many(transactions, { relationName: 'sender' }),
+  receivedTransactions: many(transactions, { relationName: 'receiver' }),
   activities: many(activities),
   collaterals: many(collaterals),
   loans: many(loans),
@@ -74,60 +74,42 @@ export const wallets = pgTable('wallets', {
   bnbBalance: text('bnb_balance'),
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
-  is_primary: boolean('is_primary'),
+  isPrimary: boolean('is_primary'),
 });
 
 // Wallet relations
-export const walletsRelations = relations(wallets, ({ one, many }) => ({
-  user: one(users),
-  transactions: many(transactions)
+export const walletsRelations = relations(wallets, ({ one }) => ({
+  user: one(users)
 }));
 
 // Transactions table
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
-  transactionType: transactionTypeEnum('transaction_type').notNull(),
-  status: transactionStatusEnum('transaction_status').notNull(),
-  amount: numeric('amount', { precision: 24, scale: 8 }).notNull(),
-  currency: varchar('currency', { length: 10 }).notNull(),
-  fee: numeric('fee', { precision: 24, scale: 8 }).default('0').notNull(),
+  type: transactionTypeEnum('type').notNull(),
+  status: transactionStatusEnum('status').notNull(),
+  amount: numeric('amount').notNull(),
+  currency: text('currency').notNull(),
   senderId: integer('sender_id').references(() => users.id),
-  recipientId: integer('recipient_id').references(() => users.id),
-  walletId: integer('wallet_id').references(() => wallets.id),
-  txHash: varchar('tx_hash', { length: 100 }),
-  blockchainTimestamp: timestamp('blockchain_timestamp'),
-  blockNumber: integer('block_number'),
+  receiverId: integer('receiver_id').references(() => users.id),
+  txHash: text('tx_hash'),
+  note: text('note'),
   description: text('description'),
-  metadata: json('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  stripePaymentId: varchar('stripe_payment_id', { length: 100 }),
-  paymentIntentId: varchar('payment_intent_id', { length: 100 }),
-  gasUsed: numeric('gas_used', { precision: 24, scale: 8 }),
-  networkFee: numeric('network_fee', { precision: 24, scale: 8 }),
-  relatedTransactionId: integer('related_transaction_id'),
-  loanId: integer('loan_id').references(() => loans.id),
-  collateralId: integer('collateral_id').references(() => collaterals.id),
-  // Additional fields for exchange transactions
-  exchangeRate: numeric('exchange_rate', { precision: 24, scale: 8 }),
-  exchangeAmount: numeric('exchange_amount', { precision: 24, scale: 8 }),
-  exchangeCurrency: varchar('exchange_currency', { length: 10 }),
+  stripePaymentId: text('stripe_payment_id'),
 });
 
 // Transaction relations
 export const transactionsRelations = relations(transactions, ({ one }) => ({
-  sender: one(users),
-  recipient: one(users),
-  wallet: one(wallets),
-  loan: one(loans),
-  collateral: one(collaterals)
+  sender: one(users, { fields: [transactions.senderId], references: [users.id] }),
+  receiver: one(users, { fields: [transactions.receiverId], references: [users.id] })
 }));
 
 // Activities table
 export const activities = pgTable('activities', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  activityType: activityTypeEnum('activity_type').notNull(),
+  action: activityTypeEnum('action').notNull(),
   description: text('description').notNull(),
   ipAddress: varchar('ip_address', { length: 50 }),
   userAgent: text('user_agent'),

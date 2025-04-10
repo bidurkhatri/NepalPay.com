@@ -186,7 +186,7 @@ export function setupAuth(app: Express): void {
         nptBalance: '0',
         bnbBalance: '0',
         address: null,
-        is_primary: true
+        isPrimary: true
       });
 
       // Skip activity creation for now
