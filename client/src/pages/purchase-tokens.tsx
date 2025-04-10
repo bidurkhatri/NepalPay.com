@@ -288,49 +288,100 @@ const PurchaseTokensPage: React.FC = () => {
     const amount = form.watch('amount');
     const paymentMethod = form.watch('paymentMethod');
     
+    console.log("Price calculation inputs:", { 
+      amount, 
+      paymentMethod, 
+      tokenPrice, 
+      feeStructure, 
+      isConnected 
+    });
+    
     if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-      // Use fee from smart contract, adjusted for payment method
-      // Smart contract's purchaseFee is the base fee
-      // Add a small additional fee for card payments
-      const feePercentage = paymentMethod === 'card' 
-        ? feeStructure.purchaseFee + 0.01 // Card payment adds 1% extra
-        : feeStructure.purchaseFee;       // Base fee for bank transfers
-      
-      // Get token amount using smart contract exchange rate
-      const nptAmount = Number(amount);
-      
-      // Convert to fiat amount using the exchange rate from smart contract
-      // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
-      const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
-      
-      // Calculate processing fee using the smart contract's fee structure
-      const fees = fiatAmount * feePercentage;
-      
-      // Calculate total (fiat amount + fees)
-      const total = fiatAmount + fees;
-      
-      // Current exchange rate from smart contract
-      const currentRate = tokenPrice.nprRate;
-      
-      setRealTimePrice({
-        nptAmount,
-        fiatAmount,
-        fiatCurrency: 'NPR',
-        exchangeRate: currentRate,
-        fees,
-        total
-      });
+      // Use demo mode if blockchain isn't connected yet
+      if (!isConnected) {
+        console.log("Using demo mode for price calculations");
+        const nptAmount = Number(amount);
+        const fiatAmount = nptAmount; // 1:1 rate for NPR in demo mode
+        const feePercentage = 0.01; // 1% fee in demo mode
+        const fees = fiatAmount * feePercentage;
+        const total = fiatAmount + fees;
+        
+        console.log("Demo price calculation results:", {
+          nptAmount,
+          fiatAmount,
+          feePercentage,
+          fees,
+          total
+        });
+        
+        setRealTimePrice({
+          nptAmount,
+          fiatAmount,
+          fiatCurrency: 'NPR',
+          exchangeRate: 1,
+          fees,
+          total
+        });
+      } else {
+        // Use fee from smart contract, adjusted for payment method
+        // Smart contract's purchaseFee is the base fee
+        // Add a small additional fee for card payments
+        const feePercentage = paymentMethod === 'card' 
+          ? (feeStructure.purchaseFee + 0.01) || 0.02 // Card payment adds 1% extra
+          : feeStructure.purchaseFee || 0.01;         // Base fee for bank transfers
+        
+        console.log("Using fee percentage:", feePercentage);
+        
+        // Get token amount using smart contract exchange rate
+        const nptAmount = Number(amount);
+        
+        // Convert to fiat amount using the exchange rate from smart contract
+        // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
+        const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
+        console.log("Calculated fiat amount:", fiatAmount);
+        
+        // If fiat amount is still 0, use direct conversion as fallback
+        const finalFiatAmount = fiatAmount > 0 ? fiatAmount : nptAmount;
+        
+        // Calculate processing fee using the smart contract's fee structure
+        const fees = finalFiatAmount * feePercentage;
+        
+        // Calculate total (fiat amount + fees)
+        const total = finalFiatAmount + fees;
+        
+        // Current exchange rate from smart contract
+        const currentRate = tokenPrice.nprRate || 1;
+        
+        console.log("Final price calculation results:", {
+          nptAmount,
+          finalFiatAmount,
+          feePercentage,
+          fees,
+          total,
+          currentRate
+        });
+        
+        setRealTimePrice({
+          nptAmount,
+          fiatAmount: finalFiatAmount,
+          fiatCurrency: 'NPR',
+          exchangeRate: currentRate,
+          fees,
+          total
+        });
+      }
     } else {
+      console.log("Invalid amount input, setting zeros");
       setRealTimePrice({
         nptAmount: 0,
         fiatAmount: 0,
         fiatCurrency: 'NPR',
-        exchangeRate: tokenPrice.nprRate,
+        exchangeRate: tokenPrice.nprRate || 1,
         fees: 0,
         total: 0
       });
     }
-  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice, feeStructure, calculateFiatAmount]);
+  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice, feeStructure, calculateFiatAmount, isConnected]);
 
   return (
     <div className="py-6 space-y-6">

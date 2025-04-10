@@ -270,29 +270,69 @@ const LoansPage: React.FC = () => {
   
   // Use blockchain contract to get collateral calculations
   const updateCollateralCalculations = useCallback(async () => {
+    console.log("Starting collateral calculations with:", { collateralType, collateralAmount, nepaliPayContract });
+    
+    // Add fallback for demo mode if MetaMask is not connected
+    const useDemoValues = !nepaliPayContract;
+    
     try {
-      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0 && nepaliPayContract) {
-        // Get rates from smart contract
-        const collateralValue = await nepaliPayContract.getCollateralValue(
-          collateralType,
-          ethers.parseEther(collateralAmount.toString())
-        );
-        
-        // Get loan-to-value ratio from smart contract
-        const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
-        
-        // Convert from BigNumber to numbers
-        const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
-        const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
-        
-        // Calculate max loan amount based on contract values
-        const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
-        
-        // Update state with calculated values from blockchain
-        setCalculatedLoanAmount(maxLoanAmount);
-        setCalculatedLtvRatio(ltvRatioDecimal);
-        setCalculatedCollateralValueInNpt(collateralValueInNpt);
+      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
+        if (useDemoValues) {
+          console.log("Using demo values for collateral calculations");
+          // Demo mode fallback values
+          const demoValues = {
+            'BNB': 450, // 1 BNB = 450 NPT
+            'ETH': 900, // 1 ETH = 900 NPT
+            'BTC': 12000 // 1 BTC = 12000 NPT
+          };
+          
+          const collateralValueInNpt = Number(collateralAmount) * (demoValues[collateralType] || 1);
+          const ltvRatioDecimal = 70; // 70% LTV
+          const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+          
+          console.log("Demo collateral calculation results:", {
+            collateralValueInNpt,
+            ltvRatioDecimal,
+            maxLoanAmount
+          });
+          
+          setCalculatedLoanAmount(maxLoanAmount);
+          setCalculatedLtvRatio(ltvRatioDecimal);
+          setCalculatedCollateralValueInNpt(collateralValueInNpt);
+        } else {
+          // Get rates from smart contract
+          console.log("Calling smart contract getCollateralValue with:", collateralType, collateralAmount);
+          const collateralValue = await nepaliPayContract.getCollateralValue(
+            collateralType,
+            ethers.parseEther(collateralAmount.toString())
+          );
+          console.log("Got collateralValue from contract:", collateralValue);
+          
+          // Get loan-to-value ratio from smart contract
+          console.log("Calling smart contract getLoanToValueRatio with:", collateralType);
+          const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
+          console.log("Got ltvRatio from contract:", ltvRatio);
+          
+          // Convert from BigNumber to numbers
+          const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
+          const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
+          
+          // Calculate max loan amount based on contract values
+          const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+          
+          console.log("Blockchain collateral calculation results:", {
+            collateralValueInNpt,
+            ltvRatioDecimal,
+            maxLoanAmount
+          });
+          
+          // Update state with calculated values from blockchain
+          setCalculatedLoanAmount(maxLoanAmount);
+          setCalculatedLtvRatio(ltvRatioDecimal);
+          setCalculatedCollateralValueInNpt(collateralValueInNpt);
+        }
       } else {
+        console.log("Invalid collateral inputs, setting zeros");
         setCalculatedLoanAmount(0);
         setCalculatedLtvRatio(0);
         setCalculatedCollateralValueInNpt(0);
@@ -303,6 +343,24 @@ const LoansPage: React.FC = () => {
       setCalculatedLoanAmount(0);
       setCalculatedLtvRatio(0);
       setCalculatedCollateralValueInNpt(0);
+      
+      // Fallback to demo values on error
+      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
+        console.log("Using fallback demo values after error");
+        const fallbackValues = {
+          'BNB': 450,
+          'ETH': 900,
+          'BTC': 12000
+        };
+        
+        const collateralValueInNpt = Number(collateralAmount) * (fallbackValues[collateralType] || 1);
+        const ltvRatioDecimal = 70; // 70% LTV
+        const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+        
+        setCalculatedLoanAmount(maxLoanAmount);
+        setCalculatedLtvRatio(ltvRatioDecimal);
+        setCalculatedCollateralValueInNpt(collateralValueInNpt);
+      }
     }
   }, [collateralType, collateralAmount, nepaliPayContract]);
   

@@ -415,14 +415,22 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     if (!tokenAmount || tokenAmount <= 0) return 0;
     
     try {
+      console.log("calculateFiatAmount input:", { tokenAmount, currency, tokenPrice, exchangeRates });
+      
       if (currency === 'NPR') {
         // For NPR, we still apply the token price (which should be ~1, but might fluctuate)
         const nprRate = tokenPrice.nprRate || 1;
-        return tokenAmount * nprRate;
+        console.log("Using NPR rate:", nprRate);
+        const result = tokenAmount * nprRate;
+        console.log("NPR calculation result:", result);
+        return result;
       } else {
         // Use exchange rate from smart contract
         const rate = exchangeRates[currency] || 1;
-        return tokenAmount * rate;
+        console.log("Using exchange rate for " + currency + ":", rate);
+        const result = tokenAmount * rate;
+        console.log(currency + " calculation result:", result);
+        return result;
       }
     } catch (error) {
       console.error("Error calculating fiat amount:", error);
