@@ -35,6 +35,15 @@ type BlockchainContextType = {
   isConnected: boolean;
   isLoading: boolean;
   error: string | null;
+  tokenPrice: {
+    nprRate: number;
+    usdRate: number;
+    eurRate: number;
+    gbpRate: number;
+  };
+  exchangeRates: {
+    [currency: string]: number;
+  };
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshBalances: () => Promise<void>;
@@ -48,6 +57,9 @@ type BlockchainContextType = {
   claimReferralReward: (referralCode: string) => Promise<string>;
   claimCashback: (transactionId: string) => Promise<string>;
   relayTransaction: (data: string, signature: string) => Promise<string>;
+  getTokenPrice: () => Promise<void>;
+  calculateTokenAmount: (fiatAmount: number, currency: string) => number;
+  calculateFiatAmount: (tokenAmount: number, currency: string) => number;
   isCorrectNetwork: boolean;
   switchToBscNetwork: () => Promise<void>;
   demoMode: boolean;
@@ -68,6 +80,18 @@ const defaultContextValue: BlockchainContextType = {
   isConnected: false,
   isLoading: false,
   error: null,
+  tokenPrice: {
+    nprRate: 1,
+    usdRate: 0.0075,
+    eurRate: 0.0070,
+    gbpRate: 0.0060
+  },
+  exchangeRates: {
+    NPR: 1,
+    USD: 133.05,
+    EUR: 143.25,
+    GBP: 167.40
+  },
   connectWallet: async () => {},
   disconnectWallet: () => {},
   refreshBalances: async () => {},
@@ -81,6 +105,9 @@ const defaultContextValue: BlockchainContextType = {
   claimReferralReward: async () => '',
   claimCashback: async () => '',
   relayTransaction: async () => '',
+  getTokenPrice: async () => {},
+  calculateTokenAmount: () => 0,
+  calculateFiatAmount: () => 0,
   isCorrectNetwork: false,
   switchToBscNetwork: async () => {},
   demoMode: false,
@@ -107,6 +134,25 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState<boolean>(false);
   const [demoMode, setDemoMode] = useState<boolean>(false);
+  const [tokenPrice, setTokenPrice] = useState<{
+    nprRate: number;
+    usdRate: number;
+    eurRate: number;
+    gbpRate: number;
+  }>({
+    nprRate: 1,
+    usdRate: 0.0075,
+    eurRate: 0.0070,
+    gbpRate: 0.0060
+  });
+  const [exchangeRates, setExchangeRates] = useState<{
+    [currency: string]: number;
+  }>({
+    NPR: 1,
+    USD: 133.05,
+    EUR: 143.25,
+    GBP: 167.40
+  });
 
   // Load contracts function
   const loadContracts = async (signer: ethers.JsonRpcSigner) => {
