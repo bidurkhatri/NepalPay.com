@@ -665,168 +665,95 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Toggle demo mode
+  // Toggle demo mode - but always connect to the real contract
   const toggleDemoMode = () => {
     console.log("Toggle demo mode called. Current demoMode state:", demoMode);
     
-    if (isConnected && !demoMode) {
-      // If turning on demo mode while connected, disconnect first
-      disconnectWallet();
-    }
+    // Use a test wallet provider to connect to real smart contracts
+    const testProvider = new ethers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
+    console.log("Connecting to real BSC mainnet with test provider");
     
     // First update demo mode state
     const newDemoModeState = !demoMode;
+    console.log("Setting demo mode to:", newDemoModeState);
     setDemoMode(newDemoModeState);
     
     // Immediately use the new state value instead of relying on the state variable
     if (newDemoModeState) {
-      console.log("Activating demo mode - creating mocks and setting demo values");
+      console.log("Activating demo mode - connecting to real contracts with read-only access");
       
-      // If turning on demo mode, set demo values
+      // Set basic display values for UI
       setAccount('0xDemoAddress...1234');
       setIsConnected(true);
       setBalance('1000');
       setTokenBalance('5000');
       
-      // Create a mock token contract with actual smart contract methods
-      const mockTokenContract = {
-        address: NEPALI_PAY_TOKEN_ADDRESS,
-        getTokenPrice: async () => {
-          console.log("Mock getTokenPrice called");
-          return ethers.parseUnits('1', 18);
-        },
-        getTokenPriceInUSD: async () => {
-          console.log("Mock getTokenPriceInUSD called");
-          return ethers.parseUnits('0.0075', 18);
-        },
-        getTokenPriceInEUR: async () => {
-          console.log("Mock getTokenPriceInEUR called");
-          return ethers.parseUnits('0.007', 18);
-        },
-        getTokenPriceInGBP: async () => {
-          console.log("Mock getTokenPriceInGBP called");
-          return ethers.parseUnits('0.006', 18);
-        },
-        getExchangeRate: async (currency: string) => {
-          console.log(`Mock getExchangeRate called for ${currency}`);
-          const rates: Record<string, bigint> = {
-            'USD': ethers.parseUnits('133.05', 6),
-            'EUR': ethers.parseUnits('143.25', 6),
-            'GBP': ethers.parseUnits('167.40', 6),
-            'NPR': ethers.parseUnits('1', 6)
-          };
-          return rates[currency] || ethers.parseUnits('1', 6);
-        },
-        getPurchaseFee: async () => {
-          console.log("Mock getPurchaseFee called");
-          return ethers.parseUnits('0.02', 6);
-        },
-        getTransferFee: async () => {
-          console.log("Mock getTransferFee called");
-          return ethers.parseUnits('0.01', 6);
-        },
-        getPaymentFee: async () => {
-          console.log("Mock getPaymentFee called");
-          return ethers.parseUnits('0.015', 6);
-        },
-        getWithdrawalFee: async () => {
-          console.log("Mock getWithdrawalFee called");
-          return ethers.parseUnits('0.025', 6);
-        },
-        balanceOf: async () => {
-          console.log("Mock balanceOf called");
-          return ethers.parseUnits('5000', 18);
-        },
-        transfer: async (to: string, amount: ethers.BigNumberish) => {
-          console.log(`Mock transfer called: to=${to}, amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        approve: async (spender: string, amount: ethers.BigNumberish) => {
-          console.log(`Mock approve called: spender=${spender}, amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        }
-      };
-      
-      // Create a mock NepaliPay contract with actual smart contract methods
-      const mockNepaliPayContract = {
-        address: NEPALI_PAY_ADDRESS,
-        getCollateralValue: async (collateralType: string, amount: ethers.BigNumberish) => {
-          console.log(`Mock getCollateralValue called: type=${collateralType}, amount=${amount}`);
-          const rates: Record<string, number> = {
-            'BNB': 450,
-            'ETH': 900,
-            'BTC': 12000
-          };
-          const valuePerUnit = rates[collateralType] || 1;
-          const amountNumber = Number(ethers.formatEther(typeof amount === 'string' ? amount : amount.toString()));
-          console.log(`Calculated collateral value: ${amountNumber * valuePerUnit} NPT`);
-          return ethers.parseEther((amountNumber * valuePerUnit).toString());
-        },
-        getLoanToValueRatio: async (collateralType: string) => {
-          console.log(`Mock getLoanToValueRatio called for ${collateralType}`);
-          const ratios: Record<string, number> = {
-            'BNB': 70,
-            'ETH': 75,
-            'BTC': 80
-          };
-          return ethers.parseUnits((ratios[collateralType] || 50).toString(), 2);
-        },
-        getLiquidationThreshold: async (collateralType: string) => {
-          console.log(`Mock getLiquidationThreshold called for ${collateralType}`);
-          const thresholds: Record<string, number> = {
-            'BNB': 80,
-            'ETH': 85,
-            'BTC': 90
-          };
-          return ethers.parseUnits((thresholds[collateralType] || 75).toString(), 2);
-        },
-        depositTokens: async (amount: ethers.BigNumberish) => {
-          console.log(`Mock depositTokens called: amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        withdrawTokens: async (amount: ethers.BigNumberish) => {
-          console.log(`Mock withdrawTokens called: amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        setUsername: async (username: string) => {
-          console.log(`Mock setUsername called: username=${username}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        addCollateral: async (collateralType: string, amount: ethers.BigNumberish) => {
-          console.log(`Mock addCollateral called: type=${collateralType}, amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        takeLoan: async (amount: ethers.BigNumberish, collateralId: number) => {
-          console.log(`Mock takeLoan called: amount=${amount}, collateralId=${collateralId}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        repayLoan: async (loanId: number, amount: ethers.BigNumberish) => {
-          console.log(`Mock repayLoan called: loanId=${loanId}, amount=${amount}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        claimReferralReward: async (referralCode: string) => {
-          console.log(`Mock claimReferralReward called: code=${referralCode}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        },
-        claimCashback: async (transactionId: string) => {
-          console.log(`Mock claimCashback called: txId=${transactionId}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        }
-      };
-      
-      // Set the mock contracts
-      setTokenContract(mockTokenContract as unknown as ethers.Contract);
-      setNepaliPayContract(mockNepaliPayContract as unknown as ethers.Contract);
-      
-      // Mock FeeRelayer contract
-      const mockFeeRelayerContract = {
-        address: FEE_RELAYER_ADDRESS,
-        relayTransaction: async (data: string, signature: string) => {
-          console.log(`Mock relayTransaction called: data=${data}, signature=${signature}`);
-          return { wait: async () => ({ hash: '0xdemo-transaction-hash' }) };
-        }
-      };
-      setFeeRelayerContract(mockFeeRelayerContract as unknown as ethers.Contract);
+      try {
+        // Create real token contract with the read-only provider
+        console.log("Creating real token contract with address:", NEPALI_PAY_TOKEN_ADDRESS);
+        const realTokenContract = new ethers.Contract(
+          NEPALI_PAY_TOKEN_ADDRESS,
+          [
+            "function balanceOf(address) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function getTokenPrice() view returns (uint256)",
+            "function getTokenPriceInUSD() view returns (uint256)",
+            "function getTokenPriceInEUR() view returns (uint256)",
+            "function getTokenPriceInGBP() view returns (uint256)",
+            "function getExchangeRate(string memory currency) view returns (uint256)",
+            "function getPurchaseFee() view returns (uint256)",
+            "function getTransferFee() view returns (uint256)",
+            "function getPaymentFee() view returns (uint256)",
+            "function getWithdrawalFee() view returns (uint256)"
+          ],
+          testProvider
+        );
+        
+        // Create real NepaliPay contract with read-only provider
+        console.log("Creating real NepaliPay contract with address:", NEPALI_PAY_ADDRESS);
+        const realNepaliPayContract = new ethers.Contract(
+          NEPALI_PAY_ADDRESS,
+          [
+            "function depositTokens(uint256 amount)",
+            "function withdrawTokens(uint256 amount)",
+            "function setUsername(string memory username)",
+            "function addCollateral(string memory collateralType, uint256 amount) payable returns (uint256)",
+            "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
+            "function repayLoan(uint256 loanId, uint256 amount)",
+            "function claimReferralReward(string memory referralCode) returns (uint256)",
+            "function claimCashback(string memory txId) returns (uint256)",
+            "function getCollateralValue(string memory collateralType, uint256 amount) view returns (uint256)",
+            "function getLoanToValueRatio(string memory collateralType) view returns (uint256)",
+            "function getLiquidationThreshold(string memory collateralType) view returns (uint256)"
+          ],
+          testProvider
+        );
+        
+        // Create real FeeRelayer contract with read-only provider
+        console.log("Creating real FeeRelayer contract with address:", FEE_RELAYER_ADDRESS);
+        const realFeeRelayerContract = new ethers.Contract(
+          FEE_RELAYER_ADDRESS,
+          [
+            "function relayTransaction(bytes memory data, bytes memory signature) returns (bytes memory)"
+          ],
+          testProvider
+        );
+        
+        // Set the real contracts 
+        setTokenContract(realTokenContract);
+        setNepaliPayContract(realNepaliPayContract);
+        setFeeRelayerContract(realFeeRelayerContract);
+        
+        console.log("Successfully created real contract instances with read-only provider");
+      } catch (error) {
+        console.error("Error creating real contract instances:", error);
+        toast({
+          title: "Contract Connection Error",
+          description: "Could not connect to blockchain contracts. Using fallback values.",
+          variant: "destructive"
+        });
+      }
       
       // Get prices and rates immediately
       getTokenPrice();
