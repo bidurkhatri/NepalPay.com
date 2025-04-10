@@ -226,16 +226,16 @@ export class PgStorage implements IStorage {
     await this.ensureDbInitialized();
     try {
       console.log(`Fetching transactions for user ID: ${userId}`);
-      // Use raw SQL query since we're having issues with the ORM
-      const result = await db.execute(
+      // Use simpler SQL query approach
+      const { rows } = await pool.query(
         `SELECT * FROM transactions 
          WHERE sender_id = $1 OR receiver_id = $1 
          ORDER BY created_at DESC`,
         [userId]
       );
       
-      console.log(`Found ${result.length} transactions`);
-      return result;
+      console.log(`Found ${rows.length} transactions`);
+      return rows as Transaction[];
     } catch (error) {
       console.error('Error in getUserTransactions:', error);
       console.error('SQL Error details:', error instanceof Error ? error.message : String(error));
@@ -559,6 +559,104 @@ export class PgStorage implements IStorage {
     });
     
     console.log('Demo data initialization complete');
+  }
+  
+  /**
+   * Delete a user by ID
+   */
+  async deleteUser(id: number): Promise<boolean> {
+    await this.ensureDbInitialized();
+    
+    try {
+      await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Update Stripe customer ID for a user
+   */
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User | undefined> {
+    await this.ensureDbInitialized();
+    
+    const result = await db.update(users)
+      .set({
+        stripeCustomerId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    return result[0];
+  }
+  
+  /**
+   * Update Stripe info (customer ID and subscription ID) for a user
+   */
+  async updateUserStripeInfo(userId: number, stripeInfo: { customerId: string, subscriptionId: string }): Promise<User | undefined> {
+    await this.ensureDbInitialized();
+    
+    const result = await db.update(users)
+      .set({
+        stripeCustomerId: stripeInfo.customerId,
+        stripeSubscriptionId: stripeInfo.subscriptionId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
+      .returning();
+      
+    return result[0];
+  }
+  
+  /**
+   * Increment ad impressions
+   */
+  async incrementAdImpressions(adId: number): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    
+    const ad = await this.getAd(adId);
+    if (!ad) {
+      return undefined;
+    }
+    
+    const currentImpressions = ad.impressions || 0;
+    
+    const result = await db.update(ads)
+      .set({
+        impressions: currentImpressions + 1,
+        updatedAt: new Date()
+      })
+      .where(eq(ads.id, adId))
+      .returning();
+      
+    return result[0];
+  }
+  
+  /**
+   * Increment ad clicks
+   */
+  async incrementAdClicks(adId: number): Promise<Ad | undefined> {
+    await this.ensureDbInitialized();
+    
+    const ad = await this.getAd(adId);
+    if (!ad) {
+      return undefined;
+    }
+    
+    const currentClicks = ad.clicks || 0;
+    
+    const result = await db.update(ads)
+      .set({
+        clicks: currentClicks + 1,
+        updatedAt: new Date()
+      })
+      .where(eq(ads.id, adId))
+      .returning();
+      
+    return result[0];
   }
 }
 

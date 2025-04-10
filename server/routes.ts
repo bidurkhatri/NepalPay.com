@@ -693,7 +693,7 @@ async function handleFailedPayment(paymentIntent: any): Promise<void> {
     // Record activity
     await storage.createActivity({
       userId: parseInt(userId, 10),
-      action: 'transaction',
+      action: 'PAYMENT',
       description: 'NPT token purchase failed',
       ipAddress: null,
       userAgent: null,
