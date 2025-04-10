@@ -408,7 +408,7 @@ const LoansPage: React.FC = () => {
                     {collateralsLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     ) : (
-                      `${collaterals?.reduce((acc: number, c: any) => acc + parseFloat(c.valueInNpt), 0).toFixed(2) || 0} NPT`
+                      `${(Array.isArray(collaterals) ? collaterals.reduce((acc: number, c: any) => acc + parseFloat(c.valueInNpt), 0) : 0).toFixed(2)} NPT`
                     )}
                   </div>
                 </div>
