@@ -217,7 +217,9 @@ const PurchaseTokensPage: React.FC = () => {
     tokenPrice, 
     calculateFiatAmount,
     feeStructure,
-    account
+    account,
+    tokenContract,
+    demoMode
   } = useBlockchain();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [purchaseAmount, setPurchaseAmount] = useState<string>('');
@@ -416,7 +418,7 @@ const PurchaseTokensPage: React.FC = () => {
         total: 0
       });
     }
-  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice, feeStructure, calculateFiatAmount, isConnected]);
+  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice, feeStructure, calculateFiatAmount, isConnected, tokenContract, demoMode]);
 
   return (
     <div className="py-6 space-y-6">
