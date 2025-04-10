@@ -665,22 +665,19 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Toggle demo mode - but always connect to the real contract
+  // Toggle demo mode - uses mock contracts for testing
   const toggleDemoMode = async () => {
     console.log("Toggle demo mode called. Current demoMode state:", demoMode);
     
-    // First update demo mode state
-    const newDemoModeState = !demoMode;
-    console.log("Setting demo mode to:", newDemoModeState);
-    setDemoMode(newDemoModeState);
-    
-    // Immediately activate demo mode
-    if (newDemoModeState) {
-      try {
-        // Use multiple BSC RPC endpoints to improve reliability
-        const testProvider = new ethers.JsonRpcProvider('https://bsc-dataseed1.binance.org/');
-        console.log("Created provider for BSC mainnet:", testProvider);
-        console.log("Activating demo mode with REAL contract connections in read-only mode");
+    try {
+      // First update demo mode state
+      const newDemoModeState = !demoMode;
+      console.log("Setting demo mode to:", newDemoModeState);
+      setDemoMode(newDemoModeState);
+      
+      // Create mock implementation for development/testing purposes
+      if (newDemoModeState) {
+        console.log("Creating mock implementation for demo mode");
         
         // Set basic display values for UI
         setAccount('0xDemoAddress...1234');
@@ -688,166 +685,129 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
         setBalance('1000');
         setTokenBalance('5000');
         
-        // Token ABI
-        const tokenAbi = [
-          "function balanceOf(address) view returns (uint256)",
-          "function transfer(address to, uint256 amount) returns (bool)",
-          "function approve(address spender, uint256 amount) returns (bool)",
-          "function getTokenPrice() view returns (uint256)",
-          "function getTokenPriceInUSD() view returns (uint256)",
-          "function getTokenPriceInEUR() view returns (uint256)",
-          "function getTokenPriceInGBP() view returns (uint256)",
-          "function getExchangeRate(string memory currency) view returns (uint256)",
-          "function getPurchaseFee() view returns (uint256)",
-          "function getTransferFee() view returns (uint256)",
-          "function getPaymentFee() view returns (uint256)",
-          "function getWithdrawalFee() view returns (uint256)"
-        ];
+        // Create mock contract objects
+        console.log("Creating mock contracts with real functions");
         
-        // NepaliPay ABI
-        const nepaliPayAbi = [
-          "function depositTokens(uint256 amount)",
-          "function withdrawTokens(uint256 amount)",
-          "function setUsername(string memory username)",
-          "function addCollateral(string memory collateralType, uint256 amount) payable returns (uint256)",
-          "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
-          "function repayLoan(uint256 loanId, uint256 amount)",
-          "function claimReferralReward(string memory referralCode) returns (uint256)",
-          "function claimCashback(string memory txId) returns (uint256)",
-          "function getCollateralValue(string memory collateralType, uint256 amount) view returns (uint256)",
-          "function getLoanToValueRatio(string memory collateralType) view returns (uint256)",
-          "function getLiquidationThreshold(string memory collateralType) view returns (uint256)"
-        ];
+        // Mock token contract with all required functions
+        const mockTokenContract = {
+          balanceOf: async () => ethers.parseEther('5000'),
+          transfer: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          approve: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          getTokenPrice: async () => ethers.parseEther('1'),
+          getTokenPriceInUSD: async () => ethers.parseEther('0.0075'),
+          getTokenPriceInEUR: async () => ethers.parseEther('0.0070'),
+          getTokenPriceInGBP: async () => ethers.parseEther('0.0060'),
+          getExchangeRate: async (currency: string) => {
+            const rates: {[key: string]: any} = {
+              NPR: ethers.parseEther('1'),
+              USD: ethers.parseEther('133.05'),
+              EUR: ethers.parseEther('143.25'),
+              GBP: ethers.parseEther('167.40')
+            };
+            return rates[currency] || ethers.parseEther('1');
+          },
+          getPurchaseFee: async () => ethers.parseUnits('2', 2), // 2%
+          getTransferFee: async () => ethers.parseUnits('1', 2), // 1%
+          getPaymentFee: async () => ethers.parseUnits('1.5', 2), // 1.5%
+          getWithdrawalFee: async () => ethers.parseUnits('2.5', 2) // 2.5%
+        };
         
-        // FeeRelayer ABI
-        const feeRelayerAbi = [
-          "function relayTransaction(bytes memory data, bytes memory signature) returns (bytes memory)"
-        ];
-        
-        try {
-          // Create real token contract
-          console.log("Creating token contract with address:", NEPALI_PAY_TOKEN_ADDRESS);
-          const realTokenContract = new ethers.Contract(
-            NEPALI_PAY_TOKEN_ADDRESS,
-            tokenAbi,
-            testProvider
-          );
-          
-          // Create real NepaliPay contract
-          console.log("Creating NepaliPay contract with address:", NEPALI_PAY_ADDRESS);
-          const realNepaliPayContract = new ethers.Contract(
-            NEPALI_PAY_ADDRESS,
-            nepaliPayAbi,
-            testProvider
-          );
-          
-          // Create real FeeRelayer contract
-          console.log("Creating FeeRelayer contract with address:", FEE_RELAYER_ADDRESS);
-          const realFeeRelayerContract = new ethers.Contract(
-            FEE_RELAYER_ADDRESS,
-            feeRelayerAbi,
-            testProvider
-          );
-          
-          // Set the contracts in state
-          console.log("Setting contract instances in state");
-          setTokenContract(realTokenContract);
-          setNepaliPayContract(realNepaliPayContract);
-          setFeeRelayerContract(realFeeRelayerContract);
-          
-          // Immediately try to get fee information
-          console.log("Attempting to get fee information from contract");
-          const purchaseFeePromise = realTokenContract.getPurchaseFee();
-          const transferFeePromise = realTokenContract.getTransferFee();
-          const paymentFeePromise = realTokenContract.getPaymentFee();
-          const withdrawalFeePromise = realTokenContract.getWithdrawalFee();
-          
-          // Wait for all fee queries to complete
-          const [purchaseFee, transferFee, paymentFee, withdrawalFee] = await Promise.all([
-            purchaseFeePromise,
-            transferFeePromise,
-            paymentFeePromise,
-            withdrawalFeePromise
-          ]);
-          
-          console.log("Retrieved fees from contract:", {
-            purchaseFee,
-            transferFee,
-            paymentFee,
-            withdrawalFee
-          });
-          
-          // Update fee structure with real values from contract
-          setFeeStructure({
-            purchaseFee: parseFloat(ethers.formatUnits(purchaseFee, 6)),
-            transferFee: parseFloat(ethers.formatUnits(transferFee, 6)),
-            paymentFee: parseFloat(ethers.formatUnits(paymentFee, 6)),
-            withdrawalFee: parseFloat(ethers.formatUnits(withdrawalFee, 6))
-          });
-          
-          // Get token prices
-          await getTokenPrice();
-          
-          console.log("Contracts successfully connected and initialized in demo mode");
-          toast({
-            title: 'Demo Mode Activated',
-            description: 'Successfully connected to NepaliPay smart contracts in read-only mode',
-          });
-        } catch (contractError) {
-          console.error("Error setting up contract connections:", contractError);
-          
-          // Still set the contract instances even if getting fees failed
-          try {
-            const basicTokenContract = new ethers.Contract(
-              NEPALI_PAY_TOKEN_ADDRESS,
-              tokenAbi,
-              testProvider
-            );
-            
-            const basicNepaliPayContract = new ethers.Contract(
-              NEPALI_PAY_ADDRESS,
-              nepaliPayAbi,
-              testProvider
-            );
-            
-            setTokenContract(basicTokenContract);
-            setNepaliPayContract(basicNepaliPayContract);
-            
-            console.log("Basic contract connections established, but fee fetching failed");
-          } catch (fallbackError) {
-            console.error("Complete failure in contract connections:", fallbackError);
+        // Mock NepaliPay contract with all required functions
+        const mockNepaliPayContract = {
+          address: NEPALI_PAY_ADDRESS,
+          depositTokens: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          withdrawTokens: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          setUsername: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          addCollateral: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          takeLoan: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          repayLoan: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          claimReferralReward: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          claimCashback: async () => ({ wait: async () => ({ hash: '0xdemo' }) }),
+          getCollateralValue: async (collateralType: string, amount: any) => {
+            console.log("Mock getCollateralValue called with:", collateralType, amount);
+            const rates: {[key: string]: number} = {
+              BNB: 300,
+              ETH: 3000,
+              BTC: 50000
+            };
+            const amountNumber = parseFloat(ethers.formatEther(amount));
+            return ethers.parseEther((amountNumber * rates[collateralType]).toString());
+          },
+          getLoanToValueRatio: async (collateralType: string) => {
+            console.log("Mock getLoanToValueRatio called with:", collateralType);
+            const ratios: {[key: string]: number} = {
+              BNB: 70,
+              ETH: 75,
+              BTC: 65
+            };
+            return ethers.parseUnits(ratios[collateralType].toString(), 2);
+          },
+          getLiquidationThreshold: async (collateralType: string) => {
+            console.log("Mock getLiquidationThreshold called with:", collateralType);
+            const thresholds: {[key: string]: number} = {
+              BNB: 85,
+              ETH: 90,
+              BTC: 80
+            };
+            return ethers.parseUnits(thresholds[collateralType].toString(), 2);
           }
-          
-          toast({
-            title: 'Demo Mode Partially Activated',
-            description: 'Connected to blockchain in read-only mode with limited functionality',
-            variant: 'default',
-          });
-        }
-      } catch (error) {
-        console.error("Error in demo mode activation:", error);
+        };
+        
+        // Mock FeeRelayer contract
+        const mockFeeRelayerContract = {
+          address: FEE_RELAYER_ADDRESS,
+          relayTransaction: async () => ({ wait: async () => ({ hash: '0xdemo' }) })
+        };
+        
+        // Set mock contracts
+        setTokenContract(mockTokenContract as any);
+        setNepaliPayContract(mockNepaliPayContract as any);
+        setFeeRelayerContract(mockFeeRelayerContract as any);
+        
+        // Update fee structure
+        setFeeStructure({
+          purchaseFee: 0.02,  // 2%
+          transferFee: 0.01,  // 1%
+          paymentFee: 0.015,  // 1.5%
+          withdrawalFee: 0.025 // 2.5%
+        });
+        
+        console.log("Mock contracts initialized successfully");
+        
+        // Update token prices
+        setTokenPrice({
+          nprRate: 1,
+          usdRate: 0.0075,
+          eurRate: 0.0070,
+          gbpRate: 0.0060
+        });
+        
         toast({
-          title: "Demo Mode Error",
-          description: "Failed to activate demo mode properly",
-          variant: "destructive",
+          title: 'Demo Mode Activated',
+          description: 'Using simulated blockchain functionality for testing.',
+        });
+      } else {
+        // Deactivate demo mode
+        console.log("Deactivating demo mode");
+        setAccount(null);
+        setIsConnected(false);
+        setBalance('0');
+        setTokenBalance('0');
+        setTokenContract(null);
+        setNepaliPayContract(null);
+        setFeeRelayerContract(null);
+        
+        toast({
+          title: 'Demo Mode Deactivated',
+          description: 'Using real wallet connections.',
         });
       }
-    } else {
-      console.log("Deactivating demo mode - resetting values");
-      
-      // If turning off demo mode, reset values
-      setAccount(null);
-      setIsConnected(false);
-      setBalance('0');
-      setTokenBalance('0');
-      setTokenContract(null);
-      setNepaliPayContract(null);
-      setFeeRelayerContract(null);
-      
+    } catch (error) {
+      console.error("Error toggling demo mode:", error);
       toast({
-        title: 'Demo Mode Deactivated',
-        description: 'Demo mode has been turned off',
-        variant: 'default',
+        title: 'Demo Mode Toggle Failed',
+        description: 'An error occurred while toggling demo mode.',
+        variant: 'destructive'
       });
     }
   };
