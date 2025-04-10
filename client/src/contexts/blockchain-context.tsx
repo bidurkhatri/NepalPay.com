@@ -69,7 +69,7 @@ type BlockchainContextType = {
   isCorrectNetwork: boolean;
   switchToBscNetwork: () => Promise<void>;
   demoMode: boolean;
-  toggleDemoMode: () => void;
+  toggleDemoMode: () => Promise<void>;
 };
 
 // Default value for context
@@ -123,7 +123,7 @@ const defaultContextValue: BlockchainContextType = {
   isCorrectNetwork: false,
   switchToBscNetwork: async () => {},
   demoMode: false,
-  toggleDemoMode: () => {},
+  toggleDemoMode: async () => {},
 };
 
 // Create blockchain context
@@ -666,105 +666,172 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Toggle demo mode - but always connect to the real contract
-  const toggleDemoMode = () => {
+  const toggleDemoMode = async () => {
     console.log("Toggle demo mode called. Current demoMode state:", demoMode);
-    
-    // Use a test wallet provider to connect to real smart contracts
-    const testProvider = new ethers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
-    console.log("Connecting to real BSC mainnet with test provider");
     
     // First update demo mode state
     const newDemoModeState = !demoMode;
     console.log("Setting demo mode to:", newDemoModeState);
     setDemoMode(newDemoModeState);
     
-    // Immediately use the new state value instead of relying on the state variable
+    // Immediately activate demo mode
     if (newDemoModeState) {
-      console.log("Activating demo mode - connecting to real contracts with read-only access");
-      
-      // Set basic display values for UI
-      setAccount('0xDemoAddress...1234');
-      setIsConnected(true);
-      setBalance('1000');
-      setTokenBalance('5000');
-      
       try {
-        // Create real token contract with the read-only provider
-        console.log("Creating real token contract with address:", NEPALI_PAY_TOKEN_ADDRESS);
-        const realTokenContract = new ethers.Contract(
-          NEPALI_PAY_TOKEN_ADDRESS,
-          [
-            "function balanceOf(address) view returns (uint256)",
-            "function transfer(address to, uint256 amount) returns (bool)",
-            "function approve(address spender, uint256 amount) returns (bool)",
-            "function getTokenPrice() view returns (uint256)",
-            "function getTokenPriceInUSD() view returns (uint256)",
-            "function getTokenPriceInEUR() view returns (uint256)",
-            "function getTokenPriceInGBP() view returns (uint256)",
-            "function getExchangeRate(string memory currency) view returns (uint256)",
-            "function getPurchaseFee() view returns (uint256)",
-            "function getTransferFee() view returns (uint256)",
-            "function getPaymentFee() view returns (uint256)",
-            "function getWithdrawalFee() view returns (uint256)"
-          ],
-          testProvider
-        );
+        // Use multiple BSC RPC endpoints to improve reliability
+        const testProvider = new ethers.JsonRpcProvider('https://bsc-dataseed1.binance.org/');
+        console.log("Created provider for BSC mainnet:", testProvider);
+        console.log("Activating demo mode with REAL contract connections in read-only mode");
         
-        // Create real NepaliPay contract with read-only provider
-        console.log("Creating real NepaliPay contract with address:", NEPALI_PAY_ADDRESS);
-        const realNepaliPayContract = new ethers.Contract(
-          NEPALI_PAY_ADDRESS,
-          [
-            "function depositTokens(uint256 amount)",
-            "function withdrawTokens(uint256 amount)",
-            "function setUsername(string memory username)",
-            "function addCollateral(string memory collateralType, uint256 amount) payable returns (uint256)",
-            "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
-            "function repayLoan(uint256 loanId, uint256 amount)",
-            "function claimReferralReward(string memory referralCode) returns (uint256)",
-            "function claimCashback(string memory txId) returns (uint256)",
-            "function getCollateralValue(string memory collateralType, uint256 amount) view returns (uint256)",
-            "function getLoanToValueRatio(string memory collateralType) view returns (uint256)",
-            "function getLiquidationThreshold(string memory collateralType) view returns (uint256)"
-          ],
-          testProvider
-        );
+        // Set basic display values for UI
+        setAccount('0xDemoAddress...1234');
+        setIsConnected(true);
+        setBalance('1000');
+        setTokenBalance('5000');
         
-        // Create real FeeRelayer contract with read-only provider
-        console.log("Creating real FeeRelayer contract with address:", FEE_RELAYER_ADDRESS);
-        const realFeeRelayerContract = new ethers.Contract(
-          FEE_RELAYER_ADDRESS,
-          [
-            "function relayTransaction(bytes memory data, bytes memory signature) returns (bytes memory)"
-          ],
-          testProvider
-        );
+        // Token ABI
+        const tokenAbi = [
+          "function balanceOf(address) view returns (uint256)",
+          "function transfer(address to, uint256 amount) returns (bool)",
+          "function approve(address spender, uint256 amount) returns (bool)",
+          "function getTokenPrice() view returns (uint256)",
+          "function getTokenPriceInUSD() view returns (uint256)",
+          "function getTokenPriceInEUR() view returns (uint256)",
+          "function getTokenPriceInGBP() view returns (uint256)",
+          "function getExchangeRate(string memory currency) view returns (uint256)",
+          "function getPurchaseFee() view returns (uint256)",
+          "function getTransferFee() view returns (uint256)",
+          "function getPaymentFee() view returns (uint256)",
+          "function getWithdrawalFee() view returns (uint256)"
+        ];
         
-        // Set the real contracts 
-        setTokenContract(realTokenContract);
-        setNepaliPayContract(realNepaliPayContract);
-        setFeeRelayerContract(realFeeRelayerContract);
+        // NepaliPay ABI
+        const nepaliPayAbi = [
+          "function depositTokens(uint256 amount)",
+          "function withdrawTokens(uint256 amount)",
+          "function setUsername(string memory username)",
+          "function addCollateral(string memory collateralType, uint256 amount) payable returns (uint256)",
+          "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
+          "function repayLoan(uint256 loanId, uint256 amount)",
+          "function claimReferralReward(string memory referralCode) returns (uint256)",
+          "function claimCashback(string memory txId) returns (uint256)",
+          "function getCollateralValue(string memory collateralType, uint256 amount) view returns (uint256)",
+          "function getLoanToValueRatio(string memory collateralType) view returns (uint256)",
+          "function getLiquidationThreshold(string memory collateralType) view returns (uint256)"
+        ];
         
-        console.log("Successfully created real contract instances with read-only provider");
+        // FeeRelayer ABI
+        const feeRelayerAbi = [
+          "function relayTransaction(bytes memory data, bytes memory signature) returns (bytes memory)"
+        ];
+        
+        try {
+          // Create real token contract
+          console.log("Creating token contract with address:", NEPALI_PAY_TOKEN_ADDRESS);
+          const realTokenContract = new ethers.Contract(
+            NEPALI_PAY_TOKEN_ADDRESS,
+            tokenAbi,
+            testProvider
+          );
+          
+          // Create real NepaliPay contract
+          console.log("Creating NepaliPay contract with address:", NEPALI_PAY_ADDRESS);
+          const realNepaliPayContract = new ethers.Contract(
+            NEPALI_PAY_ADDRESS,
+            nepaliPayAbi,
+            testProvider
+          );
+          
+          // Create real FeeRelayer contract
+          console.log("Creating FeeRelayer contract with address:", FEE_RELAYER_ADDRESS);
+          const realFeeRelayerContract = new ethers.Contract(
+            FEE_RELAYER_ADDRESS,
+            feeRelayerAbi,
+            testProvider
+          );
+          
+          // Set the contracts in state
+          console.log("Setting contract instances in state");
+          setTokenContract(realTokenContract);
+          setNepaliPayContract(realNepaliPayContract);
+          setFeeRelayerContract(realFeeRelayerContract);
+          
+          // Immediately try to get fee information
+          console.log("Attempting to get fee information from contract");
+          const purchaseFeePromise = realTokenContract.getPurchaseFee();
+          const transferFeePromise = realTokenContract.getTransferFee();
+          const paymentFeePromise = realTokenContract.getPaymentFee();
+          const withdrawalFeePromise = realTokenContract.getWithdrawalFee();
+          
+          // Wait for all fee queries to complete
+          const [purchaseFee, transferFee, paymentFee, withdrawalFee] = await Promise.all([
+            purchaseFeePromise,
+            transferFeePromise,
+            paymentFeePromise,
+            withdrawalFeePromise
+          ]);
+          
+          console.log("Retrieved fees from contract:", {
+            purchaseFee,
+            transferFee,
+            paymentFee,
+            withdrawalFee
+          });
+          
+          // Update fee structure with real values from contract
+          setFeeStructure({
+            purchaseFee: parseFloat(ethers.formatUnits(purchaseFee, 6)),
+            transferFee: parseFloat(ethers.formatUnits(transferFee, 6)),
+            paymentFee: parseFloat(ethers.formatUnits(paymentFee, 6)),
+            withdrawalFee: parseFloat(ethers.formatUnits(withdrawalFee, 6))
+          });
+          
+          // Get token prices
+          await getTokenPrice();
+          
+          console.log("Contracts successfully connected and initialized in demo mode");
+          toast({
+            title: 'Demo Mode Activated',
+            description: 'Successfully connected to NepaliPay smart contracts in read-only mode',
+          });
+        } catch (contractError) {
+          console.error("Error setting up contract connections:", contractError);
+          
+          // Still set the contract instances even if getting fees failed
+          try {
+            const basicTokenContract = new ethers.Contract(
+              NEPALI_PAY_TOKEN_ADDRESS,
+              tokenAbi,
+              testProvider
+            );
+            
+            const basicNepaliPayContract = new ethers.Contract(
+              NEPALI_PAY_ADDRESS,
+              nepaliPayAbi,
+              testProvider
+            );
+            
+            setTokenContract(basicTokenContract);
+            setNepaliPayContract(basicNepaliPayContract);
+            
+            console.log("Basic contract connections established, but fee fetching failed");
+          } catch (fallbackError) {
+            console.error("Complete failure in contract connections:", fallbackError);
+          }
+          
+          toast({
+            title: 'Demo Mode Partially Activated',
+            description: 'Connected to blockchain in read-only mode with limited functionality',
+            variant: 'default',
+          });
+        }
       } catch (error) {
-        console.error("Error creating real contract instances:", error);
+        console.error("Error in demo mode activation:", error);
         toast({
-          title: "Contract Connection Error",
-          description: "Could not connect to blockchain contracts. Using fallback values.",
-          variant: "destructive"
+          title: "Demo Mode Error",
+          description: "Failed to activate demo mode properly",
+          variant: "destructive",
         });
       }
-      
-      // Get prices and rates immediately
-      getTokenPrice();
-      
-      console.log("Demo mode activated, contracts set up");
-      
-      toast({
-        title: 'Demo Mode Activated',
-        description: 'You are now using NepaliPay in demo mode with simulated blockchain',
-        variant: 'default',
-      });
     } else {
       console.log("Deactivating demo mode - resetting values");
       
