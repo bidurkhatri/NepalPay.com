@@ -1051,7 +1051,7 @@ const LoansPage: React.FC = () => {
             </Button>
             <Button 
               onClick={processRepayment} 
-              disabled={repaymentLoading || !loanToRepay || !wallet?.nptBalance || parseFloat(wallet.nptBalance) < parseFloat(calculateRepaymentAmount(loanToRepay || {}))}
+              disabled={repaymentLoading || !loanToRepay || !wallet || parseFloat((wallet as any)?.nptBalance || '0') < parseFloat(calculateRepaymentAmount(loanToRepay || {}))}
             >
               {repaymentLoading ? (
                 <>
