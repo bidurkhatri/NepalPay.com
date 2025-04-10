@@ -163,7 +163,12 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
         [
           "function balanceOf(address) view returns (uint256)",
           "function transfer(address to, uint256 amount) returns (bool)",
-          "function approve(address spender, uint256 amount) returns (bool)"
+          "function approve(address spender, uint256 amount) returns (bool)",
+          "function getTokenPrice() view returns (uint256)",
+          "function getTokenPriceInUSD() view returns (uint256)",
+          "function getTokenPriceInEUR() view returns (uint256)",
+          "function getTokenPriceInGBP() view returns (uint256)",
+          "function getExchangeRate(string memory currency) view returns (uint256)"
         ],
         signer
       );
@@ -195,6 +200,45 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
         signer
       );
       setFeeRelayerContract(feeRelayerContract);
+      
+      // Get token prices from contract
+      try {
+        // Get price in NPR (base rate)
+        const nprRate = await tokenContract.getTokenPrice();
+        
+        // Get price in USD
+        const usdRate = await tokenContract.getTokenPriceInUSD();
+        
+        // Get price in EUR
+        const eurRate = await tokenContract.getTokenPriceInEUR();
+        
+        // Get price in GBP
+        const gbpRate = await tokenContract.getTokenPriceInGBP();
+        
+        // Set token price rates
+        setTokenPrice({
+          nprRate: parseFloat(ethers.formatUnits(nprRate, 18)),
+          usdRate: parseFloat(ethers.formatUnits(usdRate, 18)),
+          eurRate: parseFloat(ethers.formatUnits(eurRate, 18)),
+          gbpRate: parseFloat(ethers.formatUnits(gbpRate, 18))
+        });
+        
+        // Get exchange rates
+        const usdExchangeRate = await tokenContract.getExchangeRate('USD');
+        const eurExchangeRate = await tokenContract.getExchangeRate('EUR');
+        const gbpExchangeRate = await tokenContract.getExchangeRate('GBP');
+        
+        // Set exchange rates
+        setExchangeRates({
+          NPR: 1,
+          USD: parseFloat(ethers.formatUnits(usdExchangeRate, 6)),
+          EUR: parseFloat(ethers.formatUnits(eurExchangeRate, 6)),
+          GBP: parseFloat(ethers.formatUnits(gbpExchangeRate, 6))
+        });
+      } catch (priceError) {
+        console.error("Error getting token prices:", priceError);
+        // Don't set error here to avoid blocking the main functionality
+      }
     } catch (error) {
       console.error("Error loading contracts:", error);
       setError("Failed to load contracts");
@@ -227,6 +271,98 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
       setError(error.message || 'Error refreshing balances');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Get token price function from smart contract
+  const getTokenPrice = async (): Promise<void> => {
+    if (demoMode) {
+      // Use demo values
+      setTokenPrice({
+        nprRate: 1,
+        usdRate: 0.0075,
+        eurRate: 0.0070,
+        gbpRate: 0.0060
+      });
+      setExchangeRates({
+        NPR: 1,
+        USD: 133.05,
+        EUR: 143.25,
+        GBP: 167.40
+      });
+      return;
+    }
+
+    if (!tokenContract) return;
+
+    try {
+      setIsLoading(true);
+      
+      // Get price in NPR (base rate)
+      const nprRate = await tokenContract.getTokenPrice();
+      
+      // Get price in USD
+      const usdRate = await tokenContract.getTokenPriceInUSD();
+      
+      // Get price in EUR
+      const eurRate = await tokenContract.getTokenPriceInEUR();
+      
+      // Get price in GBP
+      const gbpRate = await tokenContract.getTokenPriceInGBP();
+      
+      // Set token price rates
+      setTokenPrice({
+        nprRate: parseFloat(ethers.formatUnits(nprRate, 18)),
+        usdRate: parseFloat(ethers.formatUnits(usdRate, 18)),
+        eurRate: parseFloat(ethers.formatUnits(eurRate, 18)),
+        gbpRate: parseFloat(ethers.formatUnits(gbpRate, 18))
+      });
+      
+      // Get exchange rates
+      const usdExchangeRate = await tokenContract.getExchangeRate('USD');
+      const eurExchangeRate = await tokenContract.getExchangeRate('EUR');
+      const gbpExchangeRate = await tokenContract.getExchangeRate('GBP');
+      
+      // Set exchange rates
+      setExchangeRates({
+        NPR: 1,
+        USD: parseFloat(ethers.formatUnits(usdExchangeRate, 6)),
+        EUR: parseFloat(ethers.formatUnits(eurExchangeRate, 6)),
+        GBP: parseFloat(ethers.formatUnits(gbpExchangeRate, 6))
+      });
+    } catch (error: any) {
+      console.error('Error getting token price:', error);
+      setError(error.message || 'Error getting token price');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Calculate token amount from fiat amount using real-time exchange rates
+  const calculateTokenAmount = (fiatAmount: number, currency: string): number => {
+    if (!fiatAmount || fiatAmount <= 0) return 0;
+    
+    if (currency === 'NPR') {
+      // Direct conversion - 1 NPT = 1 NPR
+      return fiatAmount;
+    } else {
+      // Use exchange rate from smart contract
+      const rate = exchangeRates[currency] || 1;
+      return fiatAmount / rate;
+    }
+  };
+  
+  // Calculate fiat amount from token amount using real-time exchange rates
+  const calculateFiatAmount = (tokenAmount: number, currency: string): number => {
+    if (!tokenAmount || tokenAmount <= 0) return 0;
+    
+    if (currency === 'NPR') {
+      // Direct conversion - 1 NPT = 1 NPR
+      return tokenAmount;
+    } else {
+      // Use exchange rate from smart contract
+      const rate = exchangeRates[currency] || 1;
+      return tokenAmount * rate;
     }
   };
 
@@ -848,6 +984,11 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
     switchToBscNetwork,
     demoMode,
     toggleDemoMode,
+    tokenPrice,
+    exchangeRates,
+    getTokenPrice,
+    calculateTokenAmount,
+    calculateFiatAmount,
   };
 
   return (

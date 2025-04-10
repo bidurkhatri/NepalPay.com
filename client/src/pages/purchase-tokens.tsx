@@ -256,6 +256,13 @@ const PurchaseTokensPage: React.FC = () => {
     }
   };
 
+  // Get token prices from blockchain when component mounts
+  useEffect(() => {
+    if (isConnected) {
+      getTokenPrice();
+    }
+  }, [isConnected]);
+
   // Calculate price in real-time when amount changes
   useEffect(() => {
     const amount = form.watch('amount');
@@ -264,16 +271,28 @@ const PurchaseTokensPage: React.FC = () => {
     if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
       // Calculate fee based on payment method (2% for card, 1% for bank)
       const feePercentage = paymentMethod === 'card' ? 0.02 : 0.01;
+      
+      // Get token amount using smart contract exchange rate
       const nptAmount = Number(amount);
-      const fiatAmount = nptAmount; // 1:1 exchange rate
-      const fees = nptAmount * feePercentage;
+      
+      // Convert to fiat amount using the exchange rate from smart contract
+      // When purchasing, users pay in fiat, so we need to calculate how much NPT they'll get
+      const fiatAmount = calculateFiatAmount(nptAmount, 'NPR');
+      
+      // Calculate processing fee
+      const fees = fiatAmount * feePercentage;
+      
+      // Calculate total (fiat amount + fees)
       const total = fiatAmount + fees;
+      
+      // Current exchange rate from smart contract
+      const currentRate = tokenPrice.nprRate;
       
       setRealTimePrice({
         nptAmount,
         fiatAmount,
         fiatCurrency: 'NPR',
-        exchangeRate: 1,
+        exchangeRate: currentRate,
         fees,
         total
       });
@@ -282,12 +301,12 @@ const PurchaseTokensPage: React.FC = () => {
         nptAmount: 0,
         fiatAmount: 0,
         fiatCurrency: 'NPR',
-        exchangeRate: 1,
+        exchangeRate: tokenPrice.nprRate,
         fees: 0,
         total: 0
       });
     }
-  }, [form.watch('amount'), form.watch('paymentMethod')]);
+  }, [form.watch('amount'), form.watch('paymentMethod'), tokenPrice]);
 
   return (
     <div className="py-6 space-y-6">
