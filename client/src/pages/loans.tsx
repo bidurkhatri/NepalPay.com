@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRealTime } from '@/contexts/real-time-context';
+import { useBlockchain } from '@/contexts/blockchain-context';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { ethers } from 'ethers';
 import { format } from 'date-fns';
 import {
   Coins,
@@ -112,12 +114,8 @@ const LoansPage: React.FC = () => {
   const [currentLoan, setCurrentLoan] = useState<any>(null);
   const [currentTab, setCurrentTab] = useState<string>('active');
   
-  // Rate by collateral type (fictional rates for demonstration)
-  const collateralRates = {
-    BNB: { rate: 1000, ltv: 0.75 }, // 1 BNB = 1000 NPT, 75% LTV
-    ETH: { rate: 8000, ltv: 0.70 }, // 1 ETH = 8000 NPT, 70% LTV
-    BTC: { rate: 200000, ltv: 0.65 }, // 1 BTC = 200000 NPT, 65% LTV
-  };
+  // Use the blockchain contract for rates
+  const { tokenContract, nepaliPayContract } = useBlockchain();
   
   // Calculate loan amount based on collateral
   const [calculatedLoanAmount, setCalculatedLoanAmount] = useState<number>(0);
@@ -184,26 +182,43 @@ const LoansPage: React.FC = () => {
   
   // Remove these unused helper functions that are causing errors
   
-  // Simple function to update calculated values directly (no blockchain calls)
-  const updateCollateralCalculations = useCallback(() => {
-    if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
-      // Direct calculations without blockchain simulation
-      const rate = collateralRates[collateralType as keyof typeof collateralRates].rate;
-      const ltvRatio = collateralRates[collateralType as keyof typeof collateralRates].ltv;
-      
-      const collateralValueInNpt = Number(collateralAmount) * rate;
-      const maxLoanAmount = collateralValueInNpt * ltvRatio;
-      
-      // Update state with calculated values - no notifications
-      setCalculatedLoanAmount(maxLoanAmount);
-      setCalculatedLtvRatio(ltvRatio * 100);
-      setCalculatedCollateralValueInNpt(collateralValueInNpt);
-    } else {
+  // Use blockchain contract to get collateral calculations
+  const updateCollateralCalculations = useCallback(async () => {
+    try {
+      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0 && nepaliPayContract) {
+        // Get rates from smart contract
+        const collateralValue = await nepaliPayContract.getCollateralValue(
+          collateralType,
+          ethers.parseEther(collateralAmount.toString())
+        );
+        
+        // Get loan-to-value ratio from smart contract
+        const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
+        
+        // Convert from BigNumber to numbers
+        const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
+        const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
+        
+        // Calculate max loan amount based on contract values
+        const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+        
+        // Update state with calculated values from blockchain
+        setCalculatedLoanAmount(maxLoanAmount);
+        setCalculatedLtvRatio(ltvRatioDecimal);
+        setCalculatedCollateralValueInNpt(collateralValueInNpt);
+      } else {
+        setCalculatedLoanAmount(0);
+        setCalculatedLtvRatio(0);
+        setCalculatedCollateralValueInNpt(0);
+      }
+    } catch (error) {
+      console.error("Error calculating collateral values from blockchain:", error);
+      // Set default values in case of error
       setCalculatedLoanAmount(0);
       setCalculatedLtvRatio(0);
       setCalculatedCollateralValueInNpt(0);
     }
-  }, [collateralType, collateralAmount, collateralRates]);
+  }, [collateralType, collateralAmount, nepaliPayContract]);
   
   React.useEffect(() => {
     updateCollateralCalculations();
@@ -665,7 +680,7 @@ const LoansPage: React.FC = () => {
                     <div className="text-sm font-medium mb-1">Collateral Value</div>
                     <div className="text-xl font-bold">{calculatedCollateralValueInNpt.toFixed(2)} NPT</div>
                     <div className="text-xs text-muted-foreground">
-                      1 {form.getValues('collateralType')} = {collateralRates[form.getValues('collateralType') as keyof typeof collateralRates].rate} NPT
+                      Value calculated directly from NepaliPay smart contract
                     </div>
                   </div>
                 </div>
