@@ -212,7 +212,10 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
           "function takeLoan(uint256 amount, uint256 collateralId) returns (uint256)",
           "function repayLoan(uint256 loanId, uint256 amount)",
           "function claimReferralReward(string memory referralCode) returns (uint256)",
-          "function claimCashback(string memory txId) returns (uint256)"
+          "function claimCashback(string memory txId) returns (uint256)",
+          "function getCollateralValue(string memory collateralType, uint256 amount) view returns (uint256)",
+          "function getLoanToValueRatio(string memory collateralType) view returns (uint256)",
+          "function getLiquidationThreshold(string memory collateralType) view returns (uint256)"
         ],
         signer
       );
@@ -411,13 +414,20 @@ export const BlockchainProvider = ({ children }: { children: ReactNode }) => {
   const calculateFiatAmount = (tokenAmount: number, currency: string): number => {
     if (!tokenAmount || tokenAmount <= 0) return 0;
     
-    if (currency === 'NPR') {
-      // Direct conversion - 1 NPT = 1 NPR
+    try {
+      if (currency === 'NPR') {
+        // For NPR, we still apply the token price (which should be ~1, but might fluctuate)
+        const nprRate = tokenPrice.nprRate || 1;
+        return tokenAmount * nprRate;
+      } else {
+        // Use exchange rate from smart contract
+        const rate = exchangeRates[currency] || 1;
+        return tokenAmount * rate;
+      }
+    } catch (error) {
+      console.error("Error calculating fiat amount:", error);
+      // Fallback to direct conversion if error
       return tokenAmount;
-    } else {
-      // Use exchange rate from smart contract
-      const rate = exchangeRates[currency] || 1;
-      return tokenAmount * rate;
     }
   };
 
