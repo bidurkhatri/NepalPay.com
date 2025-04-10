@@ -182,83 +182,28 @@ const LoansPage: React.FC = () => {
   const collateralType = form.watch('collateralType');
   const collateralAmount = form.watch('collateralAmount');
   
-  // Helper functions to simulate blockchain interactions
-  const calculateCollateralValueInNpt = useCallback((collateralType: string, collateralAmount: string): number => {
-    // Emulate blockchain calculation
-    const rate = collateralRates[collateralType as keyof typeof collateralRates].rate;
-    return Number(collateralAmount) * rate;
-  }, [collateralRates]);
+  // Remove these unused helper functions that are causing errors
   
-  const getLoanToValueRatio = useCallback((collateralType: string): number => {
-    // Emulate blockchain calculation
-    return collateralRates[collateralType as keyof typeof collateralRates].ltv;
-  }, [collateralRates]);
-  
-  const calculateMaxLoanAmount = useCallback((collateralType: string, collateralAmount: string): number => {
-    // Emulate blockchain calculation
-    const collateralValue = calculateCollateralValueInNpt(collateralType, collateralAmount);
-    const ltvRatio = getLoanToValueRatio(collateralType);
-    return collateralValue * ltvRatio;
-  }, [calculateCollateralValueInNpt, getLoanToValueRatio]);
-  
-  // Function to update calculated values using blockchain-emulated data
-  const updateCollateralCalculations = useCallback(async () => {
+  // Simple function to update calculated values directly (no blockchain calls)
+  const updateCollateralCalculations = useCallback(() => {
     if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
-      try {
-        // Emulate blockchain calls with a delay to simulate network interaction
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Get loan-to-value ratio (emulated)
-        const ltvRatio = getLoanToValueRatio(collateralType);
-        
-        // Calculate collateral value (emulated)
-        const collateralValue = calculateCollateralValueInNpt(
-          collateralType, 
-          collateralAmount
-        );
-        
-        // Calculate max loan amount (emulated)
-        const maxLoan = calculateMaxLoanAmount(
-          collateralType,
-          collateralAmount
-        );
-        
-        // Show calculation success notification
-        toast({
-          title: "Blockchain Calculation Complete",
-          description: "Collateral values calculated using blockchain rates",
-        });
-        
-        // Update state with values
-        setCalculatedLoanAmount(maxLoan);
-        setCalculatedLtvRatio(ltvRatio * 100);
-        setCalculatedCollateralValueInNpt(collateralValue);
-        
-      } catch (error) {
-        console.error('Calculation error:', error);
-        
-        // Fallback to direct calculations if emulation fails
-        const collateralValueInNpt = Number(collateralAmount) * collateralRates[collateralType as keyof typeof collateralRates].rate;
-        const maxLoanAmount = collateralValueInNpt * collateralRates[collateralType as keyof typeof collateralRates].ltv;
-        
-        setCalculatedLoanAmount(maxLoanAmount);
-        setCalculatedLtvRatio(collateralRates[collateralType as keyof typeof collateralRates].ltv * 100);
-        setCalculatedCollateralValueInNpt(collateralValueInNpt);
-      }
+      // Direct calculations without blockchain simulation
+      const rate = collateralRates[collateralType as keyof typeof collateralRates].rate;
+      const ltvRatio = collateralRates[collateralType as keyof typeof collateralRates].ltv;
+      
+      const collateralValueInNpt = Number(collateralAmount) * rate;
+      const maxLoanAmount = collateralValueInNpt * ltvRatio;
+      
+      // Update state with calculated values - no notifications
+      setCalculatedLoanAmount(maxLoanAmount);
+      setCalculatedLtvRatio(ltvRatio * 100);
+      setCalculatedCollateralValueInNpt(collateralValueInNpt);
     } else {
       setCalculatedLoanAmount(0);
       setCalculatedLtvRatio(0);
       setCalculatedCollateralValueInNpt(0);
     }
-  }, [
-    collateralType, 
-    collateralAmount, 
-    calculateCollateralValueInNpt, 
-    getLoanToValueRatio, 
-    calculateMaxLoanAmount,
-    toast, 
-    collateralRates
-  ]);
+  }, [collateralType, collateralAmount, collateralRates]);
   
   React.useEffect(() => {
     updateCollateralCalculations();
@@ -366,20 +311,21 @@ const LoansPage: React.FC = () => {
   
   // Filter loans by status
   const filteredLoans = React.useMemo(() => {
-    if (!loans) return [];
+    // Convert loans to array if it's not already one
+    const loansArray = loans ? (Array.isArray(loans) ? loans : []) : [];
     
     if (currentTab === 'active') {
-      return loans.filter((loan: any) => loan.status === 'active' || loan.status === 'pending');
+      return loansArray.filter((loan: any) => loan.status === 'active' || loan.status === 'pending');
     } else if (currentTab === 'history') {
-      return loans.filter((loan: any) => loan.status === 'repaid' || loan.status === 'defaulted' || loan.status === 'liquidated');
+      return loansArray.filter((loan: any) => loan.status === 'repaid' || loan.status === 'defaulted' || loan.status === 'liquidated');
     }
     
-    return loans;
+    return loansArray;
   }, [loans, currentTab]);
   
   // Get loan collateral
   const getLoanCollateral = (loanId: number) => {
-    if (!collaterals) return null;
+    if (!collaterals || !Array.isArray(collaterals)) return null;
     return collaterals.find((c: any) => c.loanId === loanId);
   };
   
@@ -422,7 +368,7 @@ const LoansPage: React.FC = () => {
                     {loansLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     ) : (
-                      loans?.filter((loan: any) => loan.status === 'active').length || 0
+                      (Array.isArray(loans) ? loans.filter((loan: any) => loan.status === 'active').length : 0)
                     )}
                   </div>
                 </div>
@@ -442,7 +388,7 @@ const LoansPage: React.FC = () => {
                     {loansLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />
                     ) : (
-                      `${loans?.reduce((acc: number, loan: any) => acc + parseFloat(loan.amount), 0).toFixed(2) || 0} NPT`
+                      `${(Array.isArray(loans) ? loans.reduce((acc: number, loan: any) => acc + parseFloat(loan.amount), 0) : 0).toFixed(2)} NPT`
                     )}
                   </div>
                 </div>

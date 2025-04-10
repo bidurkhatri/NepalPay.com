@@ -139,6 +139,21 @@ const PurchaseTokensPage: React.FC = () => {
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [purchaseAmount, setPurchaseAmount] = useState<string>('');
+  const [realTimePrice, setRealTimePrice] = useState<{
+    nptAmount: number;
+    fiatAmount: number;
+    fiatCurrency: string;
+    exchangeRate: number;
+    fees: number;
+    total: number;
+  }>({
+    nptAmount: 0,
+    fiatAmount: 0,
+    fiatCurrency: 'NPR',
+    exchangeRate: 1, // 1 NPT = 1 NPR
+    fees: 0,
+    total: 0,
+  });
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -178,6 +193,39 @@ const PurchaseTokensPage: React.FC = () => {
       });
     }
   };
+
+  // Calculate price in real-time when amount changes
+  useEffect(() => {
+    const amount = form.watch('amount');
+    const paymentMethod = form.watch('paymentMethod');
+    
+    if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
+      // Calculate fee based on payment method (2% for card, 1% for bank)
+      const feePercentage = paymentMethod === 'card' ? 0.02 : 0.01;
+      const nptAmount = Number(amount);
+      const fiatAmount = nptAmount; // 1:1 exchange rate
+      const fees = nptAmount * feePercentage;
+      const total = fiatAmount + fees;
+      
+      setRealTimePrice({
+        nptAmount,
+        fiatAmount,
+        fiatCurrency: 'NPR',
+        exchangeRate: 1,
+        fees,
+        total
+      });
+    } else {
+      setRealTimePrice({
+        nptAmount: 0,
+        fiatAmount: 0,
+        fiatCurrency: 'NPR',
+        exchangeRate: 1,
+        fees: 0,
+        total: 0
+      });
+    }
+  }, [form.watch('amount'), form.watch('paymentMethod')]);
 
   return (
     <div className="py-6 space-y-6">
@@ -223,6 +271,26 @@ const PurchaseTokensPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Real-time price calculation display */}
+                    {realTimePrice.nptAmount > 0 && (
+                      <div className="rounded-md bg-primary/5 p-3 space-y-2 border border-primary/10">
+                        <h4 className="text-sm font-medium">Real-time Calculation</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="text-muted-foreground">NPT Amount:</div>
+                          <div className="text-right font-medium">{realTimePrice.nptAmount.toFixed(2)} NPT</div>
+                          
+                          <div className="text-muted-foreground">In Fiat:</div>
+                          <div className="text-right font-medium">{realTimePrice.fiatAmount.toFixed(2)} {realTimePrice.fiatCurrency}</div>
+                          
+                          <div className="text-muted-foreground">Processing Fee:</div>
+                          <div className="text-right font-medium">{realTimePrice.fees.toFixed(2)} {realTimePrice.fiatCurrency}</div>
+                          
+                          <div className="text-muted-foreground">Total Payment:</div>
+                          <div className="text-right font-medium">{realTimePrice.total.toFixed(2)} {realTimePrice.fiatCurrency}</div>
+                        </div>
+                      </div>
+                    )}
                     
                     <FormField
                       control={form.control}
