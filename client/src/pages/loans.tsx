@@ -279,83 +279,110 @@ const LoansPage: React.FC = () => {
     console.log("Starting collateral calculations with:", { collateralType, collateralAmount, nepaliPayContract, demoMode });
     
     try {
-      if (collateralType && collateralAmount && !isNaN(Number(collateralAmount)) && Number(collateralAmount) > 0) {
-        // Check if we have a contract or if we're in demo mode
-        if (nepaliPayContract) {
-          // Get rates from smart contract
-          console.log(`Calling smart contract getCollateralValue with: ${collateralType}, ${collateralAmount}`);
-          const collateralValue = await nepaliPayContract.getCollateralValue(
-            collateralType,
-            ethers.parseEther(collateralAmount.toString())
-          );
-          console.log("Got collateralValue from contract:", ethers.formatEther(collateralValue));
-          
-          // Get loan-to-value ratio from smart contract
-          console.log(`Calling smart contract getLoanToValueRatio with: ${collateralType}`);
-          const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
-          console.log("Got ltvRatio from contract:", ethers.formatUnits(ltvRatio, 2));
-          
-          // Get liquidation threshold from contract
-          console.log(`Calling smart contract getLiquidationThreshold with: ${collateralType}`);
-          const liquidationThreshold = await nepaliPayContract.getLiquidationThreshold(collateralType);
-          console.log("Got liquidationThreshold from contract:", ethers.formatUnits(liquidationThreshold, 2));
-          
-          // Convert from BigNumber to numbers
-          const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
-          const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
-          const liquidationThresholdDecimal = Number(ethers.formatUnits(liquidationThreshold, 2));
-          
-          // Calculate max loan amount based on contract values
-          const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
-          
-          console.log("Blockchain collateral calculation results:", {
-            collateralValueInNpt,
-            ltvRatioDecimal,
-            liquidationThresholdDecimal,
-            maxLoanAmount
-          });
-          
-          // Update state with calculated values from blockchain
-          setCalculatedLoanAmount(maxLoanAmount);
-          setCalculatedLtvRatio(ltvRatioDecimal);
-          setCalculatedCollateralValueInNpt(collateralValueInNpt);
-          
-          // Update liquidation threshold too
-          setLiquidationThreshold(liquidationThresholdDecimal);
-          
-          // Calculate current LTV for health indicator
-          if (loanAmount && !isNaN(Number(loanAmount))) {
-            const currentLoanAmount = parseFloat(loanAmount);
-            const currentLtv = (currentLoanAmount / collateralValueInNpt) * 100;
-            setCurrentLoanToValue(currentLtv);
-          } else {
-            setCurrentLoanToValue(0);
-          }
-          
-          return {
-            collateralValueInNpt,
-            ltvRatioDecimal,
-            liquidationThresholdDecimal,
-            maxLoanAmount
-          };
-        } else {
-          console.log("NepaliPay contract not available");
-          toast({
-            title: "Smart Contract Not Available",
-            description: "Connect your wallet or activate demo mode to access the NepaliPay smart contract for calculations",
-            variant: "destructive"
-          });
-        }
+      if (!collateralType || !collateralAmount || isNaN(Number(collateralAmount)) || Number(collateralAmount) <= 0) {
+        console.log("Invalid collateral inputs, setting zeros");
+        setCalculatedLoanAmount(0);
+        setCalculatedLtvRatio(0);
+        setCalculatedCollateralValueInNpt(0);
+        setLiquidationThreshold(0);
+        setCurrentLoanToValue(0);
+        return null;
       }
       
-      console.log("Invalid collateral inputs or missing contract, setting zeros");
-      setCalculatedLoanAmount(0);
-      setCalculatedLtvRatio(0);
-      setCalculatedCollateralValueInNpt(0);
-      setLiquidationThreshold(0);
-      setCurrentLoanToValue(0);
+      // Check if we have a contract
+      if (!nepaliPayContract || typeof nepaliPayContract.getCollateralValue !== 'function') {
+        console.log("NepaliPay contract not available");
+        toast({
+          title: "Smart Contract Not Available",
+          description: "Connect your wallet or activate demo mode to access the NepaliPay smart contract for calculations",
+          variant: "destructive"
+        });
+        
+        setCalculatedLoanAmount(0);
+        setCalculatedLtvRatio(0);
+        setCalculatedCollateralValueInNpt(0);
+        setLiquidationThreshold(0);
+        setCurrentLoanToValue(0);
+        return null;
+      }
       
-      return null;
+      console.log("Contract methods available:", 
+        Object.keys(nepaliPayContract).filter(k => typeof nepaliPayContract[k] === 'function')
+      );
+      
+      // Get rates from smart contract using direct call to avoid possible missing properties
+      console.log(`Calling smart contract getCollateralValue with: ${collateralType}, ${collateralAmount}`);
+      
+      try {
+        const collateralValue = await nepaliPayContract.getCollateralValue(
+          collateralType,
+          ethers.parseEther(collateralAmount.toString())
+        );
+        console.log("Got collateralValue from contract:", ethers.formatEther(collateralValue));
+        
+        // Get loan-to-value ratio from smart contract
+        console.log(`Calling smart contract getLoanToValueRatio with: ${collateralType}`);
+        const ltvRatio = await nepaliPayContract.getLoanToValueRatio(collateralType);
+        console.log("Got ltvRatio from contract:", ethers.formatUnits(ltvRatio, 2));
+        
+        // Get liquidation threshold from contract
+        console.log(`Calling smart contract getLiquidationThreshold with: ${collateralType}`);
+        const liquidationThreshold = await nepaliPayContract.getLiquidationThreshold(collateralType);
+        console.log("Got liquidationThreshold from contract:", ethers.formatUnits(liquidationThreshold, 2));
+        
+        // Convert from BigNumber to numbers
+        const collateralValueInNpt = Number(ethers.formatEther(collateralValue));
+        const ltvRatioDecimal = Number(ethers.formatUnits(ltvRatio, 2));
+        const liquidationThresholdDecimal = Number(ethers.formatUnits(liquidationThreshold, 2));
+        
+        // Calculate max loan amount based on contract values
+        const maxLoanAmount = collateralValueInNpt * (ltvRatioDecimal / 100);
+        
+        console.log("Blockchain collateral calculation results:", {
+          collateralValueInNpt,
+          ltvRatioDecimal,
+          liquidationThresholdDecimal,
+          maxLoanAmount
+        });
+        
+        // Update state with calculated values from blockchain
+        setCalculatedLoanAmount(maxLoanAmount);
+        setCalculatedLtvRatio(ltvRatioDecimal);
+        setCalculatedCollateralValueInNpt(collateralValueInNpt);
+        setLiquidationThreshold(liquidationThresholdDecimal);
+        
+        // Calculate current LTV for health indicator
+        if (loanAmount && !isNaN(Number(loanAmount))) {
+          const currentLoanAmount = parseFloat(loanAmount);
+          const currentLtv = (currentLoanAmount / collateralValueInNpt) * 100;
+          setCurrentLoanToValue(currentLtv);
+        } else {
+          setCurrentLoanToValue(0);
+        }
+        
+        return {
+          collateralValueInNpt,
+          ltvRatioDecimal,
+          liquidationThresholdDecimal,
+          maxLoanAmount
+        };
+      } catch (contractError) {
+        console.error("Contract method error:", contractError);
+        toast({
+          title: "Smart Contract Error",
+          description: "There was an error calling the NepaliPay smart contract methods. Try refreshing or connect your wallet.",
+          variant: "destructive"
+        });
+        
+        // Set defaults on error
+        setCalculatedLoanAmount(0);
+        setCalculatedLtvRatio(0);
+        setCalculatedCollateralValueInNpt(0);
+        setLiquidationThreshold(0);
+        setCurrentLoanToValue(0);
+        
+        return null;
+      }
     } catch (error) {
       console.error("Error calculating collateral values from blockchain:", error);
       // Set default values in case of error

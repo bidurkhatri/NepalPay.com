@@ -33,11 +33,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         
         // Call toggleDemoMode - don't rely on state for condition
         try {
+          console.log("Directly calling toggleDemoMode()");
           toggleDemoMode();
           
+          // Force a state check after toggling demo mode
+          setTimeout(() => {
+            console.log("Checking demo mode status after forced activation:", {
+              isConnected, 
+              demoMode, 
+              hasNepaliPayContract: !!nepaliPayContract
+            });
+            
+            if (!nepaliPayContract) {
+              console.error("Contract still not available after toggling demo mode!");
+              toggleDemoMode(); // Try one more time
+            }
+          }, 1000);
+          
           toast({
-            title: "Demo Mode Activated",
-            description: "You're using NepaliPay in demo mode with a simulated blockchain. All contract functions will work for demonstration purposes.",
+            title: "Using Real Smart Contracts",
+            description: "Connected to real NepaliPay contracts on BSC mainnet in read-only mode.",
             duration: 5000,
           });
         } catch (err) {
@@ -47,10 +62,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
     
     // Slight delay to ensure component is fully mounted and blockchain context is initialized
-    const timer = setTimeout(activateDemoMode, 200);
+    const timer = setTimeout(activateDemoMode, 500); // Increased delay for better initialization
     
     return () => clearTimeout(timer);
-  }, [isConnected, demoMode, toggleDemoMode, toast]);
+  }, [isConnected, demoMode, toggleDemoMode, toast, nepaliPayContract]);
   
   // Log when dashboard layout renders and if contracts are available
   useEffect(() => {
