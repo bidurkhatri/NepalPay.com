@@ -182,17 +182,9 @@ export function setupAuth(app: Express): void {
         finapiUserId: null,
       });
 
-      // Create wallet for new user
-      const wallet = await storage.createWallet({
-        userId: user.id,
-        balance: '0',
-        currency: 'NPT',
-        lastUpdated: new Date(),
-        nptBalance: '0',
-        bnbBalance: '0',
-        address: null,
-        isPrimary: true
-      });
+      // Create wallet for new user with blockchain address
+      const { walletService } = await import('./services/wallet');
+      const wallet = await walletService.createUserWallet(user.id);
 
       // Skip activity creation for now
 
@@ -263,15 +255,33 @@ export function setupAuth(app: Express): void {
     });
   });
 
-  // Get current user endpoint
-  app.get('/api/user', (req, res) => {
+  // Get current user endpoint with wallet information
+  app.get('/api/user', async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    // Return user data (excluding password)
-    const { password, ...userWithoutPassword } = req.user;
-    return res.json(userWithoutPassword);
+    try {
+      // Get user wallet information
+      const wallet = await storage.getWalletByUserId(req.user.id);
+      
+      // Return user data (excluding password) with wallet info
+      const { password, ...userWithoutPassword } = req.user;
+      return res.json({
+        ...userWithoutPassword,
+        wallet: wallet ? {
+          address: wallet.address,
+          nptBalance: wallet.nptBalance || '0',
+          bnbBalance: wallet.bnbBalance || '0',
+          lastUpdated: wallet.lastUpdated
+        } : null
+      });
+    } catch (error) {
+      log(`User data fetch error: ${error instanceof Error ? error.message : String(error)}`);
+      // Fallback to user data without wallet info if there's an error
+      const { password, ...userWithoutPassword } = req.user;
+      return res.json(userWithoutPassword);
+    }
   });
 
   // Update user profile endpoint

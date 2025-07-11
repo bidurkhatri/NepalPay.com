@@ -6,6 +6,7 @@ import { setupAuth } from './auth';
 import { storage } from './storage';
 import { log } from './vite';
 import { pool } from './db';
+import walletRoutes from './routes/wallet';
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -28,17 +29,30 @@ export function registerRoutes(app: Express): Server {
   // Setup auth routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
 
-  // Get user wallet
+  // Setup wallet API routes
+  app.use('/api/v1/wallet', walletRoutes);
+
+  // Enhanced user wallet endpoint with balance updates
   app.get('/api/wallet', async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
     try {
+      // Import wallet service dynamically to avoid circular dependencies
+      const { walletService } = await import('./services/wallet');
+      
       const wallet = await storage.getWalletByUserId(req.user.id);
       if (!wallet) {
         return res.status(404).json({ error: 'Wallet not found' });
       }
+
+      // Update balances from blockchain if wallet has an address
+      if (wallet.address) {
+        const updatedWallet = await walletService.updateWalletBalances(req.user.id);
+        return res.json(updatedWallet || wallet);
+      }
+
       return res.json(wallet);
     } catch (error) {
       log(`Error fetching wallet: ${error instanceof Error ? error.message : String(error)}`);
