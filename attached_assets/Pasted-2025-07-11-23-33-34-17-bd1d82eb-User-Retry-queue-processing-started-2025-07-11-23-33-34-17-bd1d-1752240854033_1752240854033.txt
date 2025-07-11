@@ -1,0 +1,111 @@
+2025-07-11 23:33:34.17
+bd1d82eb
+User
+Retry queue processing started
+2025-07-11 23:33:34.17
+bd1d82eb
+User
+Environment configuration warnings:
+2025-07-11 23:33:34.17
+bd1d82eb
+User
+- WALLET_PRIVATE_KEY is required for blockchain operations - running in offline mode
+2025-07-11 23:33:34.27
+bd1d82eb
+User
+1:33:34 PM [express] Environment configuration validated successfully
+2025-07-11 23:33:34.40
+bd1d82eb
+User
+Re-optimizing dependencies because vite config has changed
+2025-07-11 23:33:36.06
+bd1d82eb
+User
+1:33:36 PM [express] Server running on http://0.0.0.0:5000
+2025-07-11 23:33:36.10
+bd1d82eb
+User
+Blockchain connection established successfully
+2025-07-11 23:33:36.23
+bd1d82eb
+User
+1:33:36 PM [vite] Pre-transform error: Failed to load url /src/main.tsx?v=hWeCjfgkxK38FpiqgiAFT (resolved id: /src/main.tsx?v=hWeCjfgkxK38FpiqgiAFT). Does the file exist?
+2025-07-11 23:33:36.26
+bd1d82eb
+User
+npm notice
+2025-07-11 23:33:36.26
+bd1d82eb
+User
+npm notice New major version of npm available! 10.8.2 -> 11.4.2
+2025-07-11 23:33:36.26
+bd1d82eb
+User
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.2
+2025-07-11 23:33:36.26
+bd1d82eb
+User
+npm notice To update run: npm install -g npm@11.4.2
+2025-07-11 23:33:36.26
+bd1d82eb
+User
+npm notice
+2025-07-11 23:33:37.39
+bd1d82eb
+System
+command finished with error [npm run start]: exit status 1
+2025-07-11 23:33:50.16
+bd1d82eb
+User
+> rest-express@1.0.0 start
+2025-07-11 23:33:50.16
+bd1d82eb
+User
+> NODE_ENV=production node dist/index.js
+
+Wrap
+
+Colors
+4m
+ • 
+4 minutes ago
+Port :5000 opened on
+Remote Updates
+origin/main•upstream
+last fetched 3 min ago
+Nothing to pull or push
+Commit
+There are no changes to commit.
+Configure missing Secret values
+This App contains Secrets that might be required. Add values to ensure the code runs as expected.
+Key
+WALLET_PRIVATE_KEY
+Value
+SESSION_SECRET
+••••••••
+DATABASE_URL
+••••••••
+PGDATABASE
+••••••••
+PGHOST
+••••••••
+PGPORT
+••••••••
+PGUSER
+••••••••
+PGPASSWORD
+••••••••
+NEPALIPAY_CONTRACT_ADDRESS
+••••••••
+BSC_RPC_URL
+••••••••
+ADMIN_PRIVATE_KEY
+••••••••
+STRIPE_SECRET_KEY
+••••••••
+STRIPE_WEBHOOK_SECRET
+••••••••
+VITE_STRIPE_PUBLIC_KEY
+••••••••
+WALLET_ENCRYPTION_KEY
+••••••••
