@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { storage } from '../pg-storage';
 import { User, InsertWallet, Wallet } from '../../shared/schema';
 import { environmentConfig, getNetworkConfig } from '../utils/env-config';
+import { blockchainService } from './blockchain';
 
 // Environment configuration
 const networkConfig = getNetworkConfig(environmentConfig.NODE_ENV);
@@ -78,45 +79,70 @@ export class WalletService {
   }
 
   /**
-   * Create a new wallet for a user during registration
+   * Create a new wallet for a user or add address to existing wallet
    * Generates address, stores in database, and registers on blockchain
    */
   async createUserWallet(userId: number): Promise<Wallet> {
     try {
-      console.log(`Creating wallet for user ${userId}`);
+      console.log(`Creating/updating wallet for user ${userId}`);
       
-      // Generate wallet
+      // Check if user already has a wallet
+      const existingWallet = await storage.getWalletByUserId(userId);
+      console.log(`Wallet check for user ${userId}:`, existingWallet ? `Found wallet ${existingWallet.id}, address: ${existingWallet.address}` : 'No wallet found');
+      
+      // Generate wallet address
       const { address, encryptedKey } = this.generateWallet();
+      console.log(`Generated new address for user ${userId}: ${address}`);
       
-      // Create wallet record in database
-      const walletData: InsertWallet = {
-        userId,
-        balance: '0',
-        currency: 'NPT',
-        lastUpdated: new Date(),
-        address,
-        nptBalance: '0',
-        bnbBalance: '0',
-        isPrimary: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      let wallet: Wallet;
+      
+      if (existingWallet) {
+        // Update existing wallet with address
+        console.log(`Updating existing wallet ${existingWallet.id} with address for user ${userId}`);
+        const updatedWallet = await storage.updateWallet(existingWallet.id, {
+          address,
+          nptBalance: '0',
+          bnbBalance: '0',
+          lastUpdated: new Date(),
+          updatedAt: new Date()
+        });
+        
+        if (!updatedWallet) {
+          throw new Error('Failed to update existing wallet');
+        }
+        wallet = updatedWallet;
+      } else {
+        // Create new wallet record in database
+        console.log(`Creating new wallet for user ${userId}`);
+        const walletData: InsertWallet = {
+          userId,
+          balance: '0',
+          currency: 'NPT',
+          lastUpdated: new Date(),
+          address,
+          nptBalance: '0',
+          bnbBalance: '0',
+          isPrimary: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
 
-      const wallet = await storage.createWallet(walletData);
+        wallet = await storage.createWallet(walletData);
+      }
       
       // Update user with wallet address
       await storage.updateUser(userId, { walletAddress: address });
       
       // Register on blockchain (in background, don't block registration)
-      this.registerOnBlockchain(userId, address).catch(error => {
+      blockchainService.registerUser(userId, address).catch(error => {
         console.error(`Blockchain registration failed for user ${userId}:`, error);
       });
       
-      console.log(`Wallet created successfully for user ${userId}: ${address}`);
+      console.log(`Wallet ${existingWallet ? 'updated' : 'created'} successfully for user ${userId}: ${address}`);
       return wallet;
       
     } catch (error) {
-      console.error(`Failed to create wallet for user ${userId}:`, error);
+      console.error(`Failed to create/update wallet for user ${userId}:`, error);
       throw new Error('Wallet creation failed');
     }
   }
@@ -163,15 +189,15 @@ export class WalletService {
    */
   async getWalletBalance(address: string): Promise<{ npt: string; bnb: string }> {
     try {
-      // Get NPT balance
-      const nptBalance = await this.contract.balanceOf(address);
-      
-      // Get BNB balance
-      const bnbBalance = await this.provider.getBalance(address);
+      // Use blockchain service for balance queries
+      const [nptBalance, bnbBalance] = await Promise.all([
+        blockchainService.getBalance(address),
+        blockchainService.getBNBBalance(address)
+      ]);
       
       return {
-        npt: ethers.formatEther(nptBalance),
-        bnb: ethers.formatEther(bnbBalance)
+        npt: nptBalance,
+        bnb: bnbBalance
       };
       
     } catch (error) {

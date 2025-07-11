@@ -1,0 +1,178 @@
+**Exact Instruction Set to Finalize Wallet Creation and Make NepalPay Ready to Ship**
+
+---
+
+### A. Wallet Generation and Assignment (Backend)
+
+1. **Add Ethereum Wallet Generator**
+
+   * Use `ethers.Wallet.createRandom()` to generate new wallet during registration.
+   * Store:
+
+     * `wallet.address` → DB (`wallets.address`)
+     * `wallet.privateKey` → Secure encrypted store (never exposed)
+   * Use `crypto` + `.env`-stored secret to AES encrypt privateKey.
+   * For non-custodial, instead return mnemonic to user and skip storing privateKey.
+
+2. **Enforce One-to-One Mapping**
+
+   * In `users` and `wallets` tables:
+
+     * Add unique constraint on `wallet_address`
+     * Enforce foreign key constraint between `users.wallet_address` and `wallets.address`
+
+---
+
+### B. Smart Contract Integration
+
+3. **Register Wallet On-Chain**
+
+   * After registration, call:
+
+     ```ts
+     NepaliPayContract.registerUser(userId, wallet.address)
+     ```
+   * Wrap this in a backend service:
+
+     * `blockchain/registerUser.ts`
+     * Catch and log any failure
+     * Retry with exponential backoff if transaction fails
+
+4. **Abstract Blockchain Interactions**
+
+   * Create `/services/blockchain.ts`:
+
+     * `mint()`, `burn()`, `transfer()`, `getBalance()`
+     * `registerUser()`, `isRegistered()`
+   * Use `ethers.js` with `.env` for provider, private key, contract address
+
+---
+
+### C. Frontend Integration
+
+5. **Display Wallet Address**
+
+   * On `Dashboard` and `Profile`, display:
+
+     * Wallet address
+     * QR code (generate via `qrcode.react`)
+     * NPT balance
+   * Add button for:
+
+     * Copy wallet
+     * View on BscScan
+
+---
+
+### D. Security Enhancements
+
+6. **Private Key Encryption (Custodial)**
+
+   * Encrypt with AES using `.env` key on server
+   * Store in secure `encrypted_keys` table or S3/Vault
+   * Never return privateKey in API
+
+7. **Wallet Recovery Strategy**
+
+   * If custodial:
+
+     * Admin can restore from encrypted backup
+   * If non-custodial:
+
+     * Show seed phrase at registration, with copy + confirm steps
+
+---
+
+### E. Contract Monitoring
+
+8. **Create Blockchain Listener**
+
+   * Use `ethers.provider.on("Transfer", ...)` to listen for:
+
+     * Token transfers
+     * Registration confirmation
+   * Update local DB when detected
+
+9. **Add Retry Queue**
+
+   * Failed smart contract transactions should:
+
+     * Enter Redis-backed queue
+     * Retry up to 3 times with exponential delay
+     * Log permanently after failure
+
+---
+
+### F. Tests and Validation
+
+10. **Write Unit Tests**
+
+    * Backend:
+
+      * Test wallet creation
+      * Test smart contract call success/failure
+    * Frontend:
+
+      * Test wallet display component
+    * Use Vitest or Jest
+
+11. **Smart Contract Tests**
+
+    * Write tests for:
+
+      * `registerUser`
+      * `executeTransaction`
+      * `mint/burn`
+    * Run in Hardhat local node
+
+---
+
+### G. Environment and Deployment
+
+12. **Prepare for Deployment**
+
+    * Move all addresses, keys, and RPC URLs to `.env`
+    * Create `deploy.ts` for contracts using Hardhat
+    * Add one-click seed script for testnet bootstrapping
+
+13. **CI/CD Integration**
+
+    * Ensure smart contract build + test in CI
+    * Add `npm run wallet:test` as step in backend CI
+
+---
+
+### H. Documentation
+
+14. **Add Developer Guide**
+
+    * Create `docs/wallet.md`:
+
+      * Custodial vs non-custodial flow
+      * How registration links to smart contract
+      * API overview
+
+15. **API Contract**
+
+    * Document `/auth/register` response to include:
+
+      * Wallet address
+      * Balance (optional)
+      * Recovery instructions (if applicable)
+
+---
+
+### I. Optional Additions (Post-Shipping)
+
+16. **Multi-wallet Support**
+
+    * Allow user to link multiple external wallets
+    * Tag primary wallet
+
+17. **Hardware Wallet Admin Support**
+
+    * Add support for Ledger/Trezor signing in superadmin panel
+
+---
+
+Complete all 15 main items (A–H) before declaring shipping-ready wallet functionality.

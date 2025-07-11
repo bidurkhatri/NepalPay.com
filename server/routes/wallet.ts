@@ -17,22 +17,35 @@ const requireAuth = (req: Request, res: Response, next: any) => {
 /**
  * GET /api/v1/wallet
  * Get user's wallet information with current balances
+ * Creates wallet if it doesn't exist (backward compatibility)
  */
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     
     // Get wallet from database
-    const wallet = await storage.getWalletByUserId(userId);
+    let wallet = await storage.getWalletByUserId(userId);
+    
+    // Create wallet if it doesn't exist (backward compatibility for existing users)
     if (!wallet) {
-      return res.status(404).json({ error: 'Wallet not found' });
+      console.log(`Creating missing wallet for existing user ${userId}`);
+      wallet = await walletService.createUserWallet(userId);
+    }
+    
+    // If wallet exists but has no address, add one
+    else if (wallet && !wallet.address) {
+      console.log(`Adding address to existing wallet for user ${userId}`);
+      wallet = await walletService.createUserWallet(userId);
     }
 
-    // Update balances from blockchain
-    const updatedWallet = await walletService.updateWalletBalances(userId);
+    // Update balances from blockchain if wallet has an address
+    if (wallet && wallet.address) {
+      const updatedWallet = await walletService.updateWalletBalances(userId);
+      wallet = updatedWallet || wallet;
+    }
     
     res.json({
-      wallet: updatedWallet || wallet,
+      wallet,
       networkStatus: await walletService.getNetworkStatus()
     });
     

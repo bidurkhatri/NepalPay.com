@@ -4,6 +4,7 @@ import { useRealTime } from '@/contexts/real-time-context';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Wallet,
   ArrowUpRight,
@@ -17,6 +18,9 @@ import {
   AlertCircle,
   Info,
   ArrowRight,
+  QrCode,
+  Shield,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,9 +77,39 @@ const WalletPage: React.FC = () => {
     error: walletError,
     refetch: refetchWallet
   } = useQuery({
-    queryKey: ['/api/wallet'],
+    queryKey: ['/api/v1/wallet'],
     retry: 1,
   });
+
+  // Create wallet for user
+  const createWallet = async () => {
+    try {
+      const response = await fetch('/api/v1/wallet/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Wallet Created',
+          description: 'Your wallet has been created successfully',
+        });
+        refetchWallet();
+      } else {
+        throw new Error('Failed to create wallet');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create wallet. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
   
   // Fetch transactions
   const {
@@ -104,6 +138,38 @@ const WalletPage: React.FC = () => {
       description: 'Wallet address copied to clipboard',
     });
   };
+
+  // Refresh wallet balances
+  const refreshBalances = async () => {
+    try {
+      const response = await fetch('/api/v1/wallet/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        toast({
+          title: 'Balances Updated',
+          description: 'Wallet balances refreshed from blockchain',
+        });
+        refetchWallet();
+      } else {
+        throw new Error('Failed to refresh balances');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh balances. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Show QR code modal
+  const [showQR, setShowQR] = useState(false);
   
   // Filter transactions based on search and type filter
   const filteredTransactions = React.useMemo(() => {
@@ -183,11 +249,33 @@ const WalletPage: React.FC = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : walletError ? (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>Failed to load wallet information</AlertDescription>
-                </Alert>
+                <div className="space-y-4">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>No Wallet Found</AlertTitle>
+                    <AlertDescription>
+                      You don't have a wallet yet. Create one to start using NepaliPay.
+                    </AlertDescription>
+                  </Alert>
+                  <Button onClick={createWallet} className="w-full">
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Create Wallet
+                  </Button>
+                </div>
+              ) : !wallet?.address ? (
+                <div className="space-y-4">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Wallet Setup Required</AlertTitle>
+                    <AlertDescription>
+                      Your wallet needs a blockchain address. Click below to generate one.
+                    </AlertDescription>
+                  </Alert>
+                  <Button onClick={createWallet} className="w-full">
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Generate Wallet Address
+                  </Button>
+                </div>
               ) : (
                 <>
                   <div className="bg-primary/5 rounded-lg p-4">
@@ -198,7 +286,7 @@ const WalletPage: React.FC = () => {
                   
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Wallet Address</div>
-                    <div className="flex items-center">
+                    <div className="flex items-center mb-2">
                       <div className="text-sm font-mono bg-muted p-2 rounded flex-1 truncate">
                         {wallet?.address || '0x...'}
                       </div>
@@ -216,6 +304,24 @@ const WalletPage: React.FC = () => {
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Copy Address</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => setShowQR(true)}
+                              className="ml-1"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Show QR Code</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -244,6 +350,11 @@ const WalletPage: React.FC = () => {
                         </Tooltip>
                       </TooltipProvider>
                     </div>
+                    
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Shield className="h-3 w-3 mr-1" />
+                      <span>Custodial Wallet - Secured by NepaliPay</span>
+                    </div>
                   </div>
                   
                   <div className="flex flex-col space-y-2">
@@ -256,6 +367,15 @@ const WalletPage: React.FC = () => {
                       <Link href="/send">
                         Send Tokens
                       </Link>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={refreshBalances}
+                      className="h-8"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Refresh Balance
                     </Button>
                   </div>
                 </>
@@ -424,6 +544,44 @@ const WalletPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* QR Code Dialog */}
+      {showQR && wallet?.address && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-sm w-full mx-4">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-4">Wallet Address QR Code</h3>
+              <div className="bg-white p-4 rounded-lg inline-block">
+                <QRCodeSVG 
+                  value={wallet.address} 
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mt-4 mb-4">
+                Scan this QR code to share your wallet address
+              </p>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={() => copyToClipboard(wallet.address)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button 
+                  onClick={() => setShowQR(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

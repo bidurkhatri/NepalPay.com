@@ -7,6 +7,7 @@ import { storage } from './storage';
 import { log } from './vite';
 import { pool } from './db';
 import walletRoutes from './routes/wallet';
+import walletCreateRoutes from './routes/wallet-create';
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -31,6 +32,7 @@ export function registerRoutes(app: Express): Server {
 
   // Setup wallet API routes
   app.use('/api/v1/wallet', walletRoutes);
+  app.use('/api/v1/wallet', walletCreateRoutes);
 
   // Enhanced user wallet endpoint with balance updates
   app.get('/api/wallet', async (req, res) => {
