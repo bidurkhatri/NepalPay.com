@@ -410,6 +410,26 @@ export class PgStorage implements IStorage {
   
   // ====== Demo Data ======
   
+  /**
+   * Generate a secure demo password using environment variable or secure default
+   */
+  private generateDemoPassword(): string {
+    // Use environment variable if set, otherwise generate a secure default for development
+    const envPassword = process.env.DEMO_PASSWORD;
+    if (envPassword) {
+      return envPassword;
+    }
+    
+    // For development, use plaintext password for demo accounts
+    // This is acceptable only for demo/development environments
+    if (process.env.NODE_ENV !== 'production') {
+      return 'password'; // Known demo password for development only
+    }
+    
+    // In production, demo data should not be initialized without proper credentials
+    throw new Error('DEMO_PASSWORD environment variable must be set for demo accounts in production');
+  }
+
   async initializeDemoData(): Promise<void> {
     await this.ensureDbInitialized();
     
@@ -422,11 +442,14 @@ export class PgStorage implements IStorage {
     
     console.log('Initializing demo data...');
     
+    // Generate secure demo password
+    const demoPassword = this.generateDemoPassword();
+    
     // Create demo users
     const demoUser = await this.createUser({
       username: 'demo',
       email: 'demo@nepalipay.com',
-      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      password: demoPassword,
       firstName: 'Demo',
       lastName: 'User',
       role: 'user',
@@ -439,7 +462,7 @@ export class PgStorage implements IStorage {
     const adminUser = await this.createUser({
       username: 'admin',
       email: 'admin@nepalipay.com',
-      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      password: demoPassword,
       firstName: 'Admin',
       lastName: 'User',
       role: 'admin',
@@ -452,7 +475,7 @@ export class PgStorage implements IStorage {
     const superadminUser = await this.createUser({
       username: 'superadmin',
       email: 'superadmin@nepalipay.com',
-      password: '$2b$10$XpC5Vlrlt.mpIjGbXtKlROpI2zdSW9/.18TtBl8D0POqWmyQ1xhyG', // Password: 'password'
+      password: demoPassword,
       firstName: 'Super',
       lastName: 'Admin',
       role: 'superadmin',

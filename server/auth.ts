@@ -62,7 +62,12 @@ export function setupAuth(app: Express): void {
       tableName: 'session', // Default session table name
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || 'nepalipay_session_secret_change_in_production',
+    secret: process.env.SESSION_SECRET || (() => {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('SESSION_SECRET environment variable must be set in production');
+      }
+      return 'dev_session_secret_not_for_production';
+    })(),
     resave: false,
     saveUninitialized: false,
     cookie: {
