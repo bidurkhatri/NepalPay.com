@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/contexts/auth-context';
 import { useRealTime } from '@/contexts/real-time-context';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';

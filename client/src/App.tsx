@@ -2,7 +2,7 @@ import { Route, Switch } from 'wouter';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
-import { AuthProvider } from './hooks/use-auth';
+import { AuthProvider } from './contexts/auth-context';
 import { RealTimeProvider } from './contexts/real-time-context';
 import { ProtectedRoute } from './lib/protected-route';
 import DashboardLayout from './components/dashboard-layout';

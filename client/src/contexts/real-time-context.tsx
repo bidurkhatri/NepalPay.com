@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { useAuth } from '../hooks/use-auth';
+import { useAuth } from './auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';

@@ -4,6 +4,9 @@ import MobileNavigation from './mobile-navigation';
 import { useLocation } from 'wouter';
 import { useBlockchain } from '@/contexts/blockchain-context';
 import { useToast } from '@/hooks/use-toast';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
+import { StatusIndicator } from '@/components/ui/status-indicator';
+import { motion } from 'framer-motion';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -82,15 +85,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   }, [location, isConnected, demoMode, nepaliPayContract]);
   
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-auto">
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-          {children}
-        </main>
-        <MobileNavigation />
+    <ResponsiveContainer maxWidth="none" className="h-screen">
+      <div className="flex h-full bg-background">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-auto">
+          <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
+          </main>
+          <MobileNavigation />
+          
+          {/* Connection Status Indicator */}
+          {!isConnected && !demoMode && (
+            <div className="fixed top-4 right-4 z-50">
+              <StatusIndicator 
+                status="error" 
+                showText={true}
+                className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-full px-3 py-2"
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ResponsiveContainer>
   );
 };
 

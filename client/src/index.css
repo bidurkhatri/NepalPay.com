@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import responsive design system */
+@import './styles/responsive.css';
+
 /* Reset and Base Styles */
 @layer base {
   :root {

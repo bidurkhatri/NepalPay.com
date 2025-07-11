@@ -6,43 +6,49 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EnhancedSwitch } from '@/components/ui/enhanced-switch';
+import { AnimatedCard } from '@/components/ui/animated-card';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
+import { ResponsiveGrid } from '@/components/layout/responsive-grid';
+import { EnhancedButton } from '@/components/ui/enhanced-button';
 
 const SettingsPage: React.FC = () => {
   const { toast } = useToast();
 
   return (
-    <div className="container mx-auto p-6">
+    <ResponsiveContainer maxWidth="5xl" padding="lg">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold gradient-text mb-2">Settings</h1>
-        <p className="text-muted-foreground">Customize your NepaliPay experience</p>
+        <h1 className="text-3xl md:text-4xl font-bold gradient-text mb-2">Settings</h1>
+        <p className="text-muted-foreground text-lg">Customize your NepaliPay experience</p>
       </div>
       
       <Tabs defaultValue="appearance">
-        <TabsList className="grid w-full grid-cols-4 bg-black/40 backdrop-blur-md">
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          <TabsTrigger value="support">Help & Support</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-card/80 backdrop-blur-md border border-border/50">
+          <TabsTrigger value="appearance" className="text-sm">Appearance</TabsTrigger>
+          <TabsTrigger value="notifications" className="text-sm">Notifications</TabsTrigger>
+          <TabsTrigger value="preferences" className="text-sm">Preferences</TabsTrigger>
+          <TabsTrigger value="support" className="text-sm">Help & Support</TabsTrigger>
         </TabsList>
         
         <TabsContent value="appearance">
-          <Card className="bg-black/40 backdrop-blur-md border-primary/20">
+          <AnimatedCard variant="glass" animation="fade" className="mt-6">
             <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
-              <CardDescription>Customize how NepaliPay looks</CardDescription>
+              <CardTitle className="text-xl">Appearance Settings</CardTitle>
+              <CardDescription>Customize how NepaliPay looks and feels</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Theme</h3>
+              <div className="space-y-8">
+                <div className="space-y-6">
+                  <h3 className="font-medium text-lg">Theme</h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
-                      <div className="bg-background/80 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">Dark Theme</span>
+                  <ResponsiveGrid cols={{ default: 1, sm: 2, md: 3 }} gap="md">
+                    <AnimatedCard variant="elevated" animation="scale" delay={0.1} className="relative flex flex-col">
+                      <div className="bg-background/80 rounded-md p-4 mb-4 flex-1 flex items-center justify-center min-h-[80px]">
+                        <span className="text-sm text-muted-foreground">Dark Theme</span>
                       </div>
-                      <Button 
+                      <EnhancedButton 
                         size="sm" 
+                        variant="gradient"
                         className="w-full"
                         onClick={() => {
                           toast({
@@ -52,14 +58,14 @@ const SettingsPage: React.FC = () => {
                         }}
                       >
                         Selected
-                      </Button>
-                    </div>
+                      </EnhancedButton>
+                    </AnimatedCard>
                     
-                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
-                      <div className="bg-white/90 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
-                        <span className="text-xs text-black/70">Light Theme</span>
+                    <AnimatedCard variant="elevated" animation="scale" delay={0.2} className="relative flex flex-col">
+                      <div className="bg-white/90 rounded-md p-4 mb-4 flex-1 flex items-center justify-center min-h-[80px]">
+                        <span className="text-sm text-black/70">Light Theme</span>
                       </div>
-                      <Button 
+                      <EnhancedButton 
                         size="sm" 
                         variant="outline"
                         className="w-full"
@@ -71,14 +77,14 @@ const SettingsPage: React.FC = () => {
                         }}
                       >
                         Select
-                      </Button>
-                    </div>
+                      </EnhancedButton>
+                    </AnimatedCard>
                     
-                    <div className="border border-primary/20 rounded-lg p-4 bg-black/20 relative flex flex-col">
-                      <div className="bg-gradient-to-br from-primary/30 to-background/90 rounded-md p-2 mb-3 flex-1 flex items-center justify-center">
-                        <span className="text-xs text-white/90">System Theme</span>
+                    <AnimatedCard variant="elevated" animation="scale" delay={0.3} className="relative flex flex-col">
+                      <div className="bg-gradient-to-br from-primary/30 to-background/90 rounded-md p-4 mb-4 flex-1 flex items-center justify-center min-h-[80px]">
+                        <span className="text-sm text-white/90">System Theme</span>
                       </div>
-                      <Button 
+                      <EnhancedButton 
                         size="sm" 
                         variant="outline"
                         className="w-full"
@@ -90,39 +96,55 @@ const SettingsPage: React.FC = () => {
                         }}
                       >
                         Select
-                      </Button>
-                    </div>
-                  </div>
+                      </EnhancedButton>
+                    </AnimatedCard>
+                  </ResponsiveGrid>
                 </div>
                 
-                <div className="space-y-4">
-                  <h3 className="font-medium">Accent Color</h3>
+                <div className="space-y-6">
+                  <h3 className="font-medium text-lg">Accent Color</h3>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-5 rounded-full bg-blue-500"></div>
-                      <Label htmlFor="blue">Blue</Label>
-                      <Switch id="blue" checked />
-                    </div>
+                  <ResponsiveGrid cols={{ default: 1, sm: 2, md: 4 }} gap="md">
+                    <AnimatedCard variant="glass" animation="fade" delay={0.1} className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 rounded-full bg-blue-500 ring-2 ring-blue-500/30"></div>
+                        <div className="flex-1">
+                          <Label htmlFor="blue" className="text-sm font-medium">Blue</Label>
+                        </div>
+                        <EnhancedSwitch id="blue" variant="info" size="sm" checked />
+                      </div>
+                    </AnimatedCard>
                     
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-5 rounded-full bg-purple-500"></div>
-                      <Label htmlFor="purple">Purple</Label>
-                      <Switch id="purple" />
-                    </div>
+                    <AnimatedCard variant="glass" animation="fade" delay={0.2} className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 rounded-full bg-purple-500 ring-2 ring-purple-500/30"></div>
+                        <div className="flex-1">
+                          <Label htmlFor="purple" className="text-sm font-medium">Purple</Label>
+                        </div>
+                        <EnhancedSwitch id="purple" variant="default" size="sm" />
+                      </div>
+                    </AnimatedCard>
                     
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-5 rounded-full bg-green-500"></div>
-                      <Label htmlFor="green">Green</Label>
-                      <Switch id="green" />
-                    </div>
+                    <AnimatedCard variant="glass" animation="fade" delay={0.3} className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 rounded-full bg-green-500 ring-2 ring-green-500/30"></div>
+                        <div className="flex-1">
+                          <Label htmlFor="green" className="text-sm font-medium">Green</Label>
+                        </div>
+                        <EnhancedSwitch id="green" variant="success" size="sm" />
+                      </div>
+                    </AnimatedCard>
                     
-                    <div className="flex items-center space-x-2">
-                      <div className="h-5 w-5 rounded-full bg-amber-500"></div>
-                      <Label htmlFor="amber">Amber</Label>
-                      <Switch id="amber" />
-                    </div>
-                  </div>
+                    <AnimatedCard variant="glass" animation="fade" delay={0.4} className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 rounded-full bg-amber-500 ring-2 ring-amber-500/30"></div>
+                        <div className="flex-1">
+                          <Label htmlFor="amber" className="text-sm font-medium">Amber</Label>
+                        </div>
+                        <EnhancedSwitch id="amber" variant="warning" size="sm" />
+                      </div>
+                    </AnimatedCard>
+                  </ResponsiveGrid>
                 </div>
                 
                 <div className="space-y-4">
@@ -153,7 +175,7 @@ const SettingsPage: React.FC = () => {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </TabsContent>
         
         <TabsContent value="notifications">
@@ -387,7 +409,7 @@ const SettingsPage: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </ResponsiveContainer>
   );
 };
 
