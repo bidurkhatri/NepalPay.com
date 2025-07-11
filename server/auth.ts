@@ -284,10 +284,18 @@ export function setupAuth(app: Express): void {
       const allowedFields = ['firstName', 'lastName', 'phoneNumber'];
       const updates: Partial<User> = {};
 
-      // Only allow updating specific fields
+      // Only allow updating specific fields with proper validation
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
+          // Safely assign using literal property access instead of bracket notation
+          const value = req.body[field];
+          if (field === 'firstName') {
+            updates.firstName = value;
+          } else if (field === 'lastName') {
+            updates.lastName = value;
+          } else if (field === 'phoneNumber') {
+            updates.phoneNumber = value;
+          }
         }
       }
       

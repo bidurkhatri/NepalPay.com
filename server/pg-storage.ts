@@ -227,21 +227,21 @@ export class PgStorage implements IStorage {
     try {
       console.log(`Fetching transactions for user ID: ${userId}`);
       
-      // Try a simpler approach without WHERE clause first to debug
-      const { rows } = await pool.query(`
-        SELECT * FROM transactions 
-        ORDER BY created_at DESC
-      `);
+      // Use Drizzle ORM for safe parameterized queries instead of raw SQL
+      const userTransactions = await db
+        .select()
+        .from(transactions)
+        .where(
+          or(
+            eq(transactions.senderId, userId),
+            eq(transactions.receiverId, userId)
+          )
+        )
+        .orderBy(desc(transactions.createdAt));
       
-      // Filter in JavaScript after fetching all results
-      const userTransactions = rows.filter(tx => 
-        tx.sender_id === userId || tx.receiver_id === userId
-      );
+      console.log(`Found ${userTransactions.length} transactions for user ID ${userId}`);
       
-      console.log(`Found ${userTransactions.length} transactions for user ID ${userId} out of ${rows.length} total`);
-      
-      // Cast to proper type
-      return userTransactions as unknown as Transaction[];
+      return userTransactions;
     } catch (error) {
       console.error('Error in getUserTransactions:', error);
       console.error('SQL Error details:', error instanceof Error ? error.message : String(error));
