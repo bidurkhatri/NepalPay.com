@@ -94,11 +94,11 @@ export function EnhancedWalletCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <Card className="bg-card/50 backdrop-blur-md border-primary/10 hover:border-primary/20 transition-all duration-200">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-design-primary/20 transition-all duration-200">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center">
-                <Wallet className="mr-2 h-5 w-5 text-primary" />
+                <Wallet className="mr-2 h-5 w-5" style={{ color: '#1A73E8' }} />
                 <span className="text-2xl font-bold">Your Wallet</span>
               </div>
               <TooltipProvider>
@@ -126,12 +126,16 @@ export function EnhancedWalletCard({
           <CardContent className="space-y-6">
             {/* Balance Display */}
             <motion.div 
-              className="bg-primary/5 rounded-lg p-6 border border-primary/10"
+              className="rounded-lg p-6 border"
+              style={{ 
+                backgroundColor: 'rgba(26, 115, 232, 0.05)',
+                borderColor: 'rgba(26, 115, 232, 0.1)'
+              }}
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
               <div className="text-sm text-muted-foreground mb-2">NPT Balance</div>
-              <div className="text-3xl font-bold mb-2 text-primary">
+              <div className="text-3xl font-bold mb-2" style={{ color: '#1A73E8' }}>
                 {wallet?.nptBalance || '0'} NPT
               </div>
               <div className="text-sm text-muted-foreground">
@@ -226,8 +230,12 @@ export function EnhancedWalletCard({
                 </div>
                 
                 {/* Security Notice */}
-                <div className="flex items-center text-xs text-muted-foreground bg-secondary/5 p-2 rounded border border-secondary/10">
-                  <Shield className="h-3 w-3 mr-2 text-secondary" />
+                <div className="flex items-center text-xs text-muted-foreground p-2 rounded border" 
+                     style={{ 
+                       backgroundColor: 'rgba(0, 150, 136, 0.05)',
+                       borderColor: 'rgba(0, 150, 136, 0.1)'
+                     }}>
+                  <Shield className="h-3 w-3 mr-2" style={{ color: '#009688' }} />
                   <span>Custodial Wallet - Secured by NepaliPay</span>
                 </div>
               </div>

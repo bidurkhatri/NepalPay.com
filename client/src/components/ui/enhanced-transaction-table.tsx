@@ -110,11 +110,11 @@ export function EnhancedTransactionTable({
   const renderStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-success" />;
+        return <CheckCircle className="h-4 w-4" style={{ color: '#2E7D32' }} />;
       case 'pending':
-        return <Clock className="h-4 w-4 text-warning" />;
+        return <Clock className="h-4 w-4" style={{ color: '#FF8F00' }} />;
       case 'failed':
-        return <AlertCircle className="h-4 w-4 text-error" />;
+        return <AlertCircle className="h-4 w-4" style={{ color: '#C62828' }} />;
       default:
         return <Clock className="h-4 w-4" />;
     }
@@ -124,19 +124,31 @@ export function EnhancedTransactionTable({
     switch (status) {
       case 'completed':
         return (
-          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+          <Badge variant="outline" style={{ 
+            backgroundColor: 'rgba(46, 125, 50, 0.1)', 
+            color: '#2E7D32', 
+            borderColor: 'rgba(46, 125, 50, 0.2)' 
+          }}>
             Completed
           </Badge>
         );
       case 'pending':
         return (
-          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+          <Badge variant="outline" style={{ 
+            backgroundColor: 'rgba(255, 143, 0, 0.1)', 
+            color: '#FF8F00', 
+            borderColor: 'rgba(255, 143, 0, 0.2)' 
+          }}>
             Pending
           </Badge>
         );
       case 'failed':
         return (
-          <Badge variant="outline" className="bg-error/10 text-error border-error/20">
+          <Badge variant="outline" style={{ 
+            backgroundColor: 'rgba(198, 40, 40, 0.1)', 
+            color: '#C62828', 
+            borderColor: 'rgba(198, 40, 40, 0.2)' 
+          }}>
             Failed
           </Badge>
         );
@@ -148,11 +160,11 @@ export function EnhancedTransactionTable({
   const renderTypeIcon = (type: string) => {
     switch (type) {
       case 'sent':
-        return <ArrowUpRight className="h-4 w-4 text-error" />;
+        return <ArrowUpRight className="h-4 w-4" style={{ color: '#C62828' }} />;
       case 'received':
-        return <ArrowDownRight className="h-4 w-4 text-success" />;
+        return <ArrowDownRight className="h-4 w-4" style={{ color: '#2E7D32' }} />;
       case 'purchase':
-        return <Download className="h-4 w-4 text-primary" />;
+        return <Download className="h-4 w-4" style={{ color: '#1A73E8' }} />;
       default:
         return null;
     }

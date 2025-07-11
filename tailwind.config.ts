@@ -61,17 +61,16 @@ export default {
         "accent-light": "var(--accent-light)",
         "accent-dark": "var(--accent-dark)",
         
-        // Standard semantic colors for consistency
-        brand: {
-          primary: '#1A73E8',
-          secondary: '#009688',
-        },
-        semantic: {
-          background: '#F5F9FF',
-          surface: 'rgba(255,255,255,0.12)',
-          textPrimary: '#1E1E1E',
-          textSecondary: '#616161',
-        },
+        // Design system semantic colors
+        'design-primary': '#1A73E8',
+        'design-secondary': '#009688',
+        'design-background': '#F5F9FF',
+        'design-surface': 'rgba(255,255,255,0.12)',
+        'design-text-primary': '#1E1E1E',
+        'design-text-secondary': '#616161',
+        'design-success': '#2E7D32',
+        'design-error': '#C62828',
+        'design-warning': '#FF8F00',
         danger: {
           DEFAULT: "var(--danger-color)",
           light: "var(--danger-light)",

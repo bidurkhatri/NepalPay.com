@@ -1,0 +1,188 @@
+/* Design System Implementation - Blue-Teal Professional Theme */
+
+:root {
+  /* Primary Color Palette */
+  --design-primary: #1A73E8;
+  --design-secondary: #009688;
+  --design-background: #F5F9FF;
+  --design-surface: rgba(255,255,255,0.12);
+  
+  /* Text Colors */
+  --design-text-primary: #1E1E1E;
+  --design-text-secondary: #616161;
+  
+  /* Semantic Colors */
+  --design-success: #2E7D32;
+  --design-error: #C62828;
+  --design-warning: #FF8F00;
+  
+  /* Glass Morphism */
+  --glass-blur: blur(8px);
+  --glass-opacity: 0.1;
+  --glass-border: rgba(255,255,255,0.2);
+  
+  /* Animation Tokens */
+  --animation-fast: 200ms;
+  --animation-normal: 300ms;
+  --animation-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* Typography Scale */
+  --text-h1: 2rem;
+  --text-h2: 1.5rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
+  /* Touch Targets */
+  --touch-target: 44px;
+}
+
+/* Semantic Color Classes */
+.design-primary {
+  color: var(--design-primary);
+}
+
+.design-secondary {
+  color: var(--design-secondary);
+}
+
+.design-success {
+  color: var(--design-success);
+}
+
+.design-error {
+  color: var(--design-error);
+}
+
+.design-warning {
+  color: var(--design-warning);
+}
+
+/* Background Colors */
+.bg-design-primary {
+  background-color: var(--design-primary);
+}
+
+.bg-design-primary-10 {
+  background-color: rgba(26, 115, 232, 0.1);
+}
+
+.bg-design-secondary {
+  background-color: var(--design-secondary);
+}
+
+.bg-design-secondary-10 {
+  background-color: rgba(0, 150, 136, 0.1);
+}
+
+.bg-design-success {
+  background-color: var(--design-success);
+}
+
+.bg-design-success-10 {
+  background-color: rgba(46, 125, 50, 0.1);
+}
+
+.bg-design-error {
+  background-color: var(--design-error);
+}
+
+.bg-design-error-10 {
+  background-color: rgba(198, 40, 40, 0.1);
+}
+
+.bg-design-warning {
+  background-color: var(--design-warning);
+}
+
+.bg-design-warning-10 {
+  background-color: rgba(255, 143, 0, 0.1);
+}
+
+/* Glass Morphism Effects */
+.glass-card {
+  background: var(--design-surface);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.glass-subtle {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Animation Classes */
+.animate-fast {
+  transition-duration: var(--animation-fast);
+  transition-timing-function: var(--animation-ease);
+}
+
+.animate-normal {
+  transition-duration: var(--animation-normal);
+  transition-timing-function: var(--animation-ease);
+}
+
+/* Typography Classes */
+.text-h1 {
+  font-size: var(--text-h1);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.text-h2 {
+  font-size: var(--text-h2);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+.text-body {
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.text-small {
+  font-size: var(--text-small);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* Touch Target Optimization */
+.touch-target {
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+}
+
+/* Focus States */
+.focus-design {
+  outline: 2px solid var(--design-primary);
+  outline-offset: 2px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  :root {
+    --space-md: 0.75rem;
+    --space-lg: 1rem;
+    --space-xl: 1.5rem;
+  }
+  
+  .glass-card {
+    backdrop-filter: blur(4px); /* Reduced for mobile performance */
+  }
+}

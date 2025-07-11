@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import design system */
+@import './styles/design-system.css';
 /* Import responsive design system */
 @import './styles/responsive.css';
 

@@ -62,13 +62,17 @@ export function BottomNavigation() {
                 flex flex-col items-center justify-center 
                 min-h-[44px] min-w-[44px] px-3 py-2 
                 rounded-lg transition-all duration-200
+                focus:outline-none focus:ring-2 focus:ring-offset-2
+                active:scale-95
                 ${isActive 
-                  ? 'text-primary bg-primary/10' 
+                  ? 'bg-design-primary/10' 
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 }
-                focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                active:scale-95
               `}
+              style={{
+                ...(isActive ? { color: '#1A73E8' } : {}),
+                '--tw-ring-color': '#1A73E8'
+              } as React.CSSProperties}
               aria-label={ariaLabel}
               aria-current={isActive ? 'page' : undefined}
             >

@@ -130,8 +130,9 @@ const EnhancedWalletPage: React.FC = () => {
             <Card className="bg-card/50 backdrop-blur-md border-warning/20">
               <CardContent className="py-8">
                 <div className="text-center space-y-4">
-                  <div className="rounded-full bg-warning/10 p-3 mx-auto w-fit">
-                    <AlertCircle className="h-6 w-6 text-warning" />
+                  <div className="rounded-full p-3 mx-auto w-fit" 
+                       style={{ backgroundColor: 'rgba(255, 143, 0, 0.1)' }}>
+                    <AlertCircle className="h-6 w-6" style={{ color: '#FF8F00' }} />
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">No Wallet Found</h3>
@@ -192,7 +193,7 @@ const EnhancedWalletPage: React.FC = () => {
           <Card className="bg-card/50 backdrop-blur-md border-border/50">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center">
-                <History className="mr-2 h-5 w-5 text-primary" />
+                <History className="mr-2 h-5 w-5" style={{ color: '#1A73E8' }} />
                 Transaction History
               </CardTitle>
               <CardDescription>Recent wallet transactions and activity</CardDescription>
@@ -219,8 +220,9 @@ const EnhancedWalletPage: React.FC = () => {
                 </div>
               ) : !transactions.length && !transactionsLoading ? (
                 <div className="text-center py-12">
-                  <div className="rounded-full bg-primary/10 p-3 mx-auto w-fit mb-4">
-                    <History className="h-6 w-6 text-primary" />
+                  <div className="rounded-full p-3 mx-auto w-fit mb-4" 
+                       style={{ backgroundColor: 'rgba(26, 115, 232, 0.1)' }}>
+                    <History className="h-6 w-6" style={{ color: '#1A73E8' }} />
                   </div>
                   <h3 className="font-semibold mb-2">No Transactions Yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
