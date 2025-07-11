@@ -33,6 +33,12 @@ export function registerRoutes(app: Express): Server {
   // Setup wallet API routes
   app.use('/api/v1/wallet', walletRoutes);
   app.use('/api/v1/wallet', walletCreateRoutes);
+  
+  // Setup admin API routes (admin and superadmin only)
+  app.use('/api/admin', async (req, res, next) => {
+    const { adminRouter } = await import('./routes/admin');
+    adminRouter(req, res, next);
+  });
 
   // Enhanced user wallet endpoint with balance updates
   app.get('/api/wallet', async (req, res) => {

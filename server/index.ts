@@ -4,6 +4,9 @@ import { initializeDatabase, testConnection } from './db';
 import { registerRoutes } from './routes';
 import { log, setupVite } from './vite';
 import cors from 'cors';
+import { blockchainListener } from './services/blockchain-listener';
+import { retryQueue } from './services/retry-queue';
+import { blockchainService } from './services/blockchain';
 
 // Initialize Express application
 const app = express();
@@ -41,6 +44,32 @@ async function startServer() {
           const dbInitialized = await initializeDatabase();
           if (dbInitialized) {
             log('Database tables verified/created');
+            
+            // Initialize blockchain services after database is ready
+            try {
+              // Validate blockchain configuration
+              const configValidation = blockchainService.validateConfiguration();
+              if (configValidation.valid) {
+                log('Blockchain configuration valid');
+                
+                // Start blockchain event listener
+                await blockchainListener.startListening();
+                log('Blockchain event listener started');
+                
+                // Retry queue is automatically started in constructor
+                log('Retry queue service initialized');
+                
+              } else {
+                log('Blockchain configuration invalid:');
+                configValidation.errors.forEach(error => log(`  - ${error}`));
+                log('Blockchain services disabled - wallet operations will work in offline mode');
+              }
+              
+            } catch (blockchainErr) {
+              log(`Blockchain services initialization failed: ${blockchainErr instanceof Error ? blockchainErr.message : String(blockchainErr)}`);
+              log('Continuing without blockchain services - wallet operations will work in offline mode');
+            }
+            
           } else {
             log('Database tables initialization skipped or failed');
           }
@@ -53,6 +82,34 @@ async function startServer() {
     } catch (err) {
       log(`Database connection error: ${err instanceof Error ? err.message : String(err)}`);
     }
+
+    // Graceful shutdown handling
+    process.on('SIGINT', async () => {
+      log('Received SIGINT, shutting down gracefully...');
+      
+      try {
+        // Stop blockchain services
+        blockchainListener.stopListening();
+        retryQueue.stopProcessing();
+        log('Blockchain services stopped');
+        
+        // Close HTTP server
+        httpServer.close(() => {
+          log('HTTP server closed');
+          process.exit(0);
+        });
+        
+        // Force exit after 10 seconds
+        setTimeout(() => {
+          log('Force exiting...');
+          process.exit(1);
+        }, 10000);
+        
+      } catch (shutdownErr) {
+        log(`Error during shutdown: ${shutdownErr instanceof Error ? shutdownErr.message : String(shutdownErr)}`);
+        process.exit(1);
+      }
+    });
 
     // Handle graceful shutdown
     const gracefulShutdown = () => {
