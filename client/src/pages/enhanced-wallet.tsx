@@ -13,6 +13,12 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
+  QrCode,
+  Shield,
+  CheckCircle,
+  Copy,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { TypographyH1, TypographyBody } from '@/components/ui/typography';
 import EnhancedWalletCard from '@/components/ui/enhanced-wallet-card';
@@ -21,12 +27,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 
 const EnhancedWalletPage: React.FC = () => {
   const { user } = useAuth();
   const { wsStatus, lastMessage } = useRealTime();
   const { toast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [copyingAddress, setCopyingAddress] = useState(false);
 
   // Fetch wallet data
   const { 
@@ -107,6 +116,34 @@ const EnhancedWalletPage: React.FC = () => {
     }
   };
 
+  // Copy wallet address to clipboard
+  const copyAddress = async () => {
+    if (!wallet?.address) return;
+    
+    setCopyingAddress(true);
+    try {
+      await navigator.clipboard.writeText(wallet.address);
+      toast({
+        title: "Address Copied",
+        description: "Wallet address copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy address to clipboard",
+        variant: "destructive",
+      });
+    } finally {
+      setCopyingAddress(false);
+    }
+  };
+
+  // Open BSCScan for wallet address
+  const openInExplorer = () => {
+    if (!wallet?.address) return;
+    window.open(`https://bscscan.com/address/${wallet.address}`, '_blank');
+  };
+
   return (
     <motion.div 
       className="py-6 space-y-6"
@@ -184,6 +221,39 @@ const EnhancedWalletPage: React.FC = () => {
                   Send Tokens
                 </Link>
               </Button>
+              
+              {/* Wallet Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={copyAddress}
+                  disabled={copyingAddress}
+                  className="min-h-[40px]"
+                >
+                  <Copy className="mr-2 h-3 w-3" />
+                  Copy
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowQRCode(true)}
+                  className="min-h-[40px]"
+                >
+                  <QrCode className="mr-2 h-3 w-3" />
+                  QR Code
+                </Button>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={openInExplorer}
+                className="w-full min-h-[40px]"
+              >
+                <ExternalLink className="mr-2 h-3 w-3" />
+                View on BSCScan
+              </Button>
             </motion.div>
           )}
         </div>
@@ -244,6 +314,76 @@ const EnhancedWalletPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQRCode && wallet?.address && (
+        <motion.div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowQRCode(false)}
+        >
+          <motion.div 
+            className="bg-card border rounded-xl p-6 max-w-sm w-full"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center mb-4">
+                <Shield className="h-5 w-5 mr-2" style={{ color: '#009688' }} />
+                <h3 className="font-semibold">Wallet Address</h3>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                <QRCode 
+                  value={wallet.address}
+                  size={200}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="M"
+                  style={{ width: '100%', height: 'auto' }}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Wallet Address:</p>
+                <p className="text-sm font-mono bg-muted p-2 rounded break-all">
+                  {wallet.address}
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={copyAddress}
+                  disabled={copyingAddress}
+                  className="flex-1"
+                >
+                  <Copy className="mr-2 h-3 w-3" />
+                  Copy Address
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowQRCode(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-center text-xs text-muted-foreground">
+                <CheckCircle className="h-3 w-3 mr-1" style={{ color: '#009688' }} />
+                Custodial Wallet - Secured by NepaliPay
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* Real-time Status Indicator */}
       {wsStatus !== 'connected' && (

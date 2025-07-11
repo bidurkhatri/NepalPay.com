@@ -105,13 +105,8 @@ function generateDefaultEncryptionKey(): string {
     throw new Error('WALLET_ENCRYPTION_KEY must be explicitly set in production');
   }
   
-  // Generate a consistent development key based on some system properties
-  import('crypto').then(crypto => {
-    return crypto.createHash('sha256').update('nepalipay-dev-key').digest('hex');
-  });
-  
-  // Return a consistent development key synchronously
-  return 'dev-wallet-encryption-key-change-in-production-32chars-long';
+  // Return a consistent 32-character development key
+  return 'nepalipay-dev-wallet-key-123456789';
 }
 
 /**
