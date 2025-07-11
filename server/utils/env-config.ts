@@ -30,7 +30,7 @@ export interface EnvironmentConfig {
 export function loadEnvironmentConfig(skipValidation = false): EnvironmentConfig {
   const config: EnvironmentConfig = {
     // Network Configuration
-    BSC_NETWORK_URL: process.env.BSC_NETWORK_URL || 'https://bsc-dataseed1.binance.org/',
+    BSC_NETWORK_URL: process.env.BSC_RPC_URL || process.env.BSC_NETWORK_URL || 'https://bsc-dataseed1.binance.org/',
     NEPALIPAY_CONTRACT_ADDRESS: process.env.NEPALIPAY_CONTRACT_ADDRESS || '',
     WALLET_PRIVATE_KEY: process.env.WALLET_PRIVATE_KEY,
     WALLET_ENCRYPTION_KEY: process.env.WALLET_ENCRYPTION_KEY || generateDefaultEncryptionKey(),

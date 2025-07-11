@@ -24,26 +24,60 @@ export class BlockchainService {
   ];
 
   constructor() {
-    // Initialize BSC provider
-    const rpcUrl = process.env.BSC_RPC_URL || 'https://bsc-dataseed1.binance.org/';
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
-
-    // Initialize contract
-    const contractAddress = process.env.NEPALIPAY_CONTRACT_ADDRESS || '0x742d35Cc8e6F3b3F4b2e8F8aD35a3f6B8e9a0b7C';
-    this.contract = new ethers.Contract(contractAddress, this.contractABI, this.provider);
-
-    // Initialize admin wallet if private key is provided (support both env var names)
-    const privateKey = process.env.ADMIN_PRIVATE_KEY || process.env.WALLET_PRIVATE_KEY;
-    if (privateKey) {
-      try {
-        this.adminWallet = new ethers.Wallet(privateKey, this.provider);
-        this.contract = this.contract.connect(this.adminWallet);
-        console.log('Blockchain service initialized with admin wallet');
-      } catch (error) {
-        console.warn('Failed to initialize admin wallet - invalid private key format:', error instanceof Error ? error.message : String(error));
+    try {
+      // Initialize BSC provider with better error handling
+      const rpcUrl = process.env.BSC_RPC_URL || 'https://bsc-dataseed1.binance.org/';
+      
+      // Validate RPC URL format
+      if (!rpcUrl.startsWith('http://') && !rpcUrl.startsWith('https://')) {
+        console.warn(`Invalid RPC URL format: ${rpcUrl}. Using default BSC mainnet.`);
+        this.provider = new ethers.JsonRpcProvider('https://bsc-dataseed1.binance.org/');
+      } else {
+        this.provider = new ethers.JsonRpcProvider(rpcUrl);
       }
-    } else {
-      console.log('No admin private key provided - blockchain operations will be read-only');
+
+      // Initialize contract
+      const contractAddress = process.env.NEPALIPAY_CONTRACT_ADDRESS || '0x742d35Cc8e6F3b3F4b2e8F8aD35a3f6B8e9a0b7C';
+      this.contract = new ethers.Contract(contractAddress, this.contractABI, this.provider);
+
+      // Initialize admin wallet if private key is provided (support both env var names)
+      const privateKey = process.env.ADMIN_PRIVATE_KEY || process.env.WALLET_PRIVATE_KEY;
+      if (privateKey) {
+        try {
+          this.adminWallet = new ethers.Wallet(privateKey, this.provider);
+          this.contract = this.contract.connect(this.adminWallet);
+          console.log('Blockchain service initialized with admin wallet');
+        } catch (error) {
+          console.warn('Failed to initialize admin wallet - invalid private key format:', error instanceof Error ? error.message : String(error));
+        }
+      } else {
+        console.log('No admin private key provided - blockchain operations will be read-only');
+      }
+
+      // Test connection in background (don't block initialization)
+      this.testConnectionInBackground();
+
+    } catch (error) {
+      console.error('Failed to initialize blockchain service:', error instanceof Error ? error.message : String(error));
+      console.log('Blockchain service will operate in offline mode');
+    }
+  }
+
+  /**
+   * Test blockchain connection in background without blocking initialization
+   */
+  private async testConnectionInBackground(): Promise<void> {
+    try {
+      // Set a shorter timeout for network detection
+      const networkPromise = this.provider.getNetwork();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Network detection timeout')), 5000)
+      );
+      
+      await Promise.race([networkPromise, timeoutPromise]);
+      console.log('Blockchain connection established successfully');
+    } catch (error) {
+      console.warn('Blockchain network not accessible - operating in offline mode:', error instanceof Error ? error.message : String(error));
     }
   }
 
