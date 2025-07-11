@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 
 interface StatusIndicatorProps {
-  status: 'success' | 'error' | 'warning' | 'loading' | 'connected' | 'disconnected';
+  status: 'success' | 'error' | 'warning' | 'loading' | 'connected' | 'disconnected' | 'online';
   message?: string;
   showText?: boolean;
   className?: string;
@@ -73,6 +73,13 @@ export function StatusIndicator({
       bgColor: 'bg-error/10',
       borderColor: 'border-error/20',
       text: message || 'Disconnected'
+    },
+    online: {
+      icon: Wifi,
+      color: 'text-success',
+      bgColor: 'bg-success/10',
+      borderColor: 'border-success/20',
+      text: message || 'Online'
     }
   };
 

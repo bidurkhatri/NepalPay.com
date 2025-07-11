@@ -45,8 +45,12 @@ const AdvancedLandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-purple-400">NepaliPay</div>
-              <div className="ml-2 h-6 w-6 bg-gradient-to-r from-primary to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
+              <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-teal-400">NepaliPay</div>
+              <div className="ml-2 h-6 w-6 rounded-full flex items-center justify-center shadow-lg" 
+                   style={{ 
+                     background: 'linear-gradient(to right, #1A73E8, #009688)',
+                     boxShadow: '0 4px 15px rgba(26, 115, 232, 0.2)'
+                   }}>
                 <span className="text-white font-bold text-xs">₹</span>
               </div>
             </div>
@@ -54,14 +58,24 @@ const AdvancedLandingPage: React.FC = () => {
             <div className="flex items-center space-x-4">
               {/* Nav Links - Desktop */}
               <div className="hidden md:flex items-center space-x-6">
-                <a href="#features" className="text-white/80 hover:text-primary transition-colors text-sm">Features</a>
-                <a href="#how-it-works" className="text-white/80 hover:text-primary transition-colors text-sm">How it Works</a>
-                <a href="#security" className="text-white/80 hover:text-primary transition-colors text-sm">Security</a>
+                <a href="#features" className="text-white/80 transition-colors text-sm" 
+                   style={{ color: 'rgba(255,255,255,0.8)' }}
+                   onMouseEnter={(e) => e.target.style.color = '#1A73E8'}
+                   onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.8)'}>Features</a>
+                <a href="#how-it-works" className="text-white/80 transition-colors text-sm"
+                   style={{ color: 'rgba(255,255,255,0.8)' }}
+                   onMouseEnter={(e) => e.target.style.color = '#1A73E8'}
+                   onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.8)'}>How it Works</a>
+                <a href="#security" className="text-white/80 transition-colors text-sm"
+                   style={{ color: 'rgba(255,255,255,0.8)' }}
+                   onMouseEnter={(e) => e.target.style.color = '#1A73E8'}
+                   onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.8)'}>Security</a>
               </div>
               
               {/* Language Toggle */}
               <div className="hidden lg:flex glass-card bg-white/5 p-1 rounded-full border border-white/10">
-                <button className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                <button className="px-3 py-1 rounded-full text-xs font-medium"
+                        style={{ backgroundColor: 'rgba(26, 115, 232, 0.2)', color: '#1A73E8' }}>
                   English
                 </button>
                 <button className="px-3 py-1 rounded-full text-white/60 text-xs font-medium hover:text-white/80 transition-colors">
@@ -76,7 +90,13 @@ const AdvancedLandingPage: React.FC = () => {
               </Link>
               
               <Link href="/auth">
-                <button className="text-sm px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 transition-all shadow-lg shadow-primary/20 text-white">
+                <button className="text-sm px-4 py-2 rounded-lg transition-all shadow-lg text-white"
+                        style={{ 
+                          background: 'linear-gradient(to right, #1A73E8, #009688)',
+                          boxShadow: '0 4px 15px rgba(26, 115, 232, 0.2)'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, rgba(26, 115, 232, 0.9), rgba(0, 150, 136, 0.9))'}
+                        onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #1A73E8, #009688)'}>
                   Get Started
                 </button>
               </Link>
@@ -90,17 +110,23 @@ const AdvancedLandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm mb-6">
+              <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm mb-6"
+                   style={{ 
+                     backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                     borderColor: 'rgba(26, 115, 232, 0.2)',
+                     color: '#1A73E8',
+                     border: '1px solid'
+                   }}>
                 <span className="mr-2">Revolutionizing digital payments in Nepal</span>
                 <Zap className="h-4 w-4" />
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-purple-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-400 to-blue-500">
                   The Future of Finance
                 </span>
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-blue-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-400 to-teal-500">
                   for Nepal
                 </span>
               </h1>
@@ -111,7 +137,13 @@ const AdvancedLandingPage: React.FC = () => {
               
               <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
                 <Link href="/auth">
-                  <button className="flex items-center px-8 py-3 rounded-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 transition-all shadow-lg shadow-primary/20 text-white">
+                  <button className="flex items-center px-8 py-3 rounded-lg transition-all shadow-lg text-white font-medium"
+                          style={{ 
+                            background: 'linear-gradient(to right, #1A73E8, #009688)',
+                            boxShadow: '0 10px 25px rgba(26, 115, 232, 0.2)'
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = 'linear-gradient(to right, rgba(26, 115, 232, 0.9), rgba(0, 150, 136, 0.9))'}
+                          onMouseLeave={(e) => e.target.style.background = 'linear-gradient(to right, #1A73E8, #009688)'}>
                     <span className="font-medium">Start Now</span>
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </button>
@@ -154,10 +186,14 @@ const AdvancedLandingPage: React.FC = () => {
                 <div className="pointer-events-none select-none">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">NepaliPay Wallet</h3>
+                      <h3 className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">NepaliPay Wallet</h3>
                       <p className="text-sm text-white/60">Real-time blockchain transactions</p>
                     </div>
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/20">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center shadow-lg" 
+                         style={{ 
+                           background: 'linear-gradient(to bottom right, #1A73E8, #009688)',
+                           boxShadow: '0 4px 15px rgba(26, 115, 232, 0.2)'
+                         }}>
                       <span className="text-white font-bold">₹</span>
                     </div>
                   </div>
@@ -170,7 +206,7 @@ const AdvancedLandingPage: React.FC = () => {
                         Live
                       </div>
                     </div>
-                    <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">
+                    <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">
                       10,000 NPT
                     </div>
                     <div className="text-sm text-white/60">≈ 10,000 NPR</div>
@@ -178,7 +214,7 @@ const AdvancedLandingPage: React.FC = () => {
                   
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     <div className="flex flex-col items-center bg-white/5 rounded-xl border border-white/5 p-3 hover:bg-white/10 transition-all">
-                      <Send className="h-5 w-5 text-primary mb-2" />
+                      <Send className="h-5 w-5 mb-2" style={{ color: '#1A73E8' }} />
                       <span className="text-xs text-white/80">Send</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/5 rounded-xl border border-white/5 p-3 hover:bg-white/10 transition-all">
