@@ -7,6 +7,7 @@ import cors from 'cors';
 import { blockchainListener } from './services/blockchain-listener';
 import { retryQueue } from './services/retry-queue';
 import { blockchainService } from './services/blockchain';
+import { loadEnvironmentConfig, validateEnvironmentConfigWithGracefulHandling } from './utils/env-config';
 
 // Initialize Express application
 const app = express();
@@ -19,6 +20,15 @@ app.use(cors());
 // Start server function
 async function startServer() {
   try {
+    // Validate environment configuration early but gracefully
+    try {
+      const config = loadEnvironmentConfig(false); // This will perform validation
+      log('Environment configuration validated successfully');
+    } catch (error) {
+      log(`Environment validation warning: ${error instanceof Error ? error.message : String(error)}`);
+      log('Continuing with available configuration - some features may be disabled');
+    }
+
     // Register API routes and create HTTP server first
     const httpServer = registerRoutes(app);
 

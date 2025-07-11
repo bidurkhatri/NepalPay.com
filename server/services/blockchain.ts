@@ -32,10 +32,18 @@ export class BlockchainService {
     const contractAddress = process.env.NEPALIPAY_CONTRACT_ADDRESS || '0x742d35Cc8e6F3b3F4b2e8F8aD35a3f6B8e9a0b7C';
     this.contract = new ethers.Contract(contractAddress, this.contractABI, this.provider);
 
-    // Initialize admin wallet if private key is provided
-    if (process.env.ADMIN_PRIVATE_KEY) {
-      this.adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, this.provider);
-      this.contract = this.contract.connect(this.adminWallet);
+    // Initialize admin wallet if private key is provided (support both env var names)
+    const privateKey = process.env.ADMIN_PRIVATE_KEY || process.env.WALLET_PRIVATE_KEY;
+    if (privateKey) {
+      try {
+        this.adminWallet = new ethers.Wallet(privateKey, this.provider);
+        this.contract = this.contract.connect(this.adminWallet);
+        console.log('Blockchain service initialized with admin wallet');
+      } catch (error) {
+        console.warn('Failed to initialize admin wallet - invalid private key format:', error instanceof Error ? error.message : String(error));
+      }
+    } else {
+      console.log('No admin private key provided - blockchain operations will be read-only');
     }
   }
 
@@ -287,8 +295,10 @@ export class BlockchainService {
       errors.push('NEPALIPAY_CONTRACT_ADDRESS not configured');
     }
 
-    if (!process.env.ADMIN_PRIVATE_KEY) {
-      errors.push('ADMIN_PRIVATE_KEY not configured (blockchain registration disabled)');
+    // Check for either ADMIN_PRIVATE_KEY or WALLET_PRIVATE_KEY
+    const privateKey = process.env.ADMIN_PRIVATE_KEY || process.env.WALLET_PRIVATE_KEY;
+    if (!privateKey) {
+      errors.push('WALLET_PRIVATE_KEY (or ADMIN_PRIVATE_KEY) not configured (blockchain registration disabled)');
     }
 
     return {

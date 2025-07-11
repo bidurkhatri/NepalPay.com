@@ -51,6 +51,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Alert,
   AlertDescription,
