@@ -1,0 +1,165 @@
+Search
+Time
+Deployment
+Source
+Log
+2025-07-11 23:26:49.13
+a1435325
+User
+bufferedIndex: 0,
+2025-07-11 23:27:04.34
+6690c921
+User
+Blockchain service initialized with admin wallet
+2025-07-11 23:27:04.37
+6690c921
+User
+Retry queue processing started
+2025-07-11 23:27:04.37
+6690c921
+User
+Environment configuration warnings:
+2025-07-11 23:27:04.37
+6690c921
+User
+- WALLET_PRIVATE_KEY is required for blockchain operations - running in offline mode
+2025-07-11 23:27:04.43
+6690c921
+User
+1:27:04 PM [express] Environment configuration validated successfully
+2025-07-11 23:27:04.51
+6690c921
+User
+Re-optimizing dependencies because vite config has changed
+2025-07-11 23:27:04.53
+6690c921
+User
+1:27:04 PM [express] Server running on http://0.0.0.0:5000
+2025-07-11 23:27:05.95
+6690c921
+User
+1:27:05 PM [vite] Pre-transform error: Failed to load url /src/main.tsx?v=CgzgPFF_Q0cOEMXtnqeUO (resolved id: /src/main.tsx?v=CgzgPFF_Q0cOEMXtnqeUO). Does the file exist?
+2025-07-11 23:27:05.97
+6690c921
+User
+npm notice
+2025-07-11 23:27:05.97
+6690c921
+User
+npm notice New major version of npm available! 10.8.2 -> 11.4.2
+2025-07-11 23:27:05.97
+6690c921
+User
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.2
+2025-07-11 23:27:05.97
+6690c921
+User
+npm notice To update run: npm install -g npm@11.4.2
+2025-07-11 23:27:05.97
+6690c921
+User
+npm notice
+2025-07-11 23:27:05.98
+6690c921
+System
+command finished with error [npm run start]: exit status 1
+2025-07-11 23:27:06.20
+6690c921
+User
+> rest-express@1.0.0 start
+2025-07-11 23:27:06.20
+6690c921
+User
+> NODE_ENV=production node dist/index.js
+2025-07-11 23:27:06.50
+5d20a42a
+User
+Blockchain service initialized with admin wallet
+2025-07-11 23:27:06.52
+5d20a42a
+User
+Retry queue processing started
+2025-07-11 23:27:06.53
+5d20a42a
+User
+Environment configuration warnings:
+2025-07-11 23:27:06.53
+5d20a42a
+User
+- WALLET_PRIVATE_KEY is required for blockchain operations - running in offline mode
+2025-07-11 23:27:06.55
+5d20a42a
+User
+1:27:06 PM [express] Environment configuration validated successfully
+2025-07-11 23:27:06.70
+5d20a42a
+User
+1:27:06 PM [express] Server running on http://0.0.0.0:5000
+2025-07-11 23:27:07.01
+6690c921
+User
+Invalid RPC URL format: bsc-dataseed.binance.org. Using default BSC mainnet.
+2025-07-11 23:27:07.05
+6690c921
+User
+Blockchain service initialized with admin wallet
+2025-07-11 23:27:07.08
+6690c921
+User
+Retry queue processing started
+2025-07-11 23:27:07.08
+6690c921
+User
+Environment configuration warnings:
+2025-07-11 23:27:07.08
+6690c921
+User
+- WALLET_PRIVATE_KEY is required for blockchain operations - running in offline mode
+2025-07-11 23:27:07.10
+6690c921
+User
+1:27:07 PM [express] Environment configuration validated successfully
+2025-07-11 23:27:07.16
+6690c921
+User
+1:27:07 PM [express] Server running on http://0.0.0.0:5000
+2025-07-11 23:27:11.69
+6690c921
+User
+Blockchain connection established successfully
+2025-07-11 23:27:17.64
+a1435325
+System
+system: received signal terminated
+2025-07-11 23:27:17.65
+a1435325
+System
+command finished with error [npm run start]: signal: terminated
+2025-07-11 23:27:17.70
+a1435325
+System
+main done, exiting
+2025-07-11 23:27:21.49
+6690c921
+User
+1:27:15 PM [express] Database connection successful
+2025-07-11 23:27:21.49
+6690c921
+User
+1:27:15 PM [express] Database connected successfully
+2025-07-11 23:27:23.42
+6690c921
+User
+1:27:23 PM [vite] Pre-transform error: Failed to load url /src/main.tsx?v=OWZ7LV5h-1bM4MfmR1ERU (resolved id: /src/main.tsx?v=OWZ7LV5h-1bM4MfmR1ERU). Does the file exist?
+2025-07-11 23:27:24.49
+6690c921
+System
+command finished with error [npm run start]: exit status 1
+2025-07-11 23:27:47.39
+6690c921
+User
+> rest-express@1.0.0 start
+2025-07-11 23:27:47.39
+6690c921
+User
+> NODE_ENV=production node dist/index.js

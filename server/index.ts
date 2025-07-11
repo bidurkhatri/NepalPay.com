@@ -35,7 +35,8 @@ async function startServer() {
     // Determine port from environment variable or use default (must be 5000 for Replit workflow)
     const PORT = parseInt(process.env.PORT || '5000', 10);
     
-    // Set up Vite for serving client application
+    // Set up frontend serving
+    // Always use Vite setup for now to ensure frontend works
     await setupVite(app, httpServer);
     
     // Start listening for requests immediately
