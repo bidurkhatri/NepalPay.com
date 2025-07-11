@@ -30,31 +30,29 @@ async function startServer() {
       log(`Server running on http://0.0.0.0:${PORT}`);
     });
 
-    // Initialize database connection in the background
-    // This will not block server startup
-    testConnection()
-      .then(connected => {
-        if (connected) {
-          log('Database connected successfully');
-          // Initialize database tables in the background
-          initializeDatabase()
-            .then(dbInitialized => {
-              if (dbInitialized) {
-                log('Database tables verified/created');
-              } else {
-                log('Database tables initialization skipped or failed');
-              }
-            })
-            .catch(err => {
-              log(`Database tables initialization error: ${err instanceof Error ? err.message : String(err)}`);
-            });
-        } else {
-          log('Failed to connect to database, server will operate with limited functionality');
+    // Initialize database connection with better error handling
+    try {
+      const connected = await testConnection();
+      if (connected) {
+        log('Database connected successfully');
+        
+        // Try to initialize database tables
+        try {
+          const dbInitialized = await initializeDatabase();
+          if (dbInitialized) {
+            log('Database tables verified/created');
+          } else {
+            log('Database tables initialization skipped or failed');
+          }
+        } catch (err) {
+          log(`Error checking/creating tables: ${err instanceof Error ? err.message : String(err)}`);
         }
-      })
-      .catch(err => {
-        log(`Database connection error: ${err instanceof Error ? err.message : String(err)}`);
-      });
+      } else {
+        log('Failed to connect to database, server will operate with limited functionality');
+      }
+    } catch (err) {
+      log(`Database connection error: ${err instanceof Error ? err.message : String(err)}`);
+    }
 
     // Handle graceful shutdown
     const gracefulShutdown = () => {

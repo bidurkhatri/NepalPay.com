@@ -8,24 +8,26 @@ import { log } from './vite';
 // Get database connection string from environment variables
 const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/nepalipay';
 
-// Create postgres client for drizzle ORM with optimized settings
+// Create postgres client for drizzle ORM with Replit-optimized settings
 export const client = postgres(connectionString, {
-  max: 5, // Reduced connection pool size for lower resource usage
-  idle_timeout: 10, // Reduced idle timeout for quicker release of connections
-  connect_timeout: 5, // Reduced connection timeout for faster failures
-  prepare: false, // Disable prepared statements to reduce initial overhead
-  debug: false, // Disable debug logging
-  max_lifetime: 60 * 30, // 30 minutes maximum connection lifetime
-  fetch_types: false, // Disable type fetching for improved startup performance
+  max: 1, // Single connection for Replit
+  idle_timeout: 20,
+  connect_timeout: 30,
+  prepare: false,
+  debug: false,
+  max_lifetime: 60 * 60, // 1 hour
+  fetch_types: false,
+  ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
 });
 
-// Create pg Pool for session store and other direct queries with optimized settings
+// Create pg Pool for session store and other direct queries with Replit-optimized settings
 export const pool = new pg.Pool({
   connectionString,
-  max: 5, // Reduced connection pool size for lower resource usage
-  idleTimeoutMillis: 10000, // Reduced idle timeout for quicker release of connections
-  connectionTimeoutMillis: 5000, // Reduced connection timeout
-  allowExitOnIdle: true, // Allow connections to exit on idle to free resources
+  max: 1, // Single connection for Replit
+  idleTimeoutMillis: 20000,
+  connectionTimeoutMillis: 30000,
+  allowExitOnIdle: true,
+  ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
 });
 
 // Create drizzle ORM instance

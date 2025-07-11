@@ -61,6 +61,41 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create test user endpoint for production seeding
+  app.post('/api/seed-user', async (req, res) => {
+    try {
+      // Check if test user already exists
+      const existingUser = await storage.getUserByUsername('testuser');
+      if (existingUser) {
+        return res.json({ message: 'Test user already exists', user: existingUser });
+      }
+
+      // Create a test user with wallet
+      const testUser = await storage.createUser({
+        username: 'testuser',
+        email: 'test@nepalipay.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'password123',
+        walletAddress: '0x742d35Cc6635C0532925a3b8D05b9F59C1234567'
+      });
+
+      // Create wallet for test user
+      const wallet = await storage.createWallet({
+        userId: testUser.id,
+        nptBalance: '1000.00',
+        usdBalance: '100.00',
+        eurBalance: '85.00',
+        gbpBalance: '75.00'
+      });
+
+      return res.json({ message: 'Test user created successfully', user: testUser, wallet });
+    } catch (error) {
+      log(`Error creating test user: ${error instanceof Error ? error.message : String(error)}`);
+      return res.status(500).json({ error: 'Failed to create test user' });
+    }
+  });
+
   // Create a new loan
   app.post('/api/loans', async (req, res) => {
     if (!req.isAuthenticated()) {

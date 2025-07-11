@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         if (res.status === 401) {
-          console.log('User not authenticated');
+          // User not authenticated - this is normal, not an error
           return null;
         }
         
