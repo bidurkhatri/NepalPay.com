@@ -1,6 +1,6 @@
 import React, { ReactNode, useEffect, useRef } from 'react';
 import Sidebar from './sidebar';
-import MobileNavigation from './mobile-navigation';
+import BottomNavigation from '@/components/ui/bottom-navigation';
 import { useLocation } from 'wouter';
 import { useBlockchain } from '@/contexts/blockchain-context';
 import { useToast } from '@/hooks/use-toast';
@@ -98,7 +98,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {children}
             </motion.div>
           </main>
-          <MobileNavigation />
+          <BottomNavigation />
           
           {/* Connection Status Indicator */}
           {!isConnected && !demoMode && (

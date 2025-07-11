@@ -3,8 +3,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRealTime } from '@/contexts/real-time-context';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { QRCodeSVG } from 'qrcode.react';
+import { TypographyH1, TypographyBody } from '@/components/ui/typography';
+import EnhancedWalletCard from '@/components/ui/enhanced-wallet-card';
+import EnhancedTransactionTable from '@/components/ui/enhanced-transaction-table';
 import {
   Wallet,
   ArrowUpRight,
@@ -21,6 +22,8 @@ import {
   QrCode,
   Shield,
   RefreshCw,
+  CheckCircle,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -224,24 +227,22 @@ const WalletPage: React.FC = () => {
 
   return (
     <div className="py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Wallet</h1>
-        <p className="text-muted-foreground">
+      <div className="space-y-4">
+        <TypographyH1>Wallet</TypographyH1>
+        <TypographyBody className="text-muted-foreground">
           Manage your NPT tokens and view transaction history
-        </p>
+        </TypographyBody>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Wallet Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Enhanced Wallet Card */}
         <div className="lg:col-span-1">
-          <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Wallet className="mr-2 h-5 w-5 text-primary" />
-                Your Wallet
-              </CardTitle>
-              <CardDescription>Manage your digital assets</CardDescription>
-            </CardHeader>
+          <EnhancedWalletCard 
+            wallet={wallet}
+            isLoading={walletLoading}
+            onRefresh={() => refetchWallet()}
+            isRefreshing={walletRefetching}
+          />
             
             <CardContent className="space-y-6">
               {walletLoading ? (

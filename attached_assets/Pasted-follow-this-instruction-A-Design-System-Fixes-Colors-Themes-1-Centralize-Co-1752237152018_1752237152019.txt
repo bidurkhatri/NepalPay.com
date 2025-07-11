@@ -1,0 +1,203 @@
+follow this instruction 
+
+---
+
+### A. Design System Fixes (Colors, Themes)
+
+1. **Centralize Color Tokens**
+
+   * In `tailwind.config.ts`, define:
+
+     ```ts
+     colors: {
+       primary: '#1A73E8',
+       secondary: '#009688',
+       background: '#F5F9FF',
+       surface: 'rgba(255,255,255,0.12)',
+       textPrimary: '#1E1E1E',
+       textSecondary: '#616161',
+       success: '#2E7D32',
+       error: '#C62828',
+       warning: '#FF8F00'
+     }
+     ```
+   * Replace hardcoded colors across all components with these tokens.
+
+2. **Glass Layer Hardening**
+
+   * Set background blur max: `backdrop-blur-sm` or `md`
+   * Limit opacity to `.bg-white/10` – `.bg-white/20`
+   * Avoid full-glass overlays for core text containers
+
+3. **Enforce Semantic Color Usage**
+
+   * Map:
+
+     * Success → `bg-success text-white`
+     * Error → `bg-error text-white`
+     * Warning → `bg-warning text-black`
+
+---
+
+### B. Typography & Spacing
+
+4. **Standardize Typography**
+
+   * In `theme.json` or global config:
+
+     * Heading 1: `text-2xl font-bold`
+     * Heading 2: `text-xl font-semibold`
+     * Body: `text-base font-normal`
+   * Replace inline font styles with class tokens
+   * Apply `tracking-normal` and consistent `leading`
+
+5. **Fix Font Hierarchy**
+
+   * Use `Nunito Sans` for body, `Poppins` only for H1/H2
+   * Remove `Preeti` unless rendering Nepali content explicitly
+   * Audit all heading tags (`h1–h4`) for proper nesting
+
+6. **Fix Vertical Rhythm**
+
+   * Apply consistent vertical margin spacing between elements:
+
+     * Use only `mt-4`, `mb-4`, `gap-4`, `space-y-4` variants
+   * Remove arbitrary pixel-based spacing
+
+---
+
+### C. Responsive and Mobile UX
+
+7. **Add Bottom Navigation Bar (Mobile)**
+
+   * Persistent bar for:
+
+     * Home (dashboard)
+     * Wallet
+     * Send
+     * Transactions
+     * Profile
+   * Use `fixed bottom-0 w-full` + `flex justify-around`
+
+8. **Apply Thumb-Zone Optimization**
+
+   * Place primary CTAs (e.g., “Send”, “Confirm”) in lower half of viewport
+   * Use larger hitboxes: `min-h-[44px] min-w-[44px]`
+
+9. **Component Breakpoint Handling**
+
+   * Ensure all charts, tables, modals collapse or scroll on:
+
+     * `max-w-screen-sm` and `max-w-screen-md`
+   * Use responsive grid: `grid-cols-1 sm:grid-cols-2 md:grid-cols-3`
+
+---
+
+### D. UI Components Fixes
+
+10. **Fix Wallet Display**
+
+    * Add:
+
+      * Copyable address with tooltip
+      * QR code (use `qrcode.react`)
+      * View on BscScan link
+    * Position at top of wallet page
+
+11. **Send Flow Fixes**
+
+    * Replace dropdowns with:
+
+      * Predictive search bar for contacts
+      * Toggle button group for token selection
+    * Move QR scan to first visible layer (not hidden inside accordion or modal)
+
+12. **Transaction History Fixes**
+
+    * Add column filters: status, currency, date
+    * Show tooltips for status icons (pending, failed, etc.)
+    * Use tabular pagination with `10–20` rows per page
+
+---
+
+### E. Interaction and Motion
+
+13. **Define Animation Tokens**
+
+    * Entry: `fade-in`, `slide-up` (duration 200ms)
+    * Confirmation: `pulse-on-success`
+    * Disable excessive easing and duration > 400ms
+
+14. **Add Microinteractions**
+
+    * Button click: slight scale + color flash
+    * Form success: green tick + toast (`react-hot-toast`)
+    * Input invalid: red border flash + message below
+
+15. **Disable Modal Overuse**
+
+    * Replace confirmation modals with inline success messages or top bar alerts
+    * Only use modals for:
+
+      * Password entry
+      * Payment QR
+      * Legal or irreversible actions
+
+---
+
+### F. Accessibility and Internationalization
+
+16. **Contrast Compliance**
+
+    * Use [https://webaim.org/resources/contrastchecker/](https://webaim.org/resources/contrastchecker/) to test all text-to-bg
+    * Minimum contrast ratio:
+
+      * Normal text: 4.5:1
+      * Large text: 3:1
+
+17. **Keyboard Navigation**
+
+    * Add `tabIndex={0}` to all interactive components
+    * Show visible focus state (`outline outline-blue-400`)
+    * Ensure no keyboard trap inside modals
+
+18. **ARIA Labels and Semantics**
+
+    * Use `aria-label` on icons, buttons without text
+    * Ensure all inputs have `label for=...` or `aria-label`
+
+---
+
+### G. Finalization and Testing
+
+19. **Add UI Test Coverage**
+
+    * Test:
+
+      * Wallet creation and display
+      * Mobile bottom nav flow
+      * Send/receive UX
+      * Responsive table views
+    * Use `@testing-library/react` or `Cypress`
+
+20. **Design Review Checklist**
+
+    * Build Figma checklist of all screen types:
+
+      * Dashboard
+      * Wallet
+      * Send Flow
+      * Transactions
+      * Profile
+    * Sign off each screen for:
+
+      * Spacing
+      * Contrast
+      * Navigation access
+      * Responsive behavior
+
+---
+
+### Completion Target
+
+All 20 items must be implemented and tested. Declare UI...

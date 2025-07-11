@@ -53,13 +53,25 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         
-        // NepaliPay custom colors
+        // NepaliPay semantic colors
         "primary-light": "var(--primary-light)",
         "primary-dark": "var(--primary-dark)",
         "secondary-light": "var(--secondary-light)",
         "secondary-dark": "var(--secondary-dark)",
         "accent-light": "var(--accent-light)",
         "accent-dark": "var(--accent-dark)",
+        
+        // Standard semantic colors for consistency
+        brand: {
+          primary: '#1A73E8',
+          secondary: '#009688',
+        },
+        semantic: {
+          background: '#F5F9FF',
+          surface: 'rgba(255,255,255,0.12)',
+          textPrimary: '#1E1E1E',
+          textSecondary: '#616161',
+        },
         danger: {
           DEFAULT: "var(--danger-color)",
           light: "var(--danger-light)",
@@ -110,6 +122,15 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-success": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)", backgroundColor: "hsl(var(--success))" },
+          "100%": { transform: "scale(1)" },
+        },
         "fade-in-up": {
           from: { opacity: "0", transform: "translateY(30px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -145,7 +166,9 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "gradient-slide": "gradient-slide 3s linear infinite",
-        "fade-in": "fade-in 0.3s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+        "slide-up": "slide-up 0.2s ease-out",
+        "pulse-success": "pulse-success 0.3s ease-out",
         "fade-in-up": "fade-in-up 0.4s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
         "slide-out": "slide-out 0.3s ease-out",

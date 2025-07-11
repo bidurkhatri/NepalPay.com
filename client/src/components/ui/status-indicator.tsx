@@ -1,69 +1,111 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
+import React from 'react';
+import { motion } from 'framer-motion';
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  Wifi, 
+  WifiOff,
+  Loader2 
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatusIndicatorProps {
-  status: 'online' | 'offline' | 'loading' | 'error'
-  size?: 'sm' | 'md' | 'lg'
-  showText?: boolean
-  className?: string
+  status: 'success' | 'error' | 'warning' | 'loading' | 'connected' | 'disconnected';
+  message?: string;
+  showText?: boolean;
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ 
+export function StatusIndicator({ 
   status, 
-  size = 'md', 
-  showText = false,
-  className 
-}) => {
+  message, 
+  showText = false, 
+  className,
+  size = 'md'
+}: StatusIndicatorProps) {
   const sizeClasses = {
-    sm: "h-2 w-2",
-    md: "h-3 w-3",
-    lg: "h-4 w-4"
-  }
+    sm: 'h-3 w-3',
+    md: 'h-4 w-4', 
+    lg: 'h-5 w-5'
+  };
 
   const statusConfig = {
-    online: {
-      color: "bg-green-500",
-      text: "Online",
-      animate: true
-    },
-    offline: {
-      color: "bg-red-500",
-      text: "Offline",
-      animate: false
-    },
-    loading: {
-      color: "bg-yellow-500",
-      text: "Connecting...",
-      animate: true
+    success: {
+      icon: CheckCircle,
+      color: 'text-success',
+      bgColor: 'bg-success/10',
+      borderColor: 'border-success/20',
+      text: message || 'Success'
     },
     error: {
-      color: "bg-red-500",
-      text: "Error",
-      animate: false
+      icon: AlertCircle,
+      color: 'text-error',
+      bgColor: 'bg-error/10',
+      borderColor: 'border-error/20',
+      text: message || 'Error'
+    },
+    warning: {
+      icon: AlertCircle,
+      color: 'text-warning',
+      bgColor: 'bg-warning/10',
+      borderColor: 'border-warning/20',
+      text: message || 'Warning'
+    },
+    loading: {
+      icon: Loader2,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+      borderColor: 'border-primary/20',
+      text: message || 'Loading...'
+    },
+    connected: {
+      icon: Wifi,
+      color: 'text-success',
+      bgColor: 'bg-success/10',
+      borderColor: 'border-success/20',
+      text: message || 'Connected'
+    },
+    disconnected: {
+      icon: WifiOff,
+      color: 'text-error',
+      bgColor: 'bg-error/10',
+      borderColor: 'border-error/20',
+      text: message || 'Disconnected'
     }
-  }
+  };
 
-  const config = statusConfig[status]
+  const config = statusConfig[status];
+  const Icon = config.icon;
 
   return (
-    <div className={cn("flex items-center space-x-2", className)}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className={cn(
+        'flex items-center space-x-2',
+        showText && 'px-3 py-2 rounded-md border',
+        showText && config.bgColor,
+        showText && config.borderColor,
+        className
+      )}
+    >
       <motion.div
-        className={cn(
-          "rounded-full",
-          sizeClasses[size],
-          config.color
-        )}
-        animate={config.animate ? { scale: [1, 1.2, 1] } : {}}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
+        animate={status === 'loading' ? { rotate: 360 } : {}}
+        transition={status === 'loading' ? { duration: 1, repeat: Infinity, ease: 'linear' } : {}}
+      >
+        <Icon className={cn(sizeClasses[size], config.color)} />
+      </motion.div>
+      
       {showText && (
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className={cn('text-sm font-medium', config.color)}>
           {config.text}
         </span>
       )}
-    </div>
-  )
+    </motion.div>
+  );
 }
 
-export { StatusIndicator }
+export default StatusIndicator;

@@ -2,6 +2,7 @@ import { Route, Switch } from 'wouter';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { Toaster } from './components/ui/toaster';
+import ToastProvider from './components/ui/toast-notifications';
 import { AuthProvider } from './contexts/auth-context';
 import { RealTimeProvider } from './contexts/real-time-context';
 import { ProtectedRoute } from './lib/protected-route';
@@ -13,7 +14,7 @@ import NotFoundPage from './pages/not-found';
 import HomePage from './pages/home-page';
 import AdvancedLandingPage from './pages/advanced-landing-page';
 import DashboardPage from './pages/dashboard';
-import WalletPage from './pages/wallet';
+import EnhancedWalletPage from './pages/enhanced-wallet';
 import SendFundsPage from './pages/send-funds';
 import PurchaseTokensPage from './pages/purchase-tokens';
 import PaymentsPage from './pages/payments';
@@ -27,9 +28,10 @@ import SettingsPage from './pages/settings';
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RealTimeProvider>
-          <Switch>
+      <ToastProvider>
+        <AuthProvider>
+          <RealTimeProvider>
+            <Switch>
             <Route path="/">
               <AdvancedLandingPage />
             </Route>
@@ -45,7 +47,7 @@ function App() {
             </ProtectedRoute>
             <ProtectedRoute path="/wallet">
               <DashboardLayout>
-                <WalletPage />
+                <EnhancedWalletPage />
               </DashboardLayout>
             </ProtectedRoute>
             <ProtectedRoute path="/send">
@@ -97,10 +99,11 @@ function App() {
             <Route>
               <NotFoundPage />
             </Route>
-          </Switch>
-          <Toaster />
-        </RealTimeProvider>
-      </AuthProvider>
+            </Switch>
+            <Toaster />
+          </RealTimeProvider>
+        </AuthProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
